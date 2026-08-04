@@ -13,98 +13,89 @@
          يتطبق فورًا من أول رسمة للصفحة، قبل ما الجافاسكريبت يشتغل
          ويحمّل ملف الثيم ديناميكيًا. كده مفيش "ومضة" شكل بايظ. -->
     <style>
-        #bootLoader {
-            position: fixed;
-            inset: 0;
-            z-index: 999999;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+        :root{--boot-gold:#f3cf7d;--boot-red:#d73526;--boot-deep:#090706}
+        #bootLoader{
+            position:fixed;inset:0;z-index:999999;display:grid;place-items:center;overflow:hidden;
             background:
-                radial-gradient(circle at center, rgba(201,162,39,.14), transparent 34%),
-                linear-gradient(135deg, #1D232C, #0E1116);
-            transition: opacity .6s ease;
+                radial-gradient(circle at 50% 42%,rgba(243,207,125,.12),transparent 28%),
+                radial-gradient(circle at 12% 12%,rgba(215,53,38,.18),transparent 30%),
+                radial-gradient(circle at 88% 88%,rgba(243,207,125,.08),transparent 34%),
+                linear-gradient(145deg,#080605,#17100e 55%,#090706);
+            transition:opacity .68s ease,visibility .68s ease;
         }
-        #bootLoader.hidden { opacity: 0; pointer-events: none; }
-        .boot-brand {
-            font-family: 'Cinzel', Georgia, serif;
-            font-size: 30px;
-            font-weight: 700;
-            color: #ECEEF1;
-            letter-spacing: 10px;
-            text-align: center;
-            margin-bottom: 4px;
-            text-shadow: 0 0 40px rgba(201,162,39,.5);
+        #bootLoader.hidden{opacity:0;visibility:hidden;pointer-events:none}
+        #bootLoader::before{
+            content:"";position:absolute;inset:-40%;
+            background:conic-gradient(from 0deg,transparent 0 32%,rgba(243,207,125,.06) 40%,transparent 48% 100%);
+            animation:bootUniverse 11s linear infinite;
         }
-        .boot-brand-sub {
-            font-family: 'Raleway', Arial, sans-serif;
-            font-size: 11px;
-            font-weight: 300;
-            color: rgba(236,238,241,.62);
-            letter-spacing: 8px;
-            text-transform: uppercase;
-            text-align: center;
-            margin-bottom: 48px;
-        }
-        .boot-emblem { position: relative; width: 140px; height: 140px; margin: 0 auto 32px; }
-        .boot-ring {
-            position: absolute; inset: 0; border-radius: 50%;
-            border: 2px solid transparent;
-            border-top-color: #C9A227;
-            border-right-color: #E7DDD0;
-            animation: bootRingRotate 1.8s cubic-bezier(.68,-.55,.27,1.55) infinite;
-        }
-        .boot-ring-2 {
-            inset: 14px;
-            border-top-color: transparent;
-            border-bottom-color: #8A7B65;
-            border-left-color: #C9A227;
-            animation: bootRingRotate 2.4s linear infinite reverse;
-        }
-        .boot-ring-3 { inset: 28px; border: 1px solid rgba(201,162,39,.15); animation: none; }
-        .boot-logo-center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-        .boot-logo-img { width: 88px; height: 88px; object-fit: cover; border-radius: 50%; box-shadow: 0 16px 40px rgba(0,0,0,.32); }
-        @keyframes bootRingRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .boot-divider { width: 120px; height: 1px; background: linear-gradient(90deg, transparent, #C9A227, transparent); margin: 24px auto; }
-        .boot-dots { display: flex; gap: 8px; justify-content: center; }
-        .boot-dot { width: 5px; height: 5px; border-radius: 50%; background: #C9A227; opacity: .2; animation: bootDotPulse 1.4s ease-in-out infinite; }
-        .boot-dot:nth-child(1) { animation-delay: 0s; }
-        .boot-dot:nth-child(2) { animation-delay: .2s; }
-        .boot-dot:nth-child(3) { animation-delay: .4s; }
-        .boot-dot:nth-child(4) { animation-delay: .6s; }
-        .boot-dot:nth-child(5) { animation-delay: .8s; }
-        @keyframes bootDotPulse { 0%,100% { opacity:.15; transform:scale(1); } 50% { opacity:1; transform:scale(1.5); background:#E7DDD0; } }
-        @media (prefers-reduced-motion: reduce) { .boot-ring, .boot-ring-2, .boot-dot { animation: none; } }
+        .boot-grid{position:absolute;inset:0;opacity:.18;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:52px 52px;mask-image:radial-gradient(circle at center,#000 20%,transparent 74%)}
+        .boot-shell{position:relative;width:min(520px,calc(100vw - 30px));padding:46px 38px 36px;text-align:center;border:1px solid rgba(255,241,201,.17);border-radius:38px;background:linear-gradient(145deg,rgba(255,255,255,.075),rgba(255,255,255,.018));box-shadow:0 42px 140px rgba(0,0,0,.48),inset 0 1px rgba(255,255,255,.1);backdrop-filter:blur(30px) saturate(145%)}
+        .boot-logo-stage{position:relative;width:172px;height:172px;margin:0 auto 26px;display:grid;place-items:center}
+        .boot-orbit,.boot-orbit::before,.boot-orbit::after{position:absolute;border-radius:50%;content:""}
+        .boot-orbit{inset:0;border:1px solid rgba(243,207,125,.30);animation:bootOrbit 5.4s linear infinite}
+        .boot-orbit::before{inset:12px;border:1px dashed rgba(215,53,38,.5);animation:bootOrbit 8s linear infinite reverse}
+        .boot-orbit::after{inset:27px;border:1px solid rgba(255,255,255,.08)}
+        .boot-spark{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--boot-gold);box-shadow:0 0 18px var(--boot-gold);top:2px;left:50%;transform:translateX(-50%);animation:bootSpark 5.4s linear infinite;transform-origin:0 84px}
+        .boot-logo-frame{position:relative;width:112px;height:112px;border-radius:30px;padding:4px;background:linear-gradient(145deg,#fff1c9,#d73526 68%,#6d1510);box-shadow:0 24px 70px rgba(0,0,0,.42),0 0 50px rgba(243,207,125,.12);overflow:hidden}
+        .boot-logo-img{width:100%;height:100%;object-fit:cover;border-radius:26px;display:block;clip-path:inset(100% 0 0 0);animation:bootLogoBuild 2.25s cubic-bezier(.2,.8,.2,1) forwards}
+        .boot-logo-frame::before{content:"";position:absolute;z-index:3;left:-20%;right:-20%;height:3px;top:0;background:linear-gradient(90deg,transparent,#fff1c9,var(--boot-gold),transparent);box-shadow:0 0 22px var(--boot-gold);animation:bootScan 2.25s cubic-bezier(.2,.8,.2,1) forwards}
+        .boot-logo-frame::after{content:"";position:absolute;inset:4px;border-radius:26px;border:1px solid rgba(255,255,255,.34);opacity:0;animation:bootFrameGlow 1s ease 1.7s forwards}
+        .boot-brand{font-family:'Cinzel',serif;font-size:31px;font-weight:700;color:#fff1c9;letter-spacing:10px;margin-left:10px;text-shadow:0 0 30px rgba(243,207,125,.24)}
+        .boot-brand span{display:inline-block;opacity:0;transform:translateY(10px) scale(.88);filter:blur(6px);animation:bootLetter .55s ease forwards}
+        .boot-brand span:nth-child(1){animation-delay:.55s}.boot-brand span:nth-child(2){animation-delay:.67s}.boot-brand span:nth-child(3){animation-delay:.79s}.boot-brand span:nth-child(4){animation-delay:.91s}.boot-brand span:nth-child(5){animation-delay:1.03s}.boot-brand span:nth-child(6){animation-delay:1.15s}
+        .boot-brand-sub{font:600 10px 'Raleway',sans-serif;color:rgba(255,255,255,.48);letter-spacing:6px;text-transform:uppercase;margin:10px 0 29px;opacity:0;animation:bootFade .7s ease 1.35s forwards}
+        .boot-progress{height:5px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden;border:1px solid rgba(255,255,255,.05)}
+        .boot-progress>i{display:block;height:100%;width:14%;border-radius:inherit;background:linear-gradient(90deg,#8f2119,#d73526,#f3cf7d,#fff1c9);box-shadow:0 0 22px rgba(243,207,125,.48);transition:width .5s cubic-bezier(.2,.8,.2,1)}
+        .boot-status{min-height:18px;margin-top:14px;color:rgba(255,241,201,.72);font:600 12px 'Inter',sans-serif;letter-spacing:.25px}
+        .boot-pulses{display:flex;justify-content:center;gap:7px;margin-top:20px}.boot-pulses i{width:6px;height:6px;border-radius:50%;background:rgba(243,207,125,.18);transition:.25s}.boot-pulses i.active{background:var(--boot-gold);box-shadow:0 0 14px rgba(243,207,125,.7);transform:scale(1.2)}
+        @keyframes bootUniverse{to{transform:rotate(360deg)}}
+        @keyframes bootOrbit{to{transform:rotate(360deg)}}
+        @keyframes bootSpark{to{transform:translateX(-50%) rotate(360deg)}}
+        @keyframes bootLogoBuild{0%{clip-path:inset(100% 0 0 0);filter:saturate(.2) brightness(.35)}65%{filter:saturate(.7) brightness(.75)}100%{clip-path:inset(0 0 0 0);filter:none}}
+        @keyframes bootScan{0%{top:0;opacity:0}8%{opacity:1}92%{opacity:1}100%{top:100%;opacity:0}}
+        @keyframes bootFrameGlow{to{opacity:1;box-shadow:inset 0 0 24px rgba(243,207,125,.14)}}
+        @keyframes bootLetter{to{opacity:1;transform:none;filter:none}}
+        @keyframes bootFade{to{opacity:1}}
+        @media(max-width:560px){.boot-shell{padding:38px 24px 30px;border-radius:30px}.boot-logo-stage{width:150px;height:150px}.boot-spark{transform-origin:0 73px}.boot-brand{font-size:26px;letter-spacing:7px;margin-left:7px}}
+        @media(prefers-reduced-motion:reduce){#bootLoader::before,.boot-orbit,.boot-orbit::before,.boot-spark{animation:none}.boot-logo-img{clip-path:none;animation:none}.boot-logo-frame::before{display:none}.boot-brand span,.boot-brand-sub{opacity:1;transform:none;filter:none;animation:none}}
     </style>
 </head>
 <body>
 
     <!-- شاشة التحميل ظاهرة فورًا من الـ HTML نفسه قبل ما الـ JS
          حتى يشتغل، عشان أول حاجة تتشاف تكون اللوجو مش صفحة فاضية. -->
-    <div id="bootLoader">
-        <div class="boot-brand">TOLEDO</div>
-        <div class="boot-brand-sub">Operation System</div>
-
-        <div class="boot-emblem">
-            <div class="boot-ring"></div>
-            <div class="boot-ring boot-ring-2"></div>
-            <div class="boot-ring boot-ring-3"></div>
-            <div class="boot-logo-center">
-                <img src="https://i.ibb.co/FLnH6Fw2/1cf98fc6-5c25-4af8-8af0-1e556340272f.jpg" class="boot-logo-img" alt="Toledo">
+    <div id="bootLoader" aria-live="polite" aria-label="Loading Toledo Operation System">
+        <div class="boot-grid"></div>
+        <div class="boot-shell">
+            <div class="boot-logo-stage">
+                <div class="boot-orbit"></div>
+                <i class="boot-spark"></i>
+                <div class="boot-logo-frame">
+                    <img src="https://i.ibb.co/FLnH6Fw2/1cf98fc6-5c25-4af8-8af0-1e556340272f.jpg" class="boot-logo-img" alt="Toledo Developments">
+                </div>
             </div>
-        </div>
-
-        <div class="boot-divider"></div>
-
-        <div class="boot-dots">
-            <div class="boot-dot"></div>
-            <div class="boot-dot"></div>
-            <div class="boot-dot"></div>
-            <div class="boot-dot"></div>
-            <div class="boot-dot"></div>
+            <div class="boot-brand" aria-label="TOLEDO"><span>T</span><span>O</span><span>L</span><span>E</span><span>D</span><span>O</span></div>
+            <div class="boot-brand-sub">Operation System</div>
+            <div class="boot-progress"><i id="bootProgress"></i></div>
+            <div id="bootStatus" class="boot-status">Building your workspace…</div>
+            <div class="boot-pulses"><i class="active"></i><i></i><i></i><i></i></div>
         </div>
     </div>
+
+    <script>
+      (()=>{
+        const bar=document.getElementById('bootProgress');
+        const status=document.getElementById('bootStatus');
+        const dots=[...document.querySelectorAll('.boot-pulses i')];
+        const stages=[['Loading interface…',36],['Connecting secure services…',61],['Preparing dashboards…',84],['Finalizing workspace…',95]];
+        let i=0;
+        window.__toledoBootTimer=setInterval(()=>{
+          if(i>=stages.length){clearInterval(window.__toledoBootTimer);return;}
+          status.textContent=stages[i][0];bar.style.width=stages[i][1]+'%';dots.forEach((d,n)=>d.classList.toggle('active',n<=i));i++;
+        },650);
+      })();
+    </script>
 
     <div id="app"></div>
 

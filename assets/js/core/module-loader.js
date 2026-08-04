@@ -66,6 +66,7 @@ class ModuleLoader {
 
     showProgress() {
         let bar = document.getElementById("route-progress");
+        let overlay = document.getElementById("route-loader");
 
         if (!bar) {
             bar = document.createElement("div");
@@ -73,21 +74,47 @@ class ModuleLoader {
             document.body.appendChild(bar);
         }
 
+        if (!overlay) {
+            overlay = document.createElement("div");
+            overlay.id = "route-loader";
+            overlay.setAttribute("role", "status");
+            overlay.setAttribute("aria-live", "polite");
+            overlay.innerHTML = `
+                <div class="route-loader-card">
+                    <div class="route-logo-build">
+                        <span class="route-logo-orbit"></span>
+                        <span class="route-logo-orbit route-logo-orbit-2"></span>
+                        <div class="route-logo-mask">
+                            <img src="https://i.ibb.co/FLnH6Fw2/1cf98fc6-5c25-4af8-8af0-1e556340272f.jpg" alt="Toledo">
+                        </div>
+                    </div>
+                    <div class="route-loader-copy">
+                        <strong>TOLEDO</strong>
+                        <span>Preparing your page…</span>
+                    </div>
+                    <div class="route-loader-line"><i></i></div>
+                </div>`;
+            document.body.appendChild(overlay);
+        }
+
         bar.classList.remove("done");
-        // إعادة فرض reflow عشان الـ transition يشتغل من أول وجديد كل مرة
+        overlay.classList.remove("leaving");
         void bar.offsetWidth;
         bar.classList.add("active");
+        overlay.classList.add("show");
     }
 
     hideProgress() {
         const bar = document.getElementById("route-progress");
-        if (!bar) return;
+        const overlay = document.getElementById("route-loader");
 
-        bar.classList.add("done");
+        if (bar) bar.classList.add("done");
+        if (overlay) overlay.classList.add("leaving");
 
         setTimeout(() => {
-            bar.classList.remove("active", "done");
-        }, 250);
+            if (bar) bar.classList.remove("active", "done");
+            if (overlay) overlay.classList.remove("show", "leaving");
+        }, 420);
     }
 
     buildControllerPath(moduleConfig) {

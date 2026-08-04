@@ -18,3 +18,9 @@
 
 ## التركيب
 يجب رفع ملفات Frontend إلى GitHub وملفات `Toledo_Unified_Backend` إلى Google Apps Script ثم إنشاء New Version للـ Deployment.
+
+
+## تحديث Cinematic Loading
+- شاشة افتتاح عالمية بخلفية سينمائية وشعار Toledo يتكوّن تدريجيًا بخط مسح ضوئي وحلقات مدارية.
+- Loading موحد أثناء الانتقال بين الصفحات بنفس هوية الشعار المتكوّن.
+- دعم الشاشات الصغيرة وميزة Reduce Motion.
