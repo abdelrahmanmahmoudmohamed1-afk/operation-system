@@ -8,7 +8,7 @@
  */
 
 const INVENTORY_CACHE_KEY = 'toledo_inventory_v1';
-const INVENTORY_CACHE_SECONDS = 45;
+const INVENTORY_CACHE_SECONDS = 300;
 
 /**
  * بيرجع inventory + clientDb + cancelled مدموجين في نداء واحد،
@@ -82,6 +82,18 @@ function clearInventoryCache_() {
   CacheService.getScriptCache().remove(INVENTORY_CACHE_KEY);
 }
 
+
+/** Resolve a sheet safely when production names changed over time. */
+function getSheetByCandidates_(ss, names) {
+  const normalized = {};
+  ss.getSheets().forEach(function(sh) { normalized[norm_(sh.getName())] = sh; });
+  for (let i = 0; i < names.length; i++) {
+    const found = normalized[norm_(names[i])];
+    if (found) return found;
+  }
+  return null;
+}
+
 // ================= قراءة خام (Raw readers) =================
 
 function readInventory_() {
@@ -89,11 +101,14 @@ function readInventory_() {
 }
 
 function readInventoryFromSheet_(ss) {
-  const sh = ss.getSheetByName(SHEET_NAMES.inventory);
-  if (!sh) return [];
+  const sh = getSheetByCandidates_(ss, [SHEET_NAMES.inventory, 'Inventory Management', 'Layana Inventory Management']);
+  if (!sh) throw new Error('INVENTORY_SHEET_NOT_FOUND: Expected Layana Inventory Management or Inventory Management');
 
   const headerMap = getHeaderMap_(sh, HEADER_ROW.inventory);
-  const v = sh.getDataRange().getValues();
+  const lastRow = sh.getLastRow();
+  const lastCol = sh.getLastColumn();
+  if (lastRow <= HEADER_ROW.inventory || lastCol < 1) return [];
+  const v = sh.getRange(1, 1, lastRow, lastCol).getValues();
   const dataRows = v.slice(HEADER_ROW.inventory);
 
   return dataRows

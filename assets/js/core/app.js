@@ -64,6 +64,11 @@ class App {
         const loader = document.getElementById("bootLoader");
         if (!loader) return;
 
+        clearInterval(window.__toledoBootTimer);
+        const progress = document.getElementById("bootProgress");
+        const status = document.getElementById("bootStatus");
+        if (progress) progress.style.width = "100%";
+        if (status) status.textContent = "Workspace ready";
         loader.classList.add("hidden");
         setTimeout(() => loader.remove(), 700);
     }
@@ -87,6 +92,20 @@ class App {
 
             if (!form || !errorBox || !submitBtn) throw new Error("Login form is incomplete");
 
+            const eye = document.querySelector(".password-eye");
+            const passwordInput = document.getElementById("login-password");
+            eye?.addEventListener("click", () => {
+                const visible = passwordInput.type === "text";
+                passwordInput.type = visible ? "password" : "text";
+                eye.textContent = visible ? "◉" : "◎";
+                eye.setAttribute("aria-label", visible ? "Show password" : "Hide password");
+            });
+            document.querySelector(".forgot-link")?.addEventListener("click", () => {
+                errorBox.textContent = "Password reset is managed by Operations. Please contact the system administrator.";
+                errorBox.dataset.type = "info";
+                errorBox.classList.remove("hidden");
+            });
+
             form.addEventListener("submit", async (event) => {
                 event.preventDefault();
 
@@ -94,26 +113,40 @@ class App {
                 const password = document.getElementById("login-password").value;
 
                 if (!username || !password) {
-                    errorBox.textContent = "من فضلك أدخل اسم المستخدم وكلمة المرور";
+                    errorBox.textContent = "Enter your username and password to continue.";
+                    errorBox.dataset.type = "warning";
                     errorBox.classList.remove("hidden");
                     return;
                 }
 
                 submitBtn.disabled = true;
-                submitBtn.textContent = "جاري الدخول...";
+                submitBtn.querySelector("span:first-child").textContent = "Signing in…";
+                form.classList.add("is-submitting");
                 errorBox.classList.add("hidden");
 
                 const result = await AuthService.login(username, password);
 
                 submitBtn.disabled = false;
-                submitBtn.textContent = "تسجيل الدخول";
+                submitBtn.querySelector("span:first-child").textContent = "Log In";
+                form.classList.remove("is-submitting");
 
                 if (!result.success) {
-                    errorBox.textContent = result.message || "بيانات الدخول غير صحيحة";
+                    const raw = String(result.message || "").toLowerCase();
+                    errorBox.textContent = raw.includes("network") || raw.includes("fetch")
+                        ? "We could not reach the server. Check your internet connection and try again."
+                        : raw.includes("timeout")
+                            ? "The server is taking too long to respond. Please try again."
+                            : raw.includes("lock")
+                                ? "Too many unsuccessful attempts. Please wait before trying again."
+                                : "The username or password is incorrect.";
+                    errorBox.dataset.type = "error";
                     errorBox.classList.remove("hidden");
                     return;
                 }
 
+                errorBox.textContent = "Signed in successfully. Opening your workspace…";
+                errorBox.dataset.type = "success";
+                errorBox.classList.remove("hidden");
                 await this.startApp();
             });
         } catch (error) {

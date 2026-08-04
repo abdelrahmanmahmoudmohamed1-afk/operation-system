@@ -42,6 +42,7 @@ const ACTION_MAP = {
   login: (p) => login(p.username, p.password),
   logout: (p) => logout(p.token),
   changeOwnPassword: (p) => changeOwnPassword(p.token, p.oldPassword, p.newPassword),
+  health: (p) => getSystemHealth_(p.token),
 
   // Dashboard
   getDashboardFilters: (p) => getDashboardFilters(p.token),
@@ -109,4 +110,20 @@ function jsonOutput_(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+
+function getSystemHealth_(token) {
+  requireAuth_(token);
+  const ss = SpreadsheetApp.openById(SPREADSHEETS.DATA);
+  const sh = getSheetByCandidates_(ss, [SHEET_NAMES.inventory, 'Inventory Management', 'Layana Inventory Management']);
+  return {
+    status: sh ? 'ready' : 'misconfigured',
+    spreadsheetId: SPREADSHEETS.DATA,
+    configuredSheet: SHEET_NAMES.inventory,
+    resolvedSheet: sh ? sh.getName() : '',
+    lastRow: sh ? sh.getLastRow() : 0,
+    lastColumn: sh ? sh.getLastColumn() : 0,
+    generatedAt: formatDateTime_(new Date())
+  };
 }

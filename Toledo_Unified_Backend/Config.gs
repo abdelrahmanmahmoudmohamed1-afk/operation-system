@@ -37,7 +37,7 @@ const SHEET_NAMES = {
   orientation: 'Orientation Sheet',
 
   // من DATA
-  inventory: 'Inventory Management',
+  inventory: 'Layana Inventory Management',
   clientDb: 'Layana Transaction',
   cancelled: 'Cancelled Contracts',
   clientRegistration: 'Client Registration',

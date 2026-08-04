@@ -14,6 +14,10 @@ import Container from "../core/container.js";
 import ENDPOINTS from "../constants/endpoints.js";
 
 class DashboardService {
+    constructor() {
+        this.cache = new Map();
+        this.cacheMs = 60000;
+    }
     api() {
         return Container.get("api");
     }
@@ -27,10 +31,17 @@ class DashboardService {
         return this.unwrap(res);
     }
 
-    async getData(filters) {
+    async getData(filters, options = {}) {
+        const key = JSON.stringify(filters || {});
+        const cached = this.cache.get(key);
+        if (!options.force && cached && Date.now() - cached.time < this.cacheMs) return cached.data;
         const res = await this.api().post(ENDPOINTS.DASHBOARD_DATA, { token: this.token(), filters });
-        return this.unwrap(res);
+        const data = this.unwrap(res);
+        this.cache.set(key, { time: Date.now(), data });
+        return data;
     }
+
+    clearCache() { this.cache.clear(); }
 
     unwrap(res) {
         if (!res.ok || !res.data || !res.data.ok) {

@@ -7,7 +7,7 @@ const API_CONFIG = Object.freeze({
     version: "v1",
 
     // Request timeout (milliseconds)
-    timeout: 30000,
+    timeout: 20000,
 
     // Default Headers
     // ملحوظة: Apps Script Web Apps مش بترد على CORS preflight (OPTIONS).
@@ -21,8 +21,8 @@ const API_CONFIG = Object.freeze({
     // Retry failed requests
     retry: {
         enabled: true,
-        maxAttempts: 3,
-        delay: 1000
+        maxAttempts: 2,
+        delay: 700
     }
 
 });
