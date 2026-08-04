@@ -1,13 +1,13 @@
 تنبيه أمني مهم
 ================
 
-1) مجلد Toledo_Unified_Backend يحتوي على IDs لشيتات داخلية وكود الباك إند.
+1) مجلد Operation_System_Backend يحتوي على IDs لشيتات داخلية وكود الباك إند.
    لا ترفعه إلى Repository عام (Public).
 
 2) ملف .gitignore يمنع إضافته في الـ commits الجديدة، لكن لو كان المجلد مرفوعًا بالفعل
    على GitHub لازم تشيله من التتبع مرة واحدة بالأمر التالي داخل Terminal:
 
-   git rm -r --cached Toledo_Unified_Backend
+   git rm -r --cached Operation_System_Backend
    git commit -m "Remove private backend from public repository"
    git push
 

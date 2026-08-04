@@ -21,7 +21,7 @@ class InventoryController extends Module {
         }
 
         this.container.innerHTML = renderLayout(projects);
-        const globalSearch = sessionStorage.getItem("toledo_global_search");
+        const globalSearch = sessionStorage.getItem("operation_system_global_search");
         if (globalSearch) {
             try {
                 const parsed = JSON.parse(globalSearch);
@@ -95,7 +95,7 @@ class InventoryController extends Module {
         }
         if (statusFilter) statusFilter.addEventListener("change", () => this.loadUnits());
         if (refreshBtn) refreshBtn.addEventListener("click", () => this.loadUnits(true));
-        window.addEventListener("toledo:global-search", (e) => {
+        window.addEventListener("operation-system:global-search", (e) => {
             const target = e.detail?.target || "all";
             if (target !== "all" && target !== "inventory") return;
             this.searchTerm = e.detail?.term || "";

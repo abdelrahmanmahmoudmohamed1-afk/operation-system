@@ -1,4 +1,4 @@
-# Toledo Operation System — Enterprise V3
+# Operation System — Enterprise V3
 
 ## الإصلاحات الأساسية
 - إصلاح اسم شيت المخزون إلى `Layana Inventory Management` مع fallback للاسم القديم.
@@ -17,10 +17,10 @@
 - تنظيف `genius.css` وإزالة التكرار.
 
 ## التركيب
-يجب رفع ملفات Frontend إلى GitHub وملفات `Toledo_Unified_Backend` إلى Google Apps Script ثم إنشاء New Version للـ Deployment.
+يجب رفع ملفات Frontend إلى GitHub وملفات `Operation_System_Backend` إلى Google Apps Script ثم إنشاء New Version للـ Deployment.
 
 
 ## تحديث Cinematic Loading
-- شاشة افتتاح عالمية بخلفية سينمائية وشعار Toledo يتكوّن تدريجيًا بخط مسح ضوئي وحلقات مدارية.
+- شاشة افتتاح عالمية بخلفية سينمائية وشعار Operation System يتكوّن تدريجيًا بخط مسح ضوئي وحلقات مدارية.
 - Loading موحد أثناء الانتقال بين الصفحات بنفس هوية الشعار المتكوّن.
 - دعم الشاشات الصغيرة وميزة Reduce Motion.

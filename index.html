@@ -75,8 +75,9 @@
                     <img src="https://i.ibb.co/FLnH6Fw2/1cf98fc6-5c25-4af8-8af0-1e556340272f.jpg" class="boot-logo-img" alt="Company logo">
                 </div>
             </div>
-            <div class="boot-brand" aria-label="OPERATION"><span>O</span><span>P</span><span>E</span><span>R</span><span>A</span><span>T</span><span>I</span><span>O</span><span>N</span></div>
+            <div class="boot-brand" aria-label="Operation System"><span>O</span><span>P</span><span>E</span><span>R</span><span>A</span><span>T</span><span>I</span><span>O</span><span>N</span></div>
             <div class="boot-brand-sub">SYSTEM</div>
+            <div class="boot-developer-credit">Developed by Abdelrahman Mahmoud</div>
             <div class="boot-progress"><i id="bootProgress"></i></div>
             <div id="bootStatus" class="boot-status">Building your workspace…</div>
             <div class="boot-pulses"><i class="active"></i><i></i><i></i><i></i></div>
@@ -90,8 +91,8 @@
         const dots=[...document.querySelectorAll('.boot-pulses i')];
         const stages=[['Loading interface…',36],['Connecting secure services…',61],['Preparing dashboards…',84],['Finalizing workspace…',95]];
         let i=0;
-        window.__toledoBootTimer=setInterval(()=>{
-          if(i>=stages.length){clearInterval(window.__toledoBootTimer);return;}
+        window.__operationSystemBootTimer=setInterval(()=>{
+          if(i>=stages.length){clearInterval(window.__operationSystemBootTimer);return;}
           status.textContent=stages[i][0];bar.style.width=stages[i][1]+'%';dots.forEach((d,n)=>d.classList.toggle('active',n<=i));i++;
         },650);
       })();

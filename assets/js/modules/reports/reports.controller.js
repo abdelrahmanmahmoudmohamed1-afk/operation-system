@@ -8,7 +8,7 @@ class ReportsController extends Module {
     constructor() {
         super();
         this.data = null;
-        this.savedKey = "toledo_saved_reports_enterprise_v3";
+        this.savedKey = "operation_system_saved_reports_v3";
     }
 
     async render() {

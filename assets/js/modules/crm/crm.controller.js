@@ -15,8 +15,8 @@ class CRMController extends Module {
         document.getElementById("crm-table-body").innerHTML = renderLoading({ rows: 6 });
 
         // لو جاي من بار البحث العام فوق، نطبّق الكلمة على طول
-        const pendingSearch = sessionStorage.getItem("toledo_pending_search");
-        const globalSearch = sessionStorage.getItem("toledo_global_search");
+        const pendingSearch = sessionStorage.getItem("operation_system_pending_search");
+        const globalSearch = sessionStorage.getItem("operation_system_global_search");
         let searchTerm = pendingSearch || "";
         if (globalSearch) {
             try {
@@ -25,7 +25,7 @@ class CRMController extends Module {
             } catch { /* ignore */ }
         }
         if (searchTerm) {
-            sessionStorage.removeItem("toledo_pending_search");
+            sessionStorage.removeItem("operation_system_pending_search");
             const searchInput = document.getElementById("crm-search");
             if (searchInput) searchInput.value = searchTerm;
             await this.loadClients(searchTerm);
@@ -68,7 +68,7 @@ class CRMController extends Module {
         }
 
         if (refreshBtn) refreshBtn.addEventListener("click", () => this.loadClients());
-        window.addEventListener("toledo:global-search", (e) => {
+        window.addEventListener("operation-system:global-search", (e) => {
             const term = e.detail?.term || "";
             const target = e.detail?.target || "all";
             if (target === "all" || target === "crm") {

@@ -10,7 +10,7 @@ class ApiService {
         this.retry = API_CONFIG.retry || { enabled: false, maxAttempts: 1, delay: 0 };
         this.inFlight = new Map();
         this.memory = new Map();
-        this.cachePrefix = "toledo_api_v4:";
+        this.cachePrefix = "operation_system_api_v5:";
         this.readPolicies = new Map([
             ["getDashboardFilters", 5 * 60 * 1000],
             ["getDashboardData", 90 * 1000],
@@ -94,7 +94,7 @@ class ApiService {
             const semanticOk = response.ok && data?.ok !== false;
             if (!semanticOk) {
                 if (semanticStatus === 401 || data?.message === "AUTH_REQUIRED" || data?.message === "SESSION_EXPIRED") {
-                    window.dispatchEvent(new CustomEvent("toledo:session-expired", { detail: data }));
+                    window.dispatchEvent(new CustomEvent("operation-system:session-expired", { detail: data }));
                 }
                 return this.failure(semanticStatus, this.getStatusMessage(semanticStatus, data), data);
             }
