@@ -1,17 +1,4 @@
-/**
- * ---------------------------------------------------------
- * Abdelrahman Framework
- * File: api.service.js
- * Layer: Services
- * Responsibility:
- * - Handle all API requests
- * - Communicate with backend
- * - Standardize request/response handling
- * ---------------------------------------------------------
- * Version: 0.2.1
- * ---------------------------------------------------------
- */
-
+/** Central API client for the Google Apps Script backend. */
 import API_CONFIG from "../../config/api.config.js";
 
 class ApiService {
@@ -19,149 +6,99 @@ class ApiService {
         this.name = "ApiService";
         this.baseURL = API_CONFIG.baseURL || "";
         this.timeout = API_CONFIG.timeout || 30000;
-        this.headers = API_CONFIG.headers || {
-            "Content-Type": "application/json"
-        };
+        this.headers = API_CONFIG.headers || { "Content-Type": "text/plain;charset=utf-8" };
+        this.retry = API_CONFIG.retry || { enabled: false, maxAttempts: 1, delay: 0 };
     }
 
-    async post(action, payload = {}) {
-        return this.request({
-            method: "POST",
-            body: {
-                action,
-                ...payload
-            }
-        });
+    post(action, payload = {}) {
+        return this.request({ method: "POST", body: { action, ...payload } });
     }
 
-    async get(action, params = {}) {
-        return this.request({
-            method: "GET",
-            params: {
-                action,
-                ...params
-            }
-        });
+    get(action, params = {}) {
+        return this.request({ method: "GET", params: { action, ...params } });
     }
 
     async request(options = {}) {
-        if (!this.baseURL) {
-            console.warn("API baseURL is not configured");
+        if (!this.baseURL) return this.failure(0, "API baseURL is not configured");
+        if (!navigator.onLine) return this.failure(0, "No internet connection");
 
-            return {
-                ok: false,
-                status: 0,
-                message: "API baseURL is not configured",
-                data: null
-            };
+        const attempts = this.retry.enabled ? Math.max(1, Number(this.retry.maxAttempts) || 1) : 1;
+        let lastResult = null;
+
+        for (let attempt = 1; attempt <= attempts; attempt += 1) {
+            lastResult = await this.requestOnce(options);
+            if (lastResult.ok || !this.shouldRetry(lastResult, attempt, attempts)) return lastResult;
+            await this.sleep((Number(this.retry.delay) || 500) * attempt);
         }
+        return lastResult || this.failure(0, "Request failed");
+    }
 
-        if (!navigator.onLine) {
-            return {
-                ok: false,
-                status: 0,
-                message: "No internet connection",
-                data: null
-            };
-        }
-
+    async requestOnce(options) {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => {
-            controller.abort();
-        }, this.timeout);
+        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
         try {
-            const url = this.buildURL(options.params);
-
-            const fetchOptions = {
+            const response = await fetch(this.buildURL(options.params), {
                 method: options.method || "GET",
                 headers: this.headers,
-                signal: controller.signal
-            };
-
-            if (options.body) {
-                fetchOptions.body = JSON.stringify(options.body);
-            }
-
-            const response = await fetch(url, fetchOptions);
-
-            clearTimeout(timeoutId);
+                body: options.body ? JSON.stringify(options.body) : undefined,
+                signal: controller.signal,
+                cache: "no-store",
+                redirect: "follow"
+            });
 
             const data = await this.parseResponse(response);
+            const semanticStatus = Number(data?.status) || response.status;
+            const semanticOk = response.ok && data?.ok !== false;
 
-            if (!response.ok) {
-                return {
-                    ok: false,
-                    status: response.status,
-                    message: this.getStatusMessage(response.status, data),
-                    data
-                };
+            if (!semanticOk) {
+                if (semanticStatus === 401 || data?.message === "AUTH_REQUIRED" || data?.message === "SESSION_EXPIRED") {
+                    window.dispatchEvent(new CustomEvent("toledo:session-expired", { detail: data }));
+                }
+                return this.failure(semanticStatus, this.getStatusMessage(semanticStatus, data), data);
             }
 
             return {
                 ok: true,
-                status: response.status,
+                status: semanticStatus,
                 message: data?.message || "Request completed successfully",
                 data
             };
         } catch (error) {
+            if (error.name === "AbortError") return this.failure(0, "API request timeout");
+            return this.failure(0, error.message || "Network error");
+        } finally {
             clearTimeout(timeoutId);
-
-            if (error.name === "AbortError") {
-                return {
-                    ok: false,
-                    status: 0,
-                    message: "API request timeout",
-                    data: null
-                };
-            }
-
-            return {
-                ok: false,
-                status: 0,
-                message: error.message || "Network error",
-                data: null
-            };
         }
     }
 
     async parseResponse(response) {
-        try {
-            return await response.json();
-        } catch {
-            return null;
-        }
+        const text = await response.text();
+        if (!text) return null;
+        try { return JSON.parse(text); }
+        catch { return { ok: false, message: "Invalid response from server", raw: text.slice(0, 300) }; }
     }
 
     buildURL(params = null) {
-        if (!params) {
-            return this.baseURL;
-        }
-
-        const query = new URLSearchParams(params).toString();
-
-        return `${this.baseURL}?${query}`;
+        if (!params || !Object.keys(params).length) return this.baseURL;
+        const query = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+            query.set(key, typeof value === "object" ? JSON.stringify(value) : String(value));
+        });
+        return `${this.baseURL}?${query.toString()}`;
     }
 
-    getStatusMessage(status, data = null) {
-        if (data?.message) {
-            return data.message;
-        }
+    shouldRetry(result, attempt, attempts) {
+        if (attempt >= attempts) return false;
+        return result.status === 0 || result.status === 429 || result.status >= 500;
+    }
 
-        switch (status) {
-            case 400:
-                return "Bad request";
-            case 401:
-                return "Unauthorized";
-            case 403:
-                return "Forbidden";
-            case 404:
-                return "API endpoint not found";
-            case 500:
-                return "Internal server error";
-            default:
-                return "API request failed";
-        }
+    failure(status, message, data = null) { return { ok: false, status, message, data }; }
+    sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
+
+    getStatusMessage(status, data = null) {
+        if (data?.message) return data.message;
+        return ({ 400: "Bad request", 401: "Session expired", 403: "Forbidden", 404: "API endpoint not found", 429: "Too many requests", 500: "Internal server error" })[status] || "API request failed";
     }
 }
 

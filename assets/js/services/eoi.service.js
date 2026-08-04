@@ -23,7 +23,7 @@ class EOIService {
     }
 
     async getBootstrap() {
-        const res = await this.api().post(ENDPOINTS.EOI_FORM_BOOTSTRAP, {});
+        const res = await this.api().post(ENDPOINTS.EOI_FORM_BOOTSTRAP, { token: this.token() });
         return this.unwrap(res);
     }
 

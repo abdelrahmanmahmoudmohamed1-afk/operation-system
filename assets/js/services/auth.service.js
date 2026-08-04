@@ -16,6 +16,28 @@ class AuthService {
         return { success: true, token: data.token, user: data.user };
     }
 
+    async changePassword(oldPassword, newPassword) {
+        const token = this.authManager().getToken();
+        const res = await this.api().post(ENDPOINTS.CHANGE_PASSWORD, {
+            token,
+            oldPassword,
+            newPassword
+        });
+
+        if (!res.ok || !res.data || !res.data.ok) {
+            return {
+                success: false,
+                message: (res.data && res.data.message) || res.message || "Password update failed"
+            };
+        }
+
+        const data = res.data.data || {};
+        return {
+            success: Boolean(data.success),
+            message: data.message || (data.success ? "Password updated" : "Password update failed")
+        };
+    }
+
     async logout() {
         const token = this.authManager().getToken();
         try { await this.api().post(ENDPOINTS.LOGOUT, { token }); } catch (e) { /* ignore */ }

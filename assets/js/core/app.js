@@ -75,6 +75,7 @@ class App {
     async showLogin() {
         try {
             const response = await fetch("layouts/login.html", { cache: "no-store" });
+            if (!response.ok) throw new Error(`Login layout failed (${response.status})`);
             const html = await response.text();
 
             const appContainer = document.getElementById("app");
@@ -84,11 +85,13 @@ class App {
             const errorBox = document.getElementById("login-error");
             const submitBtn = document.getElementById("login-submit");
 
+            if (!form || !errorBox || !submitBtn) throw new Error("Login form is incomplete");
+
             form.addEventListener("submit", async (event) => {
                 event.preventDefault();
 
                 const username = document.getElementById("login-username").value.trim();
-                const password = document.getElementById("login-password").value.trim();
+                const password = document.getElementById("login-password").value;
 
                 if (!username || !password) {
                     errorBox.textContent = "من فضلك أدخل اسم المستخدم وكلمة المرور";
@@ -139,6 +142,8 @@ class App {
         this.bindLanguageSwitch();
         this.bindDetails();
         this.bindActionFeedback();
+        this.bindConnectivityStatus();
+        this.bindSessionExpiry();
         this.applyLanguageLabels();
 
         EventBus.emit("app:started", {
@@ -243,7 +248,15 @@ class App {
         });
     }
 
+    escapeHTML(value) {
+        return String(value ?? "-").replace(/[&<>"']/g, (char) => ({
+            "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+        })[char]);
+    }
+
     bindDetails() {
+        if (this.detailsBound) return;
+        this.detailsBound = true;
         document.addEventListener("click", (event) => {
             const row = event.target.closest(".detail-row");
             const card = event.target.closest(".detail-card");
@@ -253,13 +266,13 @@ class App {
             if (row?.dataset.detail) {
                 try {
                     const data = JSON.parse(row.dataset.detail);
-                    html = Object.entries(data).map(([k, v]) => `<div class="detail-line"><span>${k}</span><strong>${v ?? "-"}</strong></div>`).join("");
+                    html = Object.entries(data).map(([k, v]) => `<div class="detail-line"><span>${this.escapeHTML(k)}</span><strong>${this.escapeHTML(v)}</strong></div>`).join("");
                 } catch { html = "<p>No details available</p>"; }
             } else if (card) {
                 html = `
-                    <div class="detail-line"><span>Metric</span><strong>${card.dataset.detailTitle || "-"}</strong></div>
-                    <div class="detail-line"><span>Count / Value</span><strong>${card.dataset.detailValue || "-"}</strong></div>
-                    <div class="detail-line"><span>Total Value</span><strong>${card.dataset.detailSub || "-"}</strong></div>
+                    <div class="detail-line"><span>Metric</span><strong>${this.escapeHTML(card.dataset.detailTitle)}</strong></div>
+                    <div class="detail-line"><span>Count / Value</span><strong>${this.escapeHTML(card.dataset.detailValue)}</strong></div>
+                    <div class="detail-line"><span>Total Value</span><strong>${this.escapeHTML(card.dataset.detailSub)}</strong></div>
                 `;
             }
             this.openDetailsModal(html);
@@ -301,6 +314,37 @@ class App {
             const message = event.reason?.message || String(event.reason || "Unexpected promise error");
             Container.get("notification")?.error(message);
             Container.get("audit")?.record("Unhandled error", "System", { message });
+        });
+    }
+
+    bindConnectivityStatus() {
+        if (this.connectivityBound) return;
+        this.connectivityBound = true;
+        const update = () => {
+            let banner = document.getElementById("connectivity-banner");
+            if (!banner) {
+                banner = document.createElement("div");
+                banner.id = "connectivity-banner";
+                banner.className = "connectivity-banner hidden";
+                banner.setAttribute("role", "status");
+                document.body.appendChild(banner);
+            }
+            banner.textContent = navigator.onLine ? "Connection restored" : "You are offline. Live data is unavailable.";
+            banner.classList.toggle("offline", !navigator.onLine);
+            banner.classList.remove("hidden");
+            if (navigator.onLine) setTimeout(() => banner.classList.add("hidden"), 2500);
+        };
+        window.addEventListener("online", update);
+        window.addEventListener("offline", update);
+        if (!navigator.onLine) update();
+    }
+
+    bindSessionExpiry() {
+        if (this.sessionExpiryBound) return;
+        this.sessionExpiryBound = true;
+        window.addEventListener("toledo:session-expired", () => {
+            Container.get("authManager")?.logout();
+            location.reload();
         });
     }
 
@@ -360,11 +404,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0E1116;color:#fff;font-family:Arial,sans-serif;padding:24px;text-align:center;">
                     <div>
                         <h2 style="color:#F87171;margin-bottom:10px;">System failed to start</h2>
-                        <p style="color:#8B94A3;max-width:420px;">${(error && error.message) || error}</p>
+                        <p id="fatal-error-message" style="color:#8B94A3;max-width:420px;"></p>
                         <p style="color:#8B94A3;font-size:12px;margin-top:16px;">Open DevTools Console (F12) for full details.</p>
                     </div>
                 </div>
             `;
+            const fatalMessage = document.getElementById("fatal-error-message");
+            if (fatalMessage) fatalMessage.textContent = (error && error.message) || String(error);
         }
     });
 });

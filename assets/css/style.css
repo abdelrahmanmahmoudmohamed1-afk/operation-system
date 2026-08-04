@@ -3292,3 +3292,26 @@ body,
 .theme-options-grid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))!important}.theme-swatch.theme-odoo{background:linear-gradient(135deg,#875a7b,#ffffff)!important}.theme-swatch.theme-oracle{background:linear-gradient(135deg,#c74634,#ffffff)!important}.theme-swatch.theme-sap{background:linear-gradient(135deg,#0a6ed1,#ffffff)!important}
 .field-hint{display:block;margin-top:6px;color:var(--text-muted,#94a3b8);font-size:11px}.cashflow-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0}.cashflow-toolbar p{margin:5px 0 0;color:var(--text-muted,#94a3b8);font-size:12px}.custom-payments-list{display:grid;gap:10px}.custom-payment-row{display:grid;grid-template-columns:1.35fr .75fr .75fr .75fr auto;gap:10px;align-items:center;padding:10px;border:1px solid rgba(255,255,255,.10);border-radius:16px;background:rgba(255,255,255,.035)}.scenario-alerts{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin:18px 0}.scenario-alert{display:grid;gap:5px;padding:15px 16px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04)}.scenario-alert strong{font-size:12px;text-transform:uppercase;letter-spacing:.8px}.scenario-alert span{font-size:13px;color:var(--text-muted,#a7b0bc)}.scenario-alert b{font-family:var(--font-data,monospace);font-size:16px}.scenario-ok{border-color:rgba(74,222,128,.35);background:rgba(74,222,128,.08)}.scenario-warning{border-color:rgba(248,113,113,.35);background:rgba(248,113,113,.08)}.scenario-exact{border-color:rgba(212,175,55,.35);background:rgba(212,175,55,.08)}
 @media(max-width:900px){.custom-payment-row{grid-template-columns:1fr}.cashflow-toolbar{align-items:flex-start;flex-direction:column}}
+
+/* Runtime connectivity feedback */
+.connectivity-banner {
+    position: fixed;
+    left: 50%;
+    bottom: 20px;
+    transform: translateX(-50%);
+    z-index: 1000000;
+    max-width: min(92vw, 520px);
+    padding: 10px 16px;
+    border: 1px solid rgba(34, 197, 94, .35);
+    border-radius: 12px;
+    background: rgba(15, 23, 42, .96);
+    color: #dcfce7;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, .28);
+    font-size: 13px;
+    text-align: center;
+}
+.connectivity-banner.offline {
+    border-color: rgba(248, 113, 113, .5);
+    color: #fee2e2;
+}
+.connectivity-banner.hidden { display: none; }

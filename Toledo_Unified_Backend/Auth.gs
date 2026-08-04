@@ -10,6 +10,9 @@
 
 const AUTH_CACHE_PREFIX = 'toledo_auth_';
 const AUTH_SECONDS = 21600; // 6 ساعات
+const LOGIN_ATTEMPT_PREFIX = 'toledo_login_attempt_';
+const LOGIN_MAX_ATTEMPTS = 5;
+const LOGIN_BLOCK_SECONDS = 900; // 15 دقيقة
 
 /**
  * تسجيل الدخول. بيرجع:
@@ -23,6 +26,13 @@ function login(username, password) {
 
     if (!u || !p) {
       return { success: false, message: 'برجاء إدخال اسم المستخدم وكلمة المرور' };
+    }
+
+    const cache = CacheService.getScriptCache();
+    const attemptKey = LOGIN_ATTEMPT_PREFIX + Utilities.base64EncodeWebSafe(u).slice(0, 80);
+    const attempts = Number(cache.get(attemptKey) || 0);
+    if (attempts >= LOGIN_MAX_ATTEMPTS) {
+      return { success: false, message: 'تم إيقاف محاولات الدخول مؤقتًا. حاول مرة أخرى بعد 15 دقيقة' };
     }
 
     const ss = SpreadsheetApp.openById(SPREADSHEETS.SETTINGS);
@@ -52,7 +62,8 @@ function login(username, password) {
         };
 
         const token = Utilities.getUuid();
-        CacheService.getScriptCache().put(
+        cache.remove(attemptKey);
+        cache.put(
           AUTH_CACHE_PREFIX + token,
           JSON.stringify(user),
           AUTH_SECONDS
@@ -62,6 +73,7 @@ function login(username, password) {
       }
     }
 
+    cache.put(attemptKey, String(attempts + 1), LOGIN_BLOCK_SECONDS);
     return { success: false, message: 'اسم المستخدم أو كلمة المرور غير صحيحة' };
   } catch (err) {
     return { success: false, message: 'خطأ في تسجيل الدخول: ' + err.message };

@@ -48,22 +48,22 @@ const ACTION_MAP = {
   getDashboardData: (p) => getDashboardData(p.token, p.filters),
 
   // CRM / Client
-  getClientFormBootstrap: () => getClientFormBootstrap(),
-  getSales: () => getSales(),
-  getCompanies: (p) => getCompanies(p.salesName),
-  getManagerDirector: (p) => getManagerDirector(p.salesName),
+  getClientFormBootstrap: (p) => { requireAuth_(p.token); return getClientFormBootstrap(); },
+  getSales: (p) => { requireAuth_(p.token); return getSales(); },
+  getCompanies: (p) => { requireAuth_(p.token); return getCompanies(p.salesName); },
+  getManagerDirector: (p) => { requireAuth_(p.token); return getManagerDirector(p.salesName); },
   saveClientRegistration: (p) => saveClientRegistration(p.token, p.data),
   getClients: (p) => getClients(p.token, p.filters),
 
   // Inventory
   getInventoryData: (p) => getInventoryData(p.token, p.filters),
-  getInventoryProjects: () => getInventoryProjects(),
-  getAvailableUnitsByProject: (p) => getAvailableUnitsByProject(p.project),
+  getInventoryProjects: (p) => { requireAuth_(p.token); return getInventoryProjects(); },
+  getAvailableUnitsByProject: (p) => { requireAuth_(p.token); return getAvailableUnitsByProject(p.project); },
   getAvailableLayanaUnits: (p) => getAvailableLayanaUnits(p.token),
   refreshAvailableLayanaUnits: (p) => refreshAvailableLayanaUnits(p.token),
 
   // EOI
-  getEOIFormBootstrap: () => getEOIFormBootstrap(),
+  getEOIFormBootstrap: (p) => { requireAuth_(p.token); return getEOIFormBootstrap(); },
   saveEOI: (p) => saveEOI(p.token, p.data),
   getEOIData: (p) => getEOIData(p.token, p.filters)
 };

@@ -28,12 +28,12 @@ class InventoryService {
     }
 
     async getProjects() {
-        const res = await this.api().post(ENDPOINTS.INVENTORY_PROJECTS, {});
+        const res = await this.api().post(ENDPOINTS.INVENTORY_PROJECTS, { token: this.token() });
         return this.unwrap(res);
     }
 
     async getAvailableUnitsByProject(project) {
-        const res = await this.api().post(ENDPOINTS.AVAILABLE_UNITS_BY_PROJECT, { project });
+        const res = await this.api().post(ENDPOINTS.AVAILABLE_UNITS_BY_PROJECT, { token: this.token(), project });
         return this.unwrap(res);
     }
 
