@@ -54,6 +54,8 @@ const ACTION_MAP = {
   getManagerDirector: (p) => { requireAuth_(p.token); return getManagerDirector(p.salesName); },
   saveClientRegistration: (p) => saveClientRegistration(p.token, p.data),
   getClients: (p) => getClients(p.token, p.filters),
+  uploadClientContract: (p) => uploadClientContract(p.token, p.data),
+  getClientDocuments: (p) => getClientDocuments(p.token, p.filters),
 
   // Inventory
   getInventoryData: (p) => getInventoryData(p.token, p.filters),

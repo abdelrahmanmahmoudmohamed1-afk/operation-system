@@ -1,6 +1,6 @@
 const APP_CONFIG = Object.freeze({
     name: "Operation System",
-    version: "3.0.0",
+    version: "9.0.0",
     environment: "production",
 
     company: "Operation System",

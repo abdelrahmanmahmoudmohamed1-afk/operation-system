@@ -26,7 +26,7 @@ class Router {
         const moduleConfig = MODULES[routeName];
         const authManager = Container.get("authManager");
         const permissionManager = Container.get("permissionManager");
-        const role = String(authManager.getUser()?.role || "user").toLowerCase();
+        const role = String(authManager.getUser()?.role || "user").trim().toLowerCase();
         if (!permissionManager.can(role, routeName)) {
             this.logger().warn(`Blocked unauthorized route access: ${routeName}`);
             routeName = "overview";

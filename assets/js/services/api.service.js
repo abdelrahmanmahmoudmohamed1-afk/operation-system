@@ -10,7 +10,7 @@ class ApiService {
         this.retry = API_CONFIG.retry || { enabled: false, maxAttempts: 1, delay: 0 };
         this.inFlight = new Map();
         this.memory = new Map();
-        this.cachePrefix = "toledo_api_v4:";
+        this.cachePrefix = "operation_api_v9:";
         this.readPolicies = new Map([
             ["getDashboardFilters", 5 * 60 * 1000],
             ["getDashboardData", 90 * 1000],
@@ -27,7 +27,7 @@ class ApiService {
             ["getUsersData", 60 * 1000],
             ["getAuditHistory", 30 * 1000]
         ]);
-        this.mutations = new Set(["login", "logout", "changeOwnPassword", "saveClientRegistration", "saveEOI", "refreshAvailableLayanaUnits"]);
+        this.mutations = new Set(["login", "logout", "changeOwnPassword", "saveClientRegistration", "uploadClientContract", "saveEOI", "refreshAvailableLayanaUnits"]);
     }
 
     post(action, payload = {}, options = {}) {

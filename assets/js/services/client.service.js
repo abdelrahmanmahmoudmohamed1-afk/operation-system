@@ -30,6 +30,16 @@ class ClientService {
         return this.unwrap(res);
     }
 
+    async uploadContract(data) {
+        const res = await this.api().post(ENDPOINTS.UPLOAD_CLIENT_CONTRACT, { token: this.token(), data }, { cacheTTL: 0 });
+        return this.unwrap(res);
+    }
+
+    async getDocuments(filters = {}) {
+        const res = await this.api().post(ENDPOINTS.CLIENT_DOCUMENTS, { token: this.token(), filters });
+        return this.unwrap(res);
+    }
+
     unwrap(res) {
         if (!res.ok || !res.data || !res.data.ok) {
             throw new Error((res.data && res.data.message) || res.message || "Request failed");

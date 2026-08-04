@@ -1,6 +1,6 @@
 import Module from "../../core/module.js";
 import CrmService from "./crm.service.js";
-import { renderLayout, renderTableRows, renderRegisterForm } from "./crm.view.js";
+import { renderLayout, renderTableRows, renderRegisterForm, renderUploadContractModal } from "./crm.view.js";
 import { renderLoading, renderEmptyRow, renderErrorRow } from "../../utils/state.js";
 
 class CRMController extends Module {
@@ -77,6 +77,70 @@ class CRMController extends Module {
             }
         });
         if (addBtn) addBtn.addEventListener("click", () => this.openRegisterModal());
+
+        document.getElementById("crm-table-body")?.addEventListener("click", (event) => {
+            const button = event.target.closest(".crm-upload-contract");
+            if (!button) return;
+            event.preventDefault();
+            event.stopPropagation();
+            let client = {};
+            try { client = JSON.parse(button.dataset.client || "{}"); } catch (_) {}
+            this.openContractUploadModal(client);
+        });
+    }
+
+    openContractUploadModal(client) {
+        const root = document.getElementById("crm-modal-root");
+        if (!root) return;
+        root.innerHTML = renderUploadContractModal(client);
+
+        const close = () => { root.innerHTML = ""; };
+        document.getElementById("crm-contract-cancel")?.addEventListener("click", close);
+        document.getElementById("crm-contract-modal-backdrop")?.addEventListener("click", (event) => {
+            if (event.target.id === "crm-contract-modal-backdrop") close();
+        });
+        document.getElementById("crm-contract-upload-form")?.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const file = document.getElementById("crm-contract-file")?.files?.[0];
+            const errorBox = document.getElementById("crm-contract-error");
+            const submit = document.getElementById("crm-contract-submit");
+            if (!file) return this.showContractError(errorBox, "Please select a PDF file.");
+            if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) return this.showContractError(errorBox, "Only PDF files are allowed.");
+            if (file.size > 8 * 1024 * 1024) return this.showContractError(errorBox, "The PDF must be 8 MB or smaller.");
+            if (submit) { submit.disabled = true; submit.textContent = "Uploading..."; }
+            if (errorBox) errorBox.classList.add("hidden");
+            try {
+                const base64 = await this.fileToBase64(file);
+                const documentType = new FormData(event.currentTarget).get("documentType") || "Contract";
+                const result = await CrmService.uploadContract({
+                    ...client,
+                    documentType,
+                    fileName: file.name,
+                    mimeType: file.type || "application/pdf",
+                    base64
+                });
+                this.notify().success(result?.message || "PDF uploaded successfully");
+                close();
+            } catch (error) {
+                this.showContractError(errorBox, error.message || "Upload failed");
+                if (submit) { submit.disabled = false; submit.textContent = "Upload PDF"; }
+            }
+        });
+    }
+
+    showContractError(element, message) {
+        if (!element) { this.notify().error(message); return; }
+        element.textContent = message;
+        element.classList.remove("hidden");
+    }
+
+    fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result || "").split(",")[1] || "");
+            reader.onerror = () => reject(new Error("Could not read the selected file."));
+            reader.readAsDataURL(file);
+        });
     }
 
     async openRegisterModal() {

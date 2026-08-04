@@ -18,13 +18,15 @@ class PermissionManager {
             return false;
         }
 
-        const allowedRoutes = PERMISSIONS[role] || [];
+        const roleKey = String(role).trim().toLowerCase();
+        const routeKey = String(route).trim().toLowerCase();
+        const allowedRoutes = PERMISSIONS[roleKey] || [];
 
-        return allowedRoutes.includes(route);
+        return allowedRoutes.includes(routeKey);
     }
 
     getAllowedRoutes(role) {
-        return PERMISSIONS[role] || [];
+        return PERMISSIONS[String(role || "").trim().toLowerCase()] || [];
     }
 
     canAny(role, routes = []) {

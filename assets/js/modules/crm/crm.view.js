@@ -17,7 +17,8 @@ const TABLE_COLUMNS = [
     { key: "salesName", label: "Sales" },
     { key: "status", label: "Status" },
     { key: "soldPrice", label: "Value" },
-    { key: "contractDate", label: "Contract Date" }
+    { key: "contractDate", label: "Contract Date" },
+    { key: "documents", label: "Documents" }
 ];
 
 function statusBadge(status) {
@@ -72,6 +73,7 @@ export function renderTableRows(rows) {
             <td>${statusBadge(row.status)}</td>
             <td>${Formatter.money(row.soldPrice)}</td>
             <td>${escapeHtml(row.contractDate || "-")}</td>
+            <td><button type="button" class="btn btn-outline btn-sm crm-upload-contract" data-client='${escapeHtml(JSON.stringify({unitCode:row.unitCode,project:row.project,clientName:row.clientName}))}'>Upload PDF</button></td>
         </tr>
     `).join("");
 }
@@ -144,4 +146,38 @@ export function renderRegisterForm({ salesOptions, lists }) {
             </div>
         </div>
     `;
+}
+
+
+export function renderUploadContractModal(client = {}) {
+    return `
+        <div class="modal-backdrop" id="crm-contract-modal-backdrop">
+            <div class="modal-box crm-contract-upload-modal">
+                <h2>Upload Client Contract</h2>
+                <p class="modal-subtitle">${escapeHtml(client.project || "-")} — ${escapeHtml(client.unitCode || "-")} — ${escapeHtml(client.clientName || "-")}</p>
+                <form id="crm-contract-upload-form">
+                    <div class="form-grid">
+                        <div>
+                            <label>Document Type</label>
+                            <select name="documentType" class="premium-select">
+                                <option value="Contract">Contract</option>
+                                <option value="ID">ID</option>
+                                <option value="Payment Receipt">Payment Receipt</option>
+                                <option value="Cancellation">Cancellation</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="field-full">
+                            <label>PDF File (max 8 MB)</label>
+                            <input type="file" id="crm-contract-file" name="file" accept="application/pdf,.pdf" required>
+                        </div>
+                    </div>
+                    <p class="form-error hidden" id="crm-contract-error"></p>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" id="crm-contract-cancel">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="crm-contract-submit">Upload PDF</button>
+                    </div>
+                </form>
+            </div>
+        </div>`;
 }

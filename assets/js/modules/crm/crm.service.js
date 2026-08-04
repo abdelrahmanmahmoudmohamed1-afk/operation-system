@@ -27,6 +27,14 @@ class CrmModuleService {
     async saveClient(data) {
         return ClientService.saveClient(data);
     }
+
+    async uploadContract(data) {
+        return ClientService.uploadContract(data);
+    }
+
+    async loadDocuments(filters = {}) {
+        return ClientService.getDocuments(filters);
+    }
 }
 
 export default new CrmModuleService();

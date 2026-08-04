@@ -18,6 +18,8 @@ const ENDPOINTS = Object.freeze({
     MANAGER_DIRECTOR: "getManagerDirector",
     SAVE_CLIENT: "saveClientRegistration",
     CLIENTS_LIST: "getClients",
+    UPLOAD_CLIENT_CONTRACT: "uploadClientContract",
+    CLIENT_DOCUMENTS: "getClientDocuments",
 
     INVENTORY_DATA: "getInventoryData",
     INVENTORY_PROJECTS: "getInventoryProjects",

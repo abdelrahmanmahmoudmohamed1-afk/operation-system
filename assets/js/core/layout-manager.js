@@ -59,8 +59,13 @@ class LayoutManager {
 
         const authManager = Container.get("authManager");
         const permissionManager = Container.get("permissionManager");
-        const role = String(authManager.getUser()?.role || "user").toLowerCase();
+        const role = String(authManager.getUser()?.role || "user").trim().toLowerCase();
         const visibleMenu = MENU.filter((item) => permissionManager.can(role, item.route));
+        // Defensive guarantee: Admin must always see the Users module.
+        if (role === "admin" && !visibleMenu.some((item) => item.route === "users")) {
+            const usersItem = MENU.find((item) => item.route === "users");
+            if (usersItem) visibleMenu.splice(Math.max(0, visibleMenu.length - 1), 0, usersItem);
+        }
         const sidebar = new Sidebar(visibleMenu);
         sidebarContainer.innerHTML = sidebar.render();
     }
