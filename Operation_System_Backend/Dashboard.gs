@@ -1,6 +1,6 @@
 /**
  * ===========================================================
- * OPERATION SYSTEM BACKEND — Dashboard.gs
+ * OPERATION SYSTEM UNIFIED BACKEND — Dashboard.gs
  * ===========================================================
  * Executive dashboard aggregations. Uses Inventory.gs readers
  * and Auth.gs role filtering.
@@ -26,7 +26,7 @@ function getDashboardData(token, filters) {
 
   const cache = CacheService.getScriptCache();
   const roleKey = lower_(session.role || '') + '|' + lower_(session.name || session.user || '');
-  const cacheKey = 'operation_system_dashboard_v5_' + Utilities.base64EncodeWebSafe(roleKey + '|' + JSON.stringify(filters)).slice(0, 180);
+  const cacheKey = 'operation_dashboard_v3_' + Utilities.base64EncodeWebSafe(roleKey + '|' + JSON.stringify(filters)).slice(0, 180);
   try {
     const cached = cache.get(cacheKey);
     if (cached) return JSON.parse(cached);

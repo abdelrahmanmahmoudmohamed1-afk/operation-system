@@ -8,16 +8,12 @@ const AUDIT_HEADERS_ = [
   'Details', 'Success', 'Duration Ms'
 ];
 
-function isAdminSession_(session) {
-  const role = lower_(session && session.role);
-  return ROLES.ADMIN.indexOf(role) !== -1;
-}
-
-function requireAdmin_(token) {
+function requireOwner_(token) {
   const session = requireAuth_(token);
-  if (!isAdminSession_(session)) throw new Error('FORBIDDEN');
+  if (!isSystemOwnerIdentity_(session)) throw new Error('FORBIDDEN');
   return session;
 }
+
 
 function getOrCreateAuditSheet_() {
   const ss = SpreadsheetApp.openById(SPREADSHEETS.SETTINGS);
@@ -115,7 +111,7 @@ function readUsers_() {
 }
 
 function getUsersData(token) {
-  requireAdmin_(token);
+  requireOwner_(token);
   const users = readUsers_();
   const byRole = {};
   users.forEach(function(u) {
@@ -135,7 +131,7 @@ function getUsersData(token) {
 }
 
 function getAuditHistory(token, filters) {
-  requireAdmin_(token);
+  requireOwner_(token);
   filters = filters || {};
   const sh = getOrCreateAuditSheet_();
   const lastRow = sh.getLastRow();
@@ -175,4 +171,49 @@ function getAuditHistory(token, filters) {
     if (to && (!d || d > to)) return false;
     return true;
   }).reverse();
+}
+
+
+function ensureUserColumns_(sh) {
+  const required = ['Name','Username','Password','Role','Sales Manager','Sales Director','Active','Email','Mobile'];
+  const headerRow = HEADER_ROW.users;
+  const lastCol = Math.max(sh.getLastColumn(), 1);
+  let headers = sh.getRange(headerRow, 1, 1, lastCol).getValues()[0].map(clean_);
+  required.forEach(function(header) {
+    if (headers.map(normHeader_).indexOf(normHeader_(header)) === -1) {
+      headers.push(header);
+      sh.getRange(headerRow, headers.length).setValue(header);
+    }
+  });
+  return headers;
+}
+
+function createSystemUser(token, data) {
+  const owner = requireOwner_(token);
+  data = data || {};
+  const name = clean_(data.name);
+  const username = clean_(data.username);
+  const password = clean_(data.password);
+  const role = clean_(data.role || 'user');
+  if (!name || !username || !password) throw new Error('Name, username and password are required.');
+  if (password.length < 6) throw new Error('Password must be at least 6 characters.');
+
+  const ss = SpreadsheetApp.openById(SPREADSHEETS.SETTINGS);
+  const sh = getSheetOrThrow_(ss, SHEET_NAMES.users);
+  const headers = ensureUserColumns_(sh);
+  const normalized = headers.map(normHeader_);
+  const values = sh.getDataRange().getValues();
+  const usernameCol = normalized.indexOf(normHeader_('Username'));
+  for (let i = HEADER_ROW.users; i < values.length; i++) {
+    if (norm_(values[i][usernameCol]) === norm_(username)) throw new Error('Username already exists.');
+  }
+
+  const row = new Array(headers.length).fill('');
+  function set(header, value) { const i = normalized.indexOf(normHeader_(header)); if (i >= 0) row[i] = value; }
+  set('Name', name); set('Username', username); set('Password', password); set('Role', role);
+  set('Sales Manager', clean_(data.manager)); set('Sales Director', clean_(data.director));
+  set('Active', data.active === false ? 'Inactive' : 'Active');
+  set('Email', clean_(data.email)); set('Mobile', clean_(data.mobile));
+  sh.appendRow(row);
+  return { success: true, message: 'User created successfully.', user: { name, username, role, active: data.active !== false } };
 }

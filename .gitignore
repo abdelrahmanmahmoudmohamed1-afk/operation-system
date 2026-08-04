@@ -12,7 +12,7 @@ Thumbs.db
 
 # The Google Apps Script backend contains internal spreadsheet identifiers.
 # Keep it in a private repository or deploy it directly to Apps Script.
-Toledo_Unified_Backend/
+Operation System_Unified_Backend/
 
 # Archives / backups
 *.zip

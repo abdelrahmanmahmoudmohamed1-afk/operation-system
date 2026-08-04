@@ -1,6 +1,6 @@
 /**
  * ===========================================================
- * OPERATION SYSTEM BACKEND — Config.gs
+ * OPERATION SYSTEM UNIFIED BACKEND — Config.gs
  * ===========================================================
  * كل الـ Spreadsheet IDs وأسماء الشيتات في مكان واحد فقط.
  * أي تغيير في أي ID أو اسم شيت يتم هنا فقط، باقي الملفات
@@ -25,7 +25,10 @@ const SPREADSHEETS = {
   EOI: '1pbU2xflJX1s9Ts__o3MhIslJDGOc9GoNf_vPX6fQwJg',
 
   // All Brokers + Request (الكروبات والطلبات والزيارات)
-  BROKERS: '1C13-OWI5fOnqW-LO4Kb7bOq1wyE44nIbAp6jbm5OYTA'
+  BROKERS: '1C13-OWI5fOnqW-LO4Kb7bOq1wyE44nIbAp6jbm5OYTA',
+
+  // Leads source
+  LEADS: '1SzaCVURxxKxGcBLVtlYtH6M4u-npDfjIV1Q7BXO63ec'
 };
 
 const SHEET_NAMES = {
@@ -54,7 +57,11 @@ const SHEET_NAMES = {
 
   // من BROKERS
   allBrokers: 'All Brokers',
-  request: 'Request'
+  request: 'Request',
+
+  // Leads & documents
+  leads: 'Feedback Leads',
+  clientDocuments: 'Client Documents'
 };
 
 // صف العناوين (Headers) في كل شيت — لو اتغير الصف ده بس اللي يتعدل
@@ -75,6 +82,24 @@ const ROLES = {
   MANAGER: ['manager'],
   SALES: ['sales']
 };
+
+
+
+// الحساب الوحيد المسموح له بفتح وإدارة موديول Users.
+// يفضّل كتابة Username الدقيق في ownerUsernames لزيادة الدقة.
+const SYSTEM_OWNER = Object.freeze({
+  ownerUsernames: [],
+  ownerNames: ['Abdelrahman Mahmoud']
+});
+
+function isSystemOwnerIdentity_(user) {
+  user = user || {};
+  const username = norm_(user.user || user.username);
+  const name = norm_(user.name);
+  const usernames = (SYSTEM_OWNER.ownerUsernames || []).map(norm_).filter(Boolean);
+  const names = (SYSTEM_OWNER.ownerNames || []).map(norm_).filter(Boolean);
+  return (username && usernames.indexOf(username) !== -1) || (name && names.indexOf(name) !== -1);
+}
 
 // إعدادات عامة بتتقرأ من الفرونت إند (datalist options ثابتة)
 const STATIC_LISTS = {
@@ -112,15 +137,16 @@ const FIELD_ALIASES = {
   nationality: ['Client Nationality', 'Nationality'],
   reservationDate: ['Reservition Date', 'Reservation Date'],
   contractDate: ['Contract Date', 'Cotract Date', 'Actual Contract Date'],
+  soldDate: ['Sold Date', 'Sale Date'],
   deliveryDate: ['Delivery Date', 'Contract Delivery Date'],
   cancellationDate: ['Cancellation Date'],
   holdDate: ['Hold Date'],
   contractPlace: ['Contract Place'],
   clientType: ['Client Type', 'Clint Type', 'Contract Type'],
   clientName: ['Client Name English', 'Client Name Arabic', 'Client Name'],
-  clientPhone: ['Client Phone', 'Phone', 'Mobile', 'Mobile Number', 'Primary Mobile'],
-  clientPhone2: ['Client Phone 2', 'Secondary Mobile', 'Mobile 2', 'Alternate Phone'],
-  clientAddress: ['Client Address', 'Address', 'Full Address', 'Residence Address'],
+  clientPhone: ['Client Phone Number', 'Client Phone', 'Phone', 'Mobile', 'Mobile Number', 'Primary Mobile'],
+  clientPhone2: ['Client Phone Number 2', 'Client Phone 2', 'Client Phone  2', 'Secondary Mobile', 'Mobile 2', 'Alternate Phone'],
+  clientAddress: ['Residence address', 'Residence Address', 'Client Address', 'Address', 'Full Address'],
   gender: ['Client Gender', 'Gender', 'Sex'],
   salesTeamName: ['Sales Name', 'Sales', 'Name'],
   salesTeamManager: ['Manager', 'Sales Manager'],

@@ -1,6 +1,6 @@
 /**
  * ===========================================================
- * OPERATION SYSTEM BACKEND — Client.gs
+ * OPERATION SYSTEM UNIFIED BACKEND — Client.gs
  * ===========================================================
  * كل ما يخص موديول CRM: قائمة السيلز، الشركات المرتبطة بكل
  * سيلز، المدير والديركتور بتوعه، تسجيل عميل جديد، وقراءة كل
@@ -176,6 +176,7 @@ function getClients(token, filters) {
     soldPrice: x.soldPrice,
     area: x.area,
     contractDate: formatDate_(x.contractDate),
+    soldDate: formatDate_(x.soldDate),
     reservationDate: formatDate_(x.reservationDate)
   }));
 }

@@ -1,13 +1,13 @@
 /**
  * ===========================================================
- * OPERATION SYSTEM BACKEND — Inventory.gs
+ * OPERATION SYSTEM UNIFIED BACKEND — Inventory.gs
  * ===========================================================
  * كل ما يخص الوحدات: قراءة المخزون، الوحدات المتاحة، تفاصيل
  * أي وحدة. كل القراءة بالاسم (header-based) مش بترقيم الأعمدة.
  * ===========================================================
  */
 
-const INVENTORY_CACHE_KEY = 'operation_system_inventory_v5';
+const INVENTORY_CACHE_KEY = 'operation_inventory_v4';
 const INVENTORY_CACHE_SECONDS = 300;
 
 /**
@@ -175,7 +175,8 @@ function readClientDbFromSheet_(ss) {
       contractPlace: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.contractPlace)),
       clientType: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.clientType)),
       reservationDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.reservationDate)),
-      contractDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.contractDate))
+      contractDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.contractDate)),
+      soldDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.soldDate))
     }));
 }
 
@@ -219,6 +220,7 @@ function readCancelledFromSheet_(ss) {
       clientAddress: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.clientAddress)),
       reservationDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.reservationDate)),
       contractDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.contractDate)),
+      soldDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.soldDate)),
       cancellationDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.cancellationDate))
     }));
 }

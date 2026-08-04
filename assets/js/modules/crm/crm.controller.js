@@ -1,6 +1,6 @@
 import Module from "../../core/module.js";
 import CrmService from "./crm.service.js";
-import { renderLayout, renderTableRows, renderRegisterForm } from "./crm.view.js";
+import { renderLayout, renderTableRows, renderRegisterForm, renderContractUploadModal } from "./crm.view.js";
 import { renderLoading, renderEmptyRow, renderErrorRow } from "../../utils/state.js";
 
 class CRMController extends Module {
@@ -15,8 +15,8 @@ class CRMController extends Module {
         document.getElementById("crm-table-body").innerHTML = renderLoading({ rows: 6 });
 
         // لو جاي من بار البحث العام فوق، نطبّق الكلمة على طول
-        const pendingSearch = sessionStorage.getItem("toledo_pending_search");
-        const globalSearch = sessionStorage.getItem("toledo_global_search");
+        const pendingSearch = sessionStorage.getItem("operation_pending_search");
+        const globalSearch = sessionStorage.getItem("operation_global_search");
         let searchTerm = pendingSearch || "";
         if (globalSearch) {
             try {
@@ -25,7 +25,7 @@ class CRMController extends Module {
             } catch { /* ignore */ }
         }
         if (searchTerm) {
-            sessionStorage.removeItem("toledo_pending_search");
+            sessionStorage.removeItem("operation_pending_search");
             const searchInput = document.getElementById("crm-search");
             if (searchInput) searchInput.value = searchTerm;
             await this.loadClients(searchTerm);
@@ -45,11 +45,11 @@ class CRMController extends Module {
             if (tbody) {
                 tbody.innerHTML = this.clients.length
                     ? renderTableRows(this.clients)
-                    : renderEmptyRow(9, search ? "No clients match your search" : "No clients registered yet");
+                    : renderEmptyRow(11, search ? "No clients match your search" : "No clients registered yet");
             }
         } catch (error) {
             this.logger().error("CRM load failed", error);
-            if (tbody) tbody.innerHTML = renderErrorRow(9, error.message);
+            if (tbody) tbody.innerHTML = renderErrorRow(11, error.message);
             this.notify().error(error.message);
         }
     }
@@ -68,7 +68,7 @@ class CRMController extends Module {
         }
 
         if (refreshBtn) refreshBtn.addEventListener("click", () => this.loadClients());
-        window.addEventListener("toledo:global-search", (e) => {
+        window.addEventListener("operation:global-search", (e) => {
             const term = e.detail?.term || "";
             const target = e.detail?.target || "all";
             if (target === "all" || target === "crm") {
@@ -77,6 +77,38 @@ class CRMController extends Module {
             }
         });
         if (addBtn) addBtn.addEventListener("click", () => this.openRegisterModal());
+        this.container.addEventListener("click", (e) => {
+            const btn = e.target.closest(".crm-upload-contract");
+            if (btn) this.openContractUpload({ project: btn.dataset.project, unitCode: btn.dataset.unit, clientName: btn.dataset.client });
+        });
+    }
+
+
+    openContractUpload(row) {
+        const root = document.getElementById("crm-modal-root");
+        if (!root) return;
+        root.innerHTML = renderContractUploadModal(row);
+        const close = () => { root.innerHTML = ""; };
+        document.getElementById("crm-contract-cancel")?.addEventListener("click", close);
+        document.getElementById("crm-contract-backdrop")?.addEventListener("click", (e) => { if (e.target.id === "crm-contract-backdrop") close(); });
+        document.getElementById("crm-contract-upload")?.addEventListener("click", async () => {
+            const file = document.getElementById("crm-contract-file")?.files?.[0];
+            const errorBox = document.getElementById("crm-contract-error");
+            if (!file) { errorBox.textContent = "Choose a PDF file."; errorBox.classList.remove("hidden"); return; }
+            if (file.type !== "application/pdf") { errorBox.textContent = "Only PDF files are allowed."; errorBox.classList.remove("hidden"); return; }
+            if (file.size > 8 * 1024 * 1024) { errorBox.textContent = "Maximum PDF size is 8 MB."; errorBox.classList.remove("hidden"); return; }
+            const uploadBtn = document.getElementById("crm-contract-upload");
+            uploadBtn.disabled = true; uploadBtn.textContent = "Uploading...";
+            try {
+                const base64 = await this.fileToBase64(file);
+                await CrmService.uploadContract({ ...row, documentType: document.getElementById("crm-document-type")?.value || "Contract", fileName: file.name, mimeType: file.type, base64 });
+                this.notify().success("Contract PDF uploaded successfully"); close();
+            } catch (error) { errorBox.textContent = error.message; errorBox.classList.remove("hidden"); uploadBtn.disabled = false; uploadBtn.textContent = "Upload PDF"; }
+        });
+    }
+
+    fileToBase64(file) {
+        return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result).split(",")[1] || ""); reader.onerror = () => reject(new Error("Unable to read the selected file.")); reader.readAsDataURL(file); });
     }
 
     async openRegisterModal() {

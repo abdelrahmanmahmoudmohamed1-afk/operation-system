@@ -17,7 +17,9 @@ const TABLE_COLUMNS = [
     { key: "salesName", label: "Sales" },
     { key: "status", label: "Status" },
     { key: "soldPrice", label: "Value" },
-    { key: "contractDate", label: "Contract Date" }
+    { key: "contractDate", label: "Contract Date" },
+    { key: "soldDate", label: "Sold Date" },
+    { key: "documents", label: "Documents" }
 ];
 
 function statusBadge(status) {
@@ -72,6 +74,8 @@ export function renderTableRows(rows) {
             <td>${statusBadge(row.status)}</td>
             <td>${Formatter.money(row.soldPrice)}</td>
             <td>${escapeHtml(row.contractDate || "-")}</td>
+            <td>${escapeHtml(row.soldDate || "-")}</td>
+            <td><button class="btn btn-outline btn-sm crm-upload-contract" data-project="${escapeHtml(row.project)}" data-unit="${escapeHtml(row.unitCode)}" data-client="${escapeHtml(row.clientName)}">Upload PDF</button></td>
         </tr>
     `).join("");
 }
@@ -144,4 +148,21 @@ export function renderRegisterForm({ salesOptions, lists }) {
             </div>
         </div>
     `;
+}
+
+
+export function renderContractUploadModal(row) {
+    return `
+      <div class="modal-backdrop" id="crm-contract-backdrop">
+        <div class="modal-box">
+          <h2>Upload Client Contract</h2>
+          <p class="note">${escapeHtml(row.project || "")} — ${escapeHtml(row.unitCode || "")} — ${escapeHtml(row.clientName || "")}</p>
+          <div class="form-grid">
+            <div><label>Document Type</label><select id="crm-document-type"><option>Contract</option><option>ID</option><option>Payment Receipt</option><option>Cancellation</option><option>Other</option></select></div>
+            <div class="field-full"><label>PDF File (max 8 MB)</label><input type="file" id="crm-contract-file" accept="application/pdf"></div>
+          </div>
+          <p id="crm-contract-error" class="form-error hidden"></p>
+          <div class="form-actions"><button class="btn btn-outline" id="crm-contract-cancel">Cancel</button><button class="btn btn-primary" id="crm-contract-upload">Upload PDF</button></div>
+        </div>
+      </div>`;
 }

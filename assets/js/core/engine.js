@@ -38,7 +38,7 @@ class Engine {
 
         this.started = true;
 
-        console.log("Toledo Engine Started");
+        console.log("Operation System Engine Started");
 
     }
 
@@ -46,7 +46,7 @@ class Engine {
 
         this.started = false;
 
-        console.log("Toledo Engine Stopped");
+        console.log("Operation System Engine Stopped");
 
     }
 
