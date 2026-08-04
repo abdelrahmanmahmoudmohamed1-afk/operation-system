@@ -1,0 +1,15 @@
+:root {
+    --ink: #1c1917;
+    --surface: #292524;
+    --surface-2: #3a302a;
+    --line: rgba(245,158,11,.18);
+    --text: #fff7ed;
+    --text-muted: #d6c3aa;
+    --brass: #f59e0b;
+    --brass-soft: rgba(245,158,11,.16);
+    --font-display: 'Cinzel', Georgia, serif;
+    --font-ui: 'Raleway', Arial, sans-serif;
+}
+body { background: radial-gradient(circle at 20% 10%, rgba(245,158,11,.20), transparent 28%), linear-gradient(135deg,#1c1917,#111827) !important; color: var(--text) !important; }
+.card,.topbar,.sidebar,.table-wrap,.modal-box,.login-card { background: linear-gradient(145deg, rgba(255,247,237,.095), rgba(255,247,237,.025)) !important; backdrop-filter: blur(22px) !important; border: 1px solid rgba(245,158,11,.18) !important; box-shadow: 0 28px 75px rgba(0,0,0,.42) !important; }
+.btn-primary { background: linear-gradient(135deg,#f59e0b,#fbbf24) !important; color:#1c1917 !important; }

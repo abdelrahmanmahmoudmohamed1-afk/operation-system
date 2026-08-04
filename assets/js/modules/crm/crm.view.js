@@ -1,0 +1,143 @@
+/**
+ * ---------------------------------------------------------
+ * CRM Module — View
+ * كل دوال الـ HTML هنا فقط، من غير أي منطق نداء API.
+ * ---------------------------------------------------------
+ */
+
+import { escapeHtml, buildTable, buildTableHead } from "../../utils/helpers.js";
+import Formatter from "../../utils/formatter.js";
+
+const TABLE_COLUMNS = [
+    { key: "unitCode", label: "Unit Code" },
+    { key: "project", label: "Project" },
+    { key: "clientName", label: "Client" },
+    { key: "salesName", label: "Sales" },
+    { key: "status", label: "Status" },
+    { key: "soldPrice", label: "Value" },
+    { key: "contractDate", label: "Contract Date" }
+];
+
+function statusBadge(status) {
+    const key = String(status || "").toLowerCase();
+    return `<span class="badge badge-${key}">${escapeHtml(status || "-")}</span>`;
+}
+
+export function renderLayout() {
+    return `
+        <div class="page-header">
+            <div>
+                <h1>CRM</h1>
+                <p>Clients, contracts and registrations</p>
+            </div>
+            <button class="btn btn-primary" id="crm-add-btn">+ Register Client</button>
+        </div>
+
+        <div class="filter-bar">
+            <div class="filter-field">
+                <label>Search</label>
+                <input type="text" id="crm-search" placeholder="Client name or unit code">
+            </div>
+            <button class="btn btn-outline" id="crm-refresh-btn">Refresh</button>
+        </div>
+
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead><tr>${buildTableHead(TABLE_COLUMNS)}</tr></thead>
+                <tbody id="crm-table-body">
+                    <tr><td colspan="${TABLE_COLUMNS.length}" class="table-empty">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="crm-modal-root"></div>
+    `;
+}
+
+export function renderTableRows(rows) {
+    if (!rows || !rows.length) {
+        return `<tr><td colspan="${TABLE_COLUMNS.length}" class="table-empty">No clients found</td></tr>`;
+    }
+
+    return rows.map((row) => `
+        <tr class="detail-row" data-detail='${escapeHtml(JSON.stringify(row))}'>
+            <td>${escapeHtml(row.unitCode)}</td>
+            <td>${escapeHtml(row.project)}</td>
+            <td>${escapeHtml(row.clientName)}</td>
+            <td>${escapeHtml(row.salesName)}</td>
+            <td>${statusBadge(row.status)}</td>
+            <td>${Formatter.money(row.soldPrice)}</td>
+            <td>${escapeHtml(row.contractDate || "-")}</td>
+        </tr>
+    `).join("");
+}
+
+export function renderRegisterForm({ salesOptions, lists }) {
+    const salesOpts = (salesOptions || []).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+    const nationalityOpts = (lists.nationalities || []).map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
+    const sourceOpts = (lists.sourceOptions || []).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+    const paymentOpts = (lists.paymentMethods || []).map((p) => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("");
+
+    return `
+        <div class="modal-backdrop" id="crm-modal-backdrop">
+            <div class="modal-box">
+                <h2>Register New Client</h2>
+
+                <form id="crm-client-form">
+                    <div class="form-grid">
+                        <div>
+                            <label>Project</label>
+                            <input type="text" name="project" required>
+                        </div>
+                        <div>
+                            <label>Unit Code</label>
+                            <input type="text" name="unitCode" required>
+                        </div>
+                        <div class="field-full">
+                            <label>Client Name</label>
+                            <input type="text" name="clientName" required>
+                        </div>
+                        <div>
+                            <label>Client Phone</label>
+                            <input type="text" name="clientPhone" placeholder="01xxxxxxxxx" required>
+                        </div>
+                        <div>
+                            <label>Client Email</label>
+                            <input type="email" name="clientEmail">
+                        </div>
+                        <div>
+                            <label>Nationality</label>
+                            <select name="clientNationality">${nationalityOpts}</select>
+                        </div>
+                        <div>
+                            <label>Sales Name</label>
+                            <select name="salesName1" id="crm-sales-select">
+                                <option value="">Select sales</option>
+                                ${salesOpts}
+                            </select>
+                        </div>
+                        <div>
+                            <label>Source</label>
+                            <select name="source">${sourceOpts}</select>
+                        </div>
+                        <div>
+                            <label>Booking Deposit</label>
+                            <input type="number" name="bookingDeposit" min="0">
+                        </div>
+                        <div>
+                            <label>Payment Method</label>
+                            <select name="paymentMethod">${paymentOpts}</select>
+                        </div>
+                    </div>
+
+                    <p class="form-error hidden" id="crm-form-error"></p>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" id="crm-cancel-btn">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Client</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+}

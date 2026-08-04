@@ -1,0 +1,51 @@
+<div class="main-layout main-layout-horizontal">
+    <header class="topbar premium-topbar">
+        <div class="topbar-left">
+            <span class="topbar-title" id="page-title">Toledo Operation System</span>
+            <div class="global-search premium-search">
+                <span class="search-icon">⌕</span>
+                <select id="global-search-type" aria-label="Search Type">
+                    <option value="all">All</option>
+                    <option value="inventory">Inventory</option>
+                    <option value="crm">CRM</option>
+                    <option value="eoi">EOI</option>
+                    <option value="reports">Reports</option>
+                </select>
+                <input type="text" id="global-search-input" placeholder="Search units, clients, EOI, reports...">
+                <button type="button" id="global-search-clear" title="Clear">×</button>
+                <span class="search-shortcut">Ctrl K</span>
+            </div>
+        </div>
+
+        <div class="topbar-right">
+            <select id="language-switcher" class="language-switcher" title="Language">
+                <option value="en">EN</option>
+                <option value="ar">AR</option>
+            </select>
+            <span class="topbar-clock" id="topbar-clock"></span>
+            <span class="topbar-user" id="topbar-user-name">-</span>
+            <span class="topbar-role" id="topbar-user-role"></span>
+            <button class="logout-btn animated-logout-btn" data-logout type="button" aria-label="Logout">
+                <span class="logout-text">Log Out</span>
+                <span class="logout-animation" aria-hidden="true">
+                    <span class="logout-figure"></span>
+                    <span class="logout-doorway"></span>
+                    <span class="logout-door"></span>
+                </span>
+            </button>
+        </div>
+    </header>
+
+    <nav id="sidebar-container" class="sidebar-horizontal-wrap"></nav>
+
+    <div class="main-content-wrap">
+        <main class="content">
+            <div id="page-content"></div>
+        </main>
+
+        <footer class="app-footer">
+            <span>Toledo Operation System</span>
+            <span id="footer-version"></span>
+        </footer>
+    </div>
+</div>
