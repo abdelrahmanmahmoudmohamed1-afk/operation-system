@@ -41,6 +41,7 @@ class App {
 
     async init() {
         this.setDocumentTitle();
+        this.registerServiceWorker();
 
         await Engine.start();
 
@@ -74,7 +75,7 @@ class App {
      */
     async showLogin() {
         try {
-            const response = await fetch("layouts/login.html", { cache: "no-store" });
+            const response = await fetch("layouts/login.html", { cache: "force-cache" });
             if (!response.ok) throw new Error(`Login layout failed (${response.status})`);
             const html = await response.text();
 
@@ -140,6 +141,7 @@ class App {
         this.bindLogout();
         this.bindGlobalSearch();
         this.bindLanguageSwitch();
+        this.prefetchCommonModules();
         this.bindDetails();
         this.bindActionFeedback();
         this.bindConnectivityStatus();
@@ -246,6 +248,23 @@ class App {
             document.documentElement.dir = select.value === "ar" ? "rtl" : "ltr";
             location.reload();
         });
+    }
+
+    registerServiceWorker() {
+        if (!("serviceWorker" in navigator) || location.protocol === "file:") return;
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("./sw.js").catch((error) => console.warn("Service worker registration failed", error));
+        }, { once: true });
+    }
+
+    prefetchCommonModules() {
+        const run = () => Promise.allSettled([
+            import("../modules/dashboard/dashboard.controller.js"),
+            import("../modules/inventory/inventory.controller.js"),
+            import("../modules/reports/reports.controller.js")
+        ]);
+        if ("requestIdleCallback" in window) requestIdleCallback(run, { timeout: 3500 });
+        else setTimeout(run, 1800);
     }
 
     escapeHTML(value) {

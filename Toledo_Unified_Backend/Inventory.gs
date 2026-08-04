@@ -7,7 +7,7 @@
  * ===========================================================
  */
 
-const INVENTORY_CACHE_KEY = 'toledo_inventory_v1';
+const INVENTORY_CACHE_KEY = 'toledo_inventory_v4';
 const INVENTORY_CACHE_SECONDS = 300;
 
 /**
@@ -96,7 +96,10 @@ function readInventoryFromSheet_(ss) {
   }
 
   const headerMap = getHeaderMap_(sh, HEADER_ROW.inventory);
-  const v = sh.getDataRange().getValues();
+  const lastRow = sh.getLastRow();
+  const lastCol = sh.getLastColumn();
+  if (lastRow <= HEADER_ROW.inventory || lastCol < 1) return [];
+  const v = sh.getRange(1, 1, lastRow, lastCol).getValues();
   const dataRows = v.slice(HEADER_ROW.inventory);
 
   return dataRows
@@ -137,7 +140,10 @@ function readClientDbFromSheet_(ss) {
   if (!sh) return [];
 
   const headerMap = getHeaderMap_(sh, HEADER_ROW.clientDb);
-  const v = sh.getDataRange().getValues();
+  const lastRow = sh.getLastRow();
+  const lastCol = sh.getLastColumn();
+  if (lastRow <= HEADER_ROW.clientDb || lastCol < 1) return [];
+  const v = sh.getRange(1, 1, lastRow, lastCol).getValues();
   const dataRows = v.slice(HEADER_ROW.clientDb);
 
   return dataRows
@@ -176,7 +182,10 @@ function readCancelledFromSheet_(ss) {
   if (!sh) return [];
 
   const headerMap = getHeaderMap_(sh, HEADER_ROW.cancelled);
-  const v = sh.getDataRange().getValues();
+  const lastRow = sh.getLastRow();
+  const lastCol = sh.getLastColumn();
+  if (lastRow <= HEADER_ROW.cancelled || lastCol < 1) return [];
+  const v = sh.getRange(1, 1, lastRow, lastCol).getValues();
   const dataRows = v.slice(HEADER_ROW.cancelled);
 
   return dataRows

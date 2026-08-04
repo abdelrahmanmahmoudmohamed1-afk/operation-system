@@ -10,7 +10,7 @@ class LayoutManager {
 
     async loadMainLayout() {
         try {
-            const response = await fetch("layouts/main.html", { cache: "no-store" });
+            const response = await fetch("layouts/main.html", { cache: "force-cache" });
 
             if (!response.ok) {
                 throw new Error("Failed to load main layout");
