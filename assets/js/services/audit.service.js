@@ -1,12 +1,12 @@
 class AuditService {
     constructor() {
-        this.key = "operation_audit_history_v1";
+        this.key = "toledo_audit_history_v1";
         this.max = 500;
     }
 
     getCurrentUser() {
         try {
-            const raw = localStorage.getItem("operation_user") || sessionStorage.getItem("operation_user") || localStorage.getItem("user") || "{}";
+            const raw = localStorage.getItem("toledo_user") || sessionStorage.getItem("toledo_user") || localStorage.getItem("user") || "{}";
             return JSON.parse(raw);
         } catch {
             return {};
@@ -35,13 +35,13 @@ class AuditService {
         };
         const list = [item, ...this.list(this.max - 1)];
         localStorage.setItem(this.key, JSON.stringify(list));
-        window.dispatchEvent(new CustomEvent("operation:audit", { detail: item }));
+        window.dispatchEvent(new CustomEvent("toledo:audit", { detail: item }));
         return item;
     }
 
     clear() {
         localStorage.removeItem(this.key);
-        window.dispatchEvent(new CustomEvent("operation:audit-cleared"));
+        window.dispatchEvent(new CustomEvent("toledo:audit-cleared"));
     }
 }
 

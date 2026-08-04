@@ -68,30 +68,17 @@ const HEADER_ROW = {
   orientation: 1
 };
 
-// أدوار النظام، موحّدة في مكان واحد
+// أدوار النظام المعتمدة داخل النظام.
+// Admin: صلاحيات كاملة، بما فيها إدارة المستخدمين وسجل النشاط.
+// User: استخدام الموديولات التشغيلية بدون إدارة المستخدمين.
 const ROLES = {
-  ADMIN: ['admin', 'owner', 'ceo', 'operation', 'operations'],
-  DIRECTOR: ['director'],
-  MANAGER: ['manager'],
-  SALES: ['sales']
+  ADMIN: ['admin'],
+  USER: ['user']
 };
 
-
-
-// الحساب الوحيد المسموح له بفتح وإدارة موديول Users.
-// يفضّل كتابة Username الدقيق في ownerUsernames لزيادة الدقة.
-const SYSTEM_OWNER = Object.freeze({
-  ownerUsernames: [],
-  ownerNames: ['Abdelrahman Mahmoud']
-});
-
-function isSystemOwnerIdentity_(user) {
+function isSystemAdmin_(user) {
   user = user || {};
-  const username = norm_(user.user || user.username);
-  const name = norm_(user.name);
-  const usernames = (SYSTEM_OWNER.ownerUsernames || []).map(norm_).filter(Boolean);
-  const names = (SYSTEM_OWNER.ownerNames || []).map(norm_).filter(Boolean);
-  return (username && usernames.indexOf(username) !== -1) || (name && names.indexOf(name) !== -1);
+  return norm_(user.role) === 'admin';
 }
 
 // إعدادات عامة بتتقرأ من الفرونت إند (datalist options ثابتة)

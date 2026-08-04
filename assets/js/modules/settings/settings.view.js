@@ -59,7 +59,7 @@ export function renderLayout(user, currentTheme, prefs = {}, history = []) {
         <div class="settings-command-center">
             <div class="settings-mini-card"><span>Current User</span><strong>${escapeHtml(user?.name || user?.user || "User")}</strong></div>
             <div class="settings-mini-card"><span>Role</span><strong>${escapeHtml(user?.role || "Admin")}</strong></div>
-            <div class="settings-mini-card"><span>Language</span><strong>${escapeHtml((prefs.language || localStorage.getItem("operation_language") || "en").toUpperCase())}</strong></div>
+            <div class="settings-mini-card"><span>Language</span><strong>${escapeHtml((prefs.language || localStorage.getItem("toledo_language") || "en").toUpperCase())}</strong></div>
             <div class="settings-mini-card"><span>Audit Events</span><strong>${history.length}</strong></div>
         </div>
 

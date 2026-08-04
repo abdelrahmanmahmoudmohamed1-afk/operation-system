@@ -1,4 +1,4 @@
-const CACHE_NAME = "operation-static-v4";
+const CACHE_NAME = "toledo-static-v4";
 const CORE = [
   "./", "./index.html", "./assets/css/style.css", "./layouts/login.html", "./layouts/main.html",
   "./assets/js/core/app.js", "./assets/js/core/router.js", "./assets/js/core/module-loader.js",

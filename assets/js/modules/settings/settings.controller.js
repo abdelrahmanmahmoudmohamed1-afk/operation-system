@@ -6,7 +6,7 @@ import { renderLayout } from "./settings.view.js";
 class SettingsController extends Module {
     constructor() {
         super();
-        this.prefKey = "operation_system_preferences_v1";
+        this.prefKey = "toledo_system_preferences_v1";
     }
 
     async render() {
@@ -90,7 +90,7 @@ class SettingsController extends Module {
 
     applyPrefsToForm(prefs) {
         const set = (id, value) => { const el = document.getElementById(id); if (!el || value === undefined) return; if (el.type === "checkbox") el.checked = !!value; else el.value = value; };
-        set("settings-language", prefs.language || localStorage.getItem("operation_language") || "en");
+        set("settings-language", prefs.language || localStorage.getItem("toledo_language") || "en");
         set("settings-number-format", prefs.numberFormat || "en-EG");
         set("settings-default-route", prefs.defaultRoute || "overview");
         set("settings-report-source", prefs.reportSource || "auto");
@@ -122,7 +122,7 @@ class SettingsController extends Module {
             saveHistory: this.val("settings-save-history", true)
         };
         localStorage.setItem(this.prefKey, JSON.stringify(prefs));
-        localStorage.setItem("operation_language", prefs.language);
+        localStorage.setItem("toledo_language", prefs.language);
         document.documentElement.lang = prefs.language;
         document.documentElement.dir = prefs.language === "ar" ? "rtl" : "ltr";
         document.body.classList.toggle("compact-density", !!prefs.compactMode);

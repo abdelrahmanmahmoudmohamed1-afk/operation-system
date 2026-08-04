@@ -4,7 +4,7 @@ const THEME_CONFIG = Object.freeze({
     themes: {
         dark: "assets/themes/dark.css",
         light: "assets/themes/light.css",
-        operation: "assets/themes/operation.css",
+        toledo: "assets/themes/toledo.css",
         genius: "assets/themes/genius.css",
         aurora: "assets/themes/aurora.css",
         obsidian: "assets/themes/obsidian.css",

@@ -25,10 +25,12 @@ class Router {
     async load(routeName, pushState = true) {
         const moduleConfig = MODULES[routeName];
         const authManager = Container.get("authManager");
-        if (routeName === "users" && !authManager.getUser()?.isOwner) {
-            this.logger().warn("Blocked unauthorized Users route access");
+        const permissionManager = Container.get("permissionManager");
+        const role = String(authManager.getUser()?.role || "user").toLowerCase();
+        if (!permissionManager.can(role, routeName)) {
+            this.logger().warn(`Blocked unauthorized route access: ${routeName}`);
             routeName = "overview";
-            return this.load(routeName, pushState);
+            if (routeName !== this.currentRoute) return this.load(routeName, pushState);
         }
 
         if (!moduleConfig) {

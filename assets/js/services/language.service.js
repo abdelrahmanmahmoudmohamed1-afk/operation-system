@@ -3,7 +3,7 @@ import EN from "../../localization/en.js";
 import AR from "../../localization/ar.js";
 
 const DICTS = { en: EN, ar: AR };
-const STORAGE_KEY = "operation_language";
+const STORAGE_KEY = "toledo_language";
 
 class LanguageService {
     constructor() {
@@ -20,7 +20,7 @@ class LanguageService {
         localStorage.setItem(STORAGE_KEY, language);
         document.documentElement.lang = language;
         document.documentElement.dir = language === "ar" ? "rtl" : "ltr";
-        window.dispatchEvent(new CustomEvent("operation:language-changed", { detail: { language } }));
+        window.dispatchEvent(new CustomEvent("toledo:language-changed", { detail: { language } }));
     }
 
     init() {

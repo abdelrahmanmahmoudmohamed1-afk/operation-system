@@ -8,7 +8,7 @@ class ReportsController extends Module {
     constructor() {
         super();
         this.data = null;
-        this.savedKey = "operation_saved_reports_enterprise_v3";
+        this.savedKey = "toledo_saved_reports_enterprise_v3";
     }
 
     async render() {
@@ -63,7 +63,7 @@ class ReportsController extends Module {
             OutdoorArea: Number(pick("OutdoorArea", "Outdoor Area", "Out Door Area", "Terrace Area", "Garden Area")) || 0,
             AvgSalesPrice: 0,
             Client: pick("Client", "ClientName", "Client Name", "client"),
-            Phone: pick("Phone", "Client Phone Number", "Client Phone Number 2", "Client Phone", "ClientPhone", "Mobile"),
+            Phone: pick("Phone", "Client Phone", "ClientPhone", "Mobile"),
             Sales: pick("Sales", "SalesName", "Sales Name", "Sales Agent", "sales"),
             Broker: pick("Broker", "BrokerCompany", "Broker Company", "broker"),
             Manager: pick("Manager", "SalesManager", "Sales Manager"),

@@ -4,7 +4,6 @@ const MENU = Object.freeze([
     { label: "Inventory", route: "inventory", code: "INV", icon: "▦" },
     { label: "Payment", route: "payment", code: "PAY", icon: "◍" },
     { label: "CRM", route: "crm", code: "CRM", icon: "☻" },
-    { label: "Leads", route: "leads", code: "LDS", icon: "◎" },
     { label: "EOI", route: "eoi", code: "EOI", icon: "✎" },
     { label: "Reports", route: "reports", code: "RPT", icon: "▤" },
     { label: "Contracts", route: "contracts", code: "CTR", icon: "▣" },
