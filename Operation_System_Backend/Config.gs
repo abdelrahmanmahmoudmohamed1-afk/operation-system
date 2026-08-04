@@ -1,6 +1,6 @@
 /**
  * ===========================================================
- * TOLEDO UNIFIED BACKEND — Config.gs
+ * OPERATION SYSTEM BACKEND — Config.gs
  * ===========================================================
  * كل الـ Spreadsheet IDs وأسماء الشيتات في مكان واحد فقط.
  * أي تغيير في أي ID أو اسم شيت يتم هنا فقط، باقي الملفات
@@ -75,24 +75,6 @@ const ROLES = {
   MANAGER: ['manager'],
   SALES: ['sales']
 };
-
-
-
-// الحساب الوحيد المسموح له بفتح وإدارة موديول Users.
-// يفضّل كتابة Username الدقيق في ownerUsernames لزيادة الدقة.
-const SYSTEM_OWNER = Object.freeze({
-  ownerUsernames: [],
-  ownerNames: ['Abdelrahman Mahmoud']
-});
-
-function isSystemOwnerIdentity_(user) {
-  user = user || {};
-  const username = norm_(user.user || user.username);
-  const name = norm_(user.name);
-  const usernames = (SYSTEM_OWNER.ownerUsernames || []).map(norm_).filter(Boolean);
-  const names = (SYSTEM_OWNER.ownerNames || []).map(norm_).filter(Boolean);
-  return (username && usernames.indexOf(username) !== -1) || (name && names.indexOf(name) !== -1);
-}
 
 // إعدادات عامة بتتقرأ من الفرونت إند (datalist options ثابتة)
 const STATIC_LISTS = {

@@ -1,16 +1,16 @@
 /**
  * ===========================================================
- * TOLEDO UNIFIED BACKEND — Code.gs
+ * OPERATION SYSTEM BACKEND — Code.gs
  * ===========================================================
  * نقطة دخول الـ Web App الوحيدة لكل النظام. بيقدّم الفرونت إند
- * (Toledo System) وبيشغّل كل الـ API functions اللي الموديولات
+ * (Operation System) وبيشغّل كل الـ API functions اللي الموديولات
  * المختلفة (Dashboard, CRM, Inventory, EOI...) بتناديها عن طريق
  * google.script.run.
  * ===========================================================
  */
 
 /**
- * الفرونت إند بتاعك (Toledo System) مستضاف لوحده ومش جوه Apps
+ * الفرونت إند بتاعك (Operation System) مستضاف لوحده ومش جوه Apps
  * Script، وبيكلم الباك إند بـ fetch() عادي بنظام { action, ...payload }
  * (شوف api.service.js). فالباك إند هنا شغّال كـ JSON API بس، مش
  * بيقدّم صفحة HTML.
@@ -69,7 +69,6 @@ const ACTION_MAP = {
 
   // Users & Audit
   getUsersData: (p) => getUsersData(p.token),
-  createSystemUser: (p) => createSystemUser(p.token, p.data),
   getAuditHistory: (p) => getAuditHistory(p.token, p.filters)
 };
 

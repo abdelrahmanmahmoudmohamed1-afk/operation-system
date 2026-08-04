@@ -60,7 +60,8 @@ class LayoutManager {
         const authManager = Container.get("authManager");
         const permissionManager = Container.get("permissionManager");
         const role = String(authManager.getUser()?.role || "user").toLowerCase();
-        const visibleMenu = MENU.filter((item) => permissionManager.can(role, item.route));
+        const user = authManager.getUser() || {};
+        const visibleMenu = MENU.filter((item) => item.route === "users" ? Boolean(user.isOwner) : permissionManager.can(role, item.route));
         const sidebar = new Sidebar(visibleMenu);
         sidebarContainer.innerHTML = sidebar.render();
     }

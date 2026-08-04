@@ -1,6 +1,6 @@
 /**
  * ===========================================================
- * TOLEDO UNIFIED BACKEND — Auth.gs
+ * OPERATION SYSTEM BACKEND — Auth.gs
  * ===========================================================
  * تسجيل دخول واحد لكل الموديولات. بيرجع توكن (session token)
  * بدل ما كل صفحة تبعت اليوزر/الباسورد تاني في كل طلب، وده
@@ -8,9 +8,9 @@
  * ===========================================================
  */
 
-const AUTH_CACHE_PREFIX = 'toledo_auth_';
+const AUTH_CACHE_PREFIX = 'operation_system_auth_';
 const AUTH_SECONDS = 21600; // 6 ساعات
-const LOGIN_ATTEMPT_PREFIX = 'toledo_login_attempt_';
+const LOGIN_ATTEMPT_PREFIX = 'operation_system_login_attempt_';
 const LOGIN_MAX_ATTEMPTS = 5;
 const LOGIN_BLOCK_SECONDS = 900; // 15 دقيقة
 
@@ -60,7 +60,6 @@ function login(username, password) {
           salesManager: clean_(getByAlias_(row, headerMap, managerAliases)),
           salesDirector: clean_(getByAlias_(row, headerMap, directorAliases))
         };
-        user.isOwner = isSystemOwnerIdentity_(user);
 
         const token = Utilities.getUuid();
         cache.remove(attemptKey);

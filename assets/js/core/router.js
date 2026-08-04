@@ -24,6 +24,12 @@ class Router {
 
     async load(routeName, pushState = true) {
         const moduleConfig = MODULES[routeName];
+        const authManager = Container.get("authManager");
+        if (routeName === "users" && !authManager.getUser()?.isOwner) {
+            this.logger().warn("Blocked unauthorized Users route access");
+            routeName = "overview";
+            return this.load(routeName, pushState);
+        }
 
         if (!moduleConfig) {
             this.logger().warn(`Route not found: ${routeName}`);

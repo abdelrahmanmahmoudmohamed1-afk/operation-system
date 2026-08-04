@@ -30,6 +30,7 @@ const ENDPOINTS = Object.freeze({
     EOI_DATA: "getEOIData",
 
     USERS_DATA: "getUsersData",
+    CREATE_SYSTEM_USER: "createSystemUser",
     AUDIT_HISTORY: "getAuditHistory"
 });
 

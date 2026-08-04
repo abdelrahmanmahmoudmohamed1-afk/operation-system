@@ -11,6 +11,12 @@ class UsersService {
         return result.data?.data || result.data || { users: [], summary: {} };
     }
 
+    async createUser(data) {
+        const result = await ApiService.post(ENDPOINTS.CREATE_SYSTEM_USER, { token: this.token(), data }, { forceRefresh: true });
+        if (!result.ok) throw new Error(result.message);
+        return result.data?.data || result.data;
+    }
+
     async loadHistory(filters = {}, forceRefresh = false) {
         const result = await ApiService.post(ENDPOINTS.AUDIT_HISTORY, {
             token: this.token(), filters

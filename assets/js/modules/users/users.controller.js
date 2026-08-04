@@ -67,6 +67,9 @@ class UsersController extends Module {
 
     bindEvents() {
         document.getElementById("users-search")?.addEventListener("input", () => this.drawUsers());
+        document.getElementById("users-add-btn")?.addEventListener("click", () => this.toggleCreateModal(true));
+        ["user-create-close","user-create-cancel"].forEach(id => document.getElementById(id)?.addEventListener("click", () => this.toggleCreateModal(false)));
+        document.getElementById("user-create-save")?.addEventListener("click", () => this.createUser());
         document.getElementById("users-refresh-btn")?.addEventListener("click", () => this.loadAll(true));
         document.getElementById("audit-apply")?.addEventListener("click", () => this.loadHistory(true));
         document.getElementById("audit-result")?.addEventListener("change", () => this.drawHistory());
@@ -77,6 +80,34 @@ class UsersController extends Module {
             this.loadHistory(true);
         });
         document.getElementById("users-export-btn")?.addEventListener("click", () => this.exportCsv());
+    }
+
+    toggleCreateModal(show) {
+        document.getElementById("user-create-modal")?.classList.toggle("hidden", !show);
+    }
+
+    async createUser() {
+        const button = document.getElementById("user-create-save");
+        const data = {
+            name: document.getElementById("new-user-name")?.value.trim(),
+            username: document.getElementById("new-user-username")?.value.trim(),
+            password: document.getElementById("new-user-password")?.value,
+            role: document.getElementById("new-user-role")?.value,
+            manager: document.getElementById("new-user-manager")?.value.trim(),
+            director: document.getElementById("new-user-director")?.value.trim(),
+            email: document.getElementById("new-user-email")?.value.trim(),
+            mobile: document.getElementById("new-user-mobile")?.value.trim(),
+            active: Boolean(document.getElementById("new-user-active")?.checked)
+        };
+        if (!data.name || !data.username || !data.password) return this.notify().warning("Name, username and password are required.");
+        try {
+            if (button) { button.disabled = true; button.textContent = "Creating..."; }
+            await UsersService.createUser(data);
+            this.notify().success("User created successfully");
+            this.toggleCreateModal(false);
+            await this.loadAll(true);
+        } catch (error) { this.notify().error(error.message); }
+        finally { if (button) { button.disabled = false; button.textContent = "Create User"; } }
     }
 
     exportCsv() {

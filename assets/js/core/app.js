@@ -209,13 +209,13 @@ class App {
             const term = input.value.trim();
             if (!term) return;
             const target = type?.value || "all";
-            sessionStorage.setItem("operation_system_global_search", JSON.stringify({ term, target, ts: Date.now() }));
+            sessionStorage.setItem("toledo_global_search", JSON.stringify({ term, target, ts: Date.now() }));
 
             const route = target === "inventory" ? "inventory" : target === "eoi" ? "eoi" : target === "reports" ? "reports" : "crm";
             if (location.hash.replace("#", "") !== route) {
                 await this.router.load(route);
             } else {
-                window.dispatchEvent(new CustomEvent("operation-system:global-search", { detail: { term, target } }));
+                window.dispatchEvent(new CustomEvent("toledo:global-search", { detail: { term, target } }));
             }
         };
 
@@ -238,12 +238,12 @@ class App {
     bindLanguageSwitch() {
         const select = document.getElementById("language-switcher");
         if (!select) return;
-        const saved = localStorage.getItem("operation_system_language") || "en";
+        const saved = localStorage.getItem("toledo_language") || "en";
         select.value = saved;
         document.documentElement.lang = saved;
         document.documentElement.dir = saved === "ar" ? "rtl" : "ltr";
         select.addEventListener("change", () => {
-            localStorage.setItem("operation_system_language", select.value);
+            localStorage.setItem("toledo_language", select.value);
             document.documentElement.lang = select.value;
             document.documentElement.dir = select.value === "ar" ? "rtl" : "ltr";
             location.reload();
@@ -361,17 +361,17 @@ class App {
     bindSessionExpiry() {
         if (this.sessionExpiryBound) return;
         this.sessionExpiryBound = true;
-        window.addEventListener("operation-system:session-expired", () => {
+        window.addEventListener("toledo:session-expired", () => {
             Container.get("authManager")?.logout();
             location.reload();
         });
     }
 
     setBusy(active, message = "Loading...") {
-        let overlay = document.getElementById("operation-system-action-loader");
+        let overlay = document.getElementById("toledo-action-loader");
         if (!overlay) {
             overlay = document.createElement("div");
-            overlay.id = "operation-system-action-loader";
+            overlay.id = "toledo-action-loader";
             overlay.className = "action-loader hidden";
             overlay.innerHTML = `<div class="action-loader-box"><span class="action-spinner"></span><strong></strong></div>`;
             document.body.appendChild(overlay);
@@ -381,7 +381,7 @@ class App {
     }
 
     applyLanguageLabels() {
-        const lang = localStorage.getItem("operation_system_language") || "en";
+        const lang = localStorage.getItem("toledo_language") || "en";
         const ar = lang === "ar";
         const map = ar ? {
             "Overview": "نظرة عامة", "Dashboard": "لوحة التحكم", "Inventory": "المخزون", "Payment": "خطط السداد",
