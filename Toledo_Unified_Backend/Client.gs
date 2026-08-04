@@ -153,7 +153,10 @@ function getClients(token, filters) {
     const q = norm_(filters.search);
     rows = rows.filter(x =>
       norm_(x.clientName).indexOf(q) !== -1 ||
-      norm_(x.unitCode).indexOf(q) !== -1
+      norm_(x.unitCode).indexOf(q) !== -1 ||
+      norm_(x.clientPhone).indexOf(q) !== -1 ||
+      norm_(x.clientPhone2).indexOf(q) !== -1 ||
+      norm_(x.clientAddress).indexOf(q) !== -1
     );
   }
 
@@ -163,6 +166,9 @@ function getClients(token, filters) {
     unitType: x.unitType,
     status: x.status,
     clientName: x.clientName,
+    clientPhone: x.clientPhone || '',
+    clientPhone2: x.clientPhone2 || '',
+    clientAddress: x.clientAddress || '',
     salesName: x.salesName,
     salesManager: x.salesManager,
     salesDirector: x.salesDirector,

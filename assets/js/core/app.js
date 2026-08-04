@@ -95,22 +95,22 @@ class App {
                 const password = document.getElementById("login-password").value;
 
                 if (!username || !password) {
-                    errorBox.textContent = "من فضلك أدخل اسم المستخدم وكلمة المرور";
+                    errorBox.textContent = "Please enter your username and password.";
                     errorBox.classList.remove("hidden");
                     return;
                 }
 
                 submitBtn.disabled = true;
-                submitBtn.textContent = "جاري الدخول...";
+                submitBtn.textContent = "Signing you in...";
                 errorBox.classList.add("hidden");
 
                 const result = await AuthService.login(username, password);
 
                 submitBtn.disabled = false;
-                submitBtn.textContent = "تسجيل الدخول";
+                submitBtn.textContent = "Log In";
 
                 if (!result.success) {
-                    errorBox.textContent = result.message || "بيانات الدخول غير صحيحة";
+                    errorBox.textContent = result.message || "Invalid username or password.";
                     errorBox.classList.remove("hidden");
                     return;
                 }
@@ -123,7 +123,7 @@ class App {
     }
 
     /**
-     * تحميل التخطيط الرئيسي + الراوتر بعد التأكد من تسجيل الدخول.
+     * تحميل التخطيط الرئيسي + الراوتر بعد التأكد من Log In.
      */
     async startApp() {
         await this.layoutManager.loadMainLayout();

@@ -23,7 +23,9 @@ class ApiService {
             ["getCompanies", 10 * 60 * 1000],
             ["getManagerDirector", 10 * 60 * 1000],
             ["getEOIFormBootstrap", 5 * 60 * 1000],
-            ["getEOIData", 90 * 1000]
+            ["getEOIData", 90 * 1000],
+            ["getUsersData", 60 * 1000],
+            ["getAuditHistory", 30 * 1000]
         ]);
         this.mutations = new Set(["login", "logout", "changeOwnPassword", "saveClientRegistration", "saveEOI", "refreshAvailableLayanaUnits"]);
     }

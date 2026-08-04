@@ -65,7 +65,11 @@ const ACTION_MAP = {
   // EOI
   getEOIFormBootstrap: (p) => { requireAuth_(p.token); return getEOIFormBootstrap(); },
   saveEOI: (p) => saveEOI(p.token, p.data),
-  getEOIData: (p) => getEOIData(p.token, p.filters)
+  getEOIData: (p) => getEOIData(p.token, p.filters),
+
+  // Users & Audit
+  getUsersData: (p) => getUsersData(p.token),
+  getAuditHistory: (p) => getAuditHistory(p.token, p.filters)
 };
 
 function handleRequest_(params) {
@@ -76,17 +80,24 @@ function handleRequest_(params) {
     return jsonOutput_({ ok: false, message: 'Unknown action: ' + action });
   }
 
+  const startedAt = new Date();
+  const startMs = Date.now();
+  let payload = null;
   try {
-    // لو الـ payload جاي كـ JSON string جوه param (حالة GET)، نفكّه
-    const payload = normalizeParams_(params);
+    payload = normalizeParams_(params);
     const result = handler(payload);
+    try { recordApiAudit_(action, payload, true, '', Date.now() - startMs, startedAt); } catch (auditErr) {}
     return jsonOutput_({ ok: true, message: 'OK', data: result });
   } catch (err) {
     const message = err && err.message ? err.message : String(err);
+    try { recordApiAudit_(action, payload || params, false, message, Date.now() - startMs, startedAt); } catch (auditErr) {}
 
     // رسايل مخصوصة لانتهاء الجلسة عشان الفرونت إند يرجّع لصفحة اللوجين
     if (message === 'AUTH_REQUIRED' || message === 'SESSION_EXPIRED') {
       return jsonOutput_({ ok: false, status: 401, message: message });
+    }
+    if (message === 'FORBIDDEN') {
+      return jsonOutput_({ ok: false, status: 403, message: 'You do not have permission to access this module.' });
     }
 
     return jsonOutput_({ ok: false, message: message });

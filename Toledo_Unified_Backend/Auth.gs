@@ -25,14 +25,14 @@ function login(username, password) {
     const p = clean_(password);
 
     if (!u || !p) {
-      return { success: false, message: 'برجاء إدخال اسم المستخدم وكلمة المرور' };
+      return { success: false, message: 'Please enter your username and password.' };
     }
 
     const cache = CacheService.getScriptCache();
     const attemptKey = LOGIN_ATTEMPT_PREFIX + Utilities.base64EncodeWebSafe(u).slice(0, 80);
     const attempts = Number(cache.get(attemptKey) || 0);
     if (attempts >= LOGIN_MAX_ATTEMPTS) {
-      return { success: false, message: 'تم إيقاف محاولات الدخول مؤقتًا. حاول مرة أخرى بعد 15 دقيقة' };
+      return { success: false, message: 'Too many failed attempts. Please try again in 15 minutes.' };
     }
 
     const ss = SpreadsheetApp.openById(SPREADSHEETS.SETTINGS);
@@ -74,9 +74,9 @@ function login(username, password) {
     }
 
     cache.put(attemptKey, String(attempts + 1), LOGIN_BLOCK_SECONDS);
-    return { success: false, message: 'اسم المستخدم أو كلمة المرور غير صحيحة' };
+    return { success: false, message: 'Invalid username or password.' };
   } catch (err) {
-    return { success: false, message: 'خطأ في تسجيل الدخول: ' + err.message };
+    return { success: false, message: 'Login error: ' + err.message };
   }
 }
 
@@ -126,10 +126,10 @@ function changeOwnPassword(token, oldPassword, newPassword) {
     const newPass = clean_(newPassword);
 
     if (!oldPass || !newPass) {
-      return { success: false, message: 'كلمة المرور الحالية والجديدة مطلوبتين' };
+      return { success: false, message: 'Current and new passwords are required.' };
     }
     if (newPass.length < 6) {
-      return { success: false, message: 'كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل' };
+      return { success: false, message: 'The new password must be at least 6 characters.' };
     }
 
     const usernameAliases = ['Username', 'User'];
@@ -145,7 +145,7 @@ function changeOwnPassword(token, oldPassword, newPassword) {
 
       if (norm_(rowUsername) === norm_(session.user)) {
         if (rowPassword !== oldPass) {
-          return { success: false, message: 'كلمة المرور الحالية غير صحيحة' };
+          return { success: false, message: 'The current password is incorrect.' };
         }
         if (passwordColIdx !== -1) {
           usersSheet.getRange(i + 1, passwordColIdx + 1).setValue(newPass);
@@ -158,13 +158,13 @@ function changeOwnPassword(token, oldPassword, newPassword) {
             'PASSWORD CHANGED'
           ]);
         }
-        return { success: true, message: 'تم تغيير كلمة المرور بنجاح' };
+        return { success: true, message: 'Password changed successfully.' };
       }
     }
 
-    return { success: false, message: 'المستخدم غير موجود' };
+    return { success: false, message: 'User not found.' };
   } catch (err) {
-    return { success: false, message: 'خطأ: ' + err.message };
+    return { success: false, message: 'Error: ' + err.message };
   }
 }
 

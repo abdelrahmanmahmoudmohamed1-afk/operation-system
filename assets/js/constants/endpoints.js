@@ -27,7 +27,10 @@ const ENDPOINTS = Object.freeze({
 
     EOI_FORM_BOOTSTRAP: "getEOIFormBootstrap",
     SAVE_EOI: "saveEOI",
-    EOI_DATA: "getEOIData"
+    EOI_DATA: "getEOIData",
+
+    USERS_DATA: "getUsersData",
+    AUDIT_HISTORY: "getAuditHistory"
 });
 
 export default ENDPOINTS;

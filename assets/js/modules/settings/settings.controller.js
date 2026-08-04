@@ -140,7 +140,7 @@ class SettingsController extends Module {
         const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = "toledo_activity_history.csv";
+        a.download = "operation-system-activity-history.csv";
         a.click();
         URL.revokeObjectURL(a.href);
         AuditService.record("Audit exported", "Settings", { rows: rows.length });

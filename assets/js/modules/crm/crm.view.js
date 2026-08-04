@@ -12,6 +12,8 @@ const TABLE_COLUMNS = [
     { key: "unitCode", label: "Unit Code" },
     { key: "project", label: "Project" },
     { key: "clientName", label: "Client" },
+    { key: "clientPhone", label: "Mobile" },
+    { key: "clientAddress", label: "Address" },
     { key: "salesName", label: "Sales" },
     { key: "status", label: "Status" },
     { key: "soldPrice", label: "Value" },
@@ -36,7 +38,7 @@ export function renderLayout() {
         <div class="filter-bar">
             <div class="filter-field">
                 <label>Search</label>
-                <input type="text" id="crm-search" placeholder="Client name or unit code">
+                <input type="text" id="crm-search" placeholder="Client, mobile, address or unit code">
             </div>
             <button class="btn btn-outline" id="crm-refresh-btn">Refresh</button>
         </div>
@@ -64,6 +66,8 @@ export function renderTableRows(rows) {
             <td>${escapeHtml(row.unitCode)}</td>
             <td>${escapeHtml(row.project)}</td>
             <td>${escapeHtml(row.clientName)}</td>
+            <td><div>${escapeHtml(row.clientPhone || "-")}</div><small>${escapeHtml(row.clientPhone2 || "")}</small></td>
+            <td class="cell-wrap">${escapeHtml(row.clientAddress || "-")}</td>
             <td>${escapeHtml(row.salesName)}</td>
             <td>${statusBadge(row.status)}</td>
             <td>${Formatter.money(row.soldPrice)}</td>

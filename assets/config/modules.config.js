@@ -80,6 +80,16 @@ const MODULES = Object.freeze({
         permissions: []
     },
 
+    users: {
+        name: "Users",
+        route: "users",
+        folder: "users",
+        controller: "users.controller.js",
+        service: "users.service.js",
+        view: "users.view.js",
+        permissions: ["admin", "owner", "ceo", "operation", "operations"]
+    },
+
     settings: {
         name: "Settings",
         route: "settings",

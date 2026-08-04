@@ -85,9 +85,9 @@ class ModuleLoader {
                         <div class="route-logo-build">
                             <span class="route-logo-orbit"></span>
                             <span class="route-logo-orbit route-logo-orbit-2"></span>
-                            <div class="route-logo-mask"><img src="https://i.ibb.co/FLnH6Fw2/1cf98fc6-5c25-4af8-8af0-1e556340272f.jpg" alt="Toledo"></div>
+                            <div class="route-logo-mask"><img src="https://i.ibb.co/FLnH6Fw2/1cf98fc6-5c25-4af8-8af0-1e556340272f.jpg" alt="Company logo"></div>
                         </div>
-                        <div class="route-loader-copy"><strong>TOLEDO</strong><span>Preparing your page…</span></div>
+                        <div class="route-loader-copy"><strong>OPERATION SYSTEM</strong><span>Preparing your page…</span></div>
                         <div class="route-loader-line"><i></i></div>
                     </div>`;
                 document.body.appendChild(overlay);

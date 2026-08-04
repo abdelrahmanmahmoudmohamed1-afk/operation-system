@@ -7,8 +7,8 @@ class Sidebar {
         return `
             <div class="sidebar sidebar-horizontal premium-nav">
                 <div class="sidebar-brand">
-                    <img class="sidebar-brand-logo" src="https://i.ibb.co/FLnH6Fw2/1cf98fc6-5c25-4af8-8af0-1e556340272f.jpg" alt="Toledo">
-                    <span>TOLEDO</span>
+                    <img class="sidebar-brand-logo" src="https://i.ibb.co/FLnH6Fw2/1cf98fc6-5c25-4af8-8af0-1e556340272f.jpg" alt="Company logo">
+                    <span>Operation System</span>
                 </div>
 
                 <div class="sidebar-nav sidebar-nav-horizontal">

@@ -14,7 +14,7 @@ export function renderLayout() {
     return `
         <div class="overview-hero card">
             <div>
-                <div class="eyebrow">Toledo CRM</div>
+                <div class="eyebrow">Operation CRM</div>
                 <h1>Business Overview</h1>
                 <p id="overview-meta">Loading executive summary...</p>
             </div>

@@ -57,7 +57,11 @@ class LayoutManager {
             return;
         }
 
-        const sidebar = new Sidebar(MENU);
+        const authManager = Container.get("authManager");
+        const permissionManager = Container.get("permissionManager");
+        const role = String(authManager.getUser()?.role || "user").toLowerCase();
+        const visibleMenu = MENU.filter((item) => permissionManager.can(role, item.route));
+        const sidebar = new Sidebar(visibleMenu);
         sidebarContainer.innerHTML = sidebar.render();
     }
 

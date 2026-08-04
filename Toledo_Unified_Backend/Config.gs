@@ -32,6 +32,7 @@ const SHEET_NAMES = {
   // من SETTINGS
   users: 'User&Pass',
   passwordLog: 'Password Log',
+  auditLog: 'System Audit Log',
   salesData: 'Sales Data',
   salesCompany: 'Sales Company',
   orientation: 'Orientation Sheet',
@@ -117,6 +118,9 @@ const FIELD_ALIASES = {
   contractPlace: ['Contract Place'],
   clientType: ['Client Type', 'Clint Type', 'Contract Type'],
   clientName: ['Client Name English', 'Client Name Arabic', 'Client Name'],
+  clientPhone: ['Client Phone', 'Phone', 'Mobile', 'Mobile Number', 'Primary Mobile'],
+  clientPhone2: ['Client Phone 2', 'Secondary Mobile', 'Mobile 2', 'Alternate Phone'],
+  clientAddress: ['Client Address', 'Address', 'Full Address', 'Residence Address'],
   gender: ['Client Gender', 'Gender', 'Sex'],
   salesTeamName: ['Sales Name', 'Sales', 'Name'],
   salesTeamManager: ['Manager', 'Sales Manager'],

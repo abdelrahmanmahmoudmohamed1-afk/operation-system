@@ -1,9 +1,9 @@
 const APP_CONFIG = Object.freeze({
-    name: "Toledo Operation System",
+    name: "Operation System",
     version: "3.0.0",
     environment: "production",
 
-    company: "Toledo Developments",
+    company: "Operation System",
     defaultLanguage: "en",
     defaultTheme: "genius"
 });

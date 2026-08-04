@@ -45,11 +45,11 @@ class CRMController extends Module {
             if (tbody) {
                 tbody.innerHTML = this.clients.length
                     ? renderTableRows(this.clients)
-                    : renderEmptyRow(7, search ? "No clients match your search" : "No clients registered yet");
+                    : renderEmptyRow(9, search ? "No clients match your search" : "No clients registered yet");
             }
         } catch (error) {
             this.logger().error("CRM load failed", error);
-            if (tbody) tbody.innerHTML = renderErrorRow(7, error.message);
+            if (tbody) tbody.innerHTML = renderErrorRow(9, error.message);
             this.notify().error(error.message);
         }
     }

@@ -2,7 +2,7 @@ import { escapeHtml } from "../../utils/helpers.js";
 
 const themeMeta = [
     ["genius", "Genius", "Financial terminal glass style"],
-    ["toledo", "Toledo Brand", "Dark navy and brass identity"],
+    
     ["odoo", "Odoo ERP", "Clean ERP workspace with purple accent"],
     ["oracle", "Oracle ERP", "White executive workspace with red accent"],
     ["sap", "SAP Fiori", "Clear blue enterprise operations theme"],
