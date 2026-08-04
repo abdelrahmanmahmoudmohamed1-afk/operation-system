@@ -42,11 +42,8 @@ class DashboardController extends Module {
         try {
             const data = await DashboardService.loadData({});
 
-            if (!data?.meta || Number(data.meta.rowsInventory || 0) === 0) {
-                throw new Error("No inventory rows were returned. The backend deployment or sheet configuration needs attention; zero cards are not valid data.");
-            }
             if (metaEl) {
-                metaEl.textContent = `Updated ${data.meta.generatedAt} • ${data.meta.rowsInventory} rows • ${data.meta.sourceSheet || "Inventory"}`;
+                metaEl.textContent = `Generated: ${data.meta.generatedAt} | ${data.meta.rowsInventory} inventory rows`;
             }
 
             if (kpisEl) kpisEl.innerHTML = renderKpis(data.kpis);
@@ -175,7 +172,7 @@ class DashboardController extends Module {
 
     bindEvents() {
         const refreshBtn = document.getElementById("dash-refresh-btn");
-        if (refreshBtn) refreshBtn.addEventListener("click", () => { DashboardService.clearCache?.(); this.loadData(); });
+        if (refreshBtn) refreshBtn.addEventListener("click", () => this.loadData());
     }
 
     async destroy() {

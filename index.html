@@ -13,12 +13,69 @@
          يتطبق فورًا من أول رسمة للصفحة، قبل ما الجافاسكريبت يشتغل
          ويحمّل ملف الثيم ديناميكيًا. كده مفيش "ومضة" شكل بايظ. -->
     <style>
-        #bootLoader{position:fixed;inset:0;z-index:999999;display:grid;place-items:center;background:radial-gradient(circle at 18% 18%,rgba(210,48,38,.22),transparent 30%),radial-gradient(circle at 82% 22%,rgba(232,179,76,.16),transparent 30%),linear-gradient(145deg,#110d0c,#241714 58%,#120e0d);transition:opacity .55s ease,visibility .55s ease;overflow:hidden}
-        #bootLoader::before{content:"";position:absolute;inset:-30%;background:conic-gradient(from 180deg,transparent,rgba(255,238,194,.07),transparent 38%);animation:bootAura 8s linear infinite}
-        #bootLoader.hidden{opacity:0;visibility:hidden;pointer-events:none}.boot-panel{position:relative;width:min(460px,calc(100vw - 34px));padding:42px 38px 34px;border-radius:34px;text-align:center;background:linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,.035));border:1px solid rgba(255,236,194,.20);box-shadow:0 36px 110px rgba(0,0,0,.45),inset 0 1px rgba(255,255,255,.12);backdrop-filter:blur(26px)}
-        .boot-mark{width:94px;height:94px;margin:0 auto 24px;border-radius:27px;padding:5px;background:linear-gradient(145deg,#f5dfaa,#9d251d);box-shadow:0 24px 60px rgba(0,0,0,.36)}.boot-logo-img{width:100%;height:100%;object-fit:cover;border-radius:22px}.boot-brand{font-family:'Cinzel',serif;font-size:31px;font-weight:700;color:#fff1c9;letter-spacing:9px;margin-left:9px}.boot-brand-sub{font:600 11px 'Raleway',sans-serif;color:rgba(255,255,255,.54);letter-spacing:5px;text-transform:uppercase;margin:8px 0 31px}
-        .boot-progress-track{height:7px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;border:1px solid rgba(255,255,255,.06)}.boot-progress-bar{height:100%;width:14%;border-radius:inherit;background:linear-gradient(90deg,#9d251d,#d73526,#f3cf7d);box-shadow:0 0 24px rgba(243,207,125,.42);transition:width .5s ease}.boot-status{margin-top:15px;min-height:18px;color:rgba(255,241,201,.78);font:600 12px 'Inter',sans-serif;letter-spacing:.2px}.boot-steps{display:flex;justify-content:center;gap:7px;margin-top:21px}.boot-step{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.13)}.boot-step.active{background:#f3cf7d;box-shadow:0 0 14px rgba(243,207,125,.65)}
-        @keyframes bootAura{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){#bootLoader::before{animation:none}}
+        #bootLoader {
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background:
+                radial-gradient(circle at center, rgba(201,162,39,.14), transparent 34%),
+                linear-gradient(135deg, #1D232C, #0E1116);
+            transition: opacity .6s ease;
+        }
+        #bootLoader.hidden { opacity: 0; pointer-events: none; }
+        .boot-brand {
+            font-family: 'Cinzel', Georgia, serif;
+            font-size: 30px;
+            font-weight: 700;
+            color: #ECEEF1;
+            letter-spacing: 10px;
+            text-align: center;
+            margin-bottom: 4px;
+            text-shadow: 0 0 40px rgba(201,162,39,.5);
+        }
+        .boot-brand-sub {
+            font-family: 'Raleway', Arial, sans-serif;
+            font-size: 11px;
+            font-weight: 300;
+            color: rgba(236,238,241,.62);
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 48px;
+        }
+        .boot-emblem { position: relative; width: 140px; height: 140px; margin: 0 auto 32px; }
+        .boot-ring {
+            position: absolute; inset: 0; border-radius: 50%;
+            border: 2px solid transparent;
+            border-top-color: #C9A227;
+            border-right-color: #E7DDD0;
+            animation: bootRingRotate 1.8s cubic-bezier(.68,-.55,.27,1.55) infinite;
+        }
+        .boot-ring-2 {
+            inset: 14px;
+            border-top-color: transparent;
+            border-bottom-color: #8A7B65;
+            border-left-color: #C9A227;
+            animation: bootRingRotate 2.4s linear infinite reverse;
+        }
+        .boot-ring-3 { inset: 28px; border: 1px solid rgba(201,162,39,.15); animation: none; }
+        .boot-logo-center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+        .boot-logo-img { width: 88px; height: 88px; object-fit: cover; border-radius: 50%; box-shadow: 0 16px 40px rgba(0,0,0,.32); }
+        @keyframes bootRingRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .boot-divider { width: 120px; height: 1px; background: linear-gradient(90deg, transparent, #C9A227, transparent); margin: 24px auto; }
+        .boot-dots { display: flex; gap: 8px; justify-content: center; }
+        .boot-dot { width: 5px; height: 5px; border-radius: 50%; background: #C9A227; opacity: .2; animation: bootDotPulse 1.4s ease-in-out infinite; }
+        .boot-dot:nth-child(1) { animation-delay: 0s; }
+        .boot-dot:nth-child(2) { animation-delay: .2s; }
+        .boot-dot:nth-child(3) { animation-delay: .4s; }
+        .boot-dot:nth-child(4) { animation-delay: .6s; }
+        .boot-dot:nth-child(5) { animation-delay: .8s; }
+        @keyframes bootDotPulse { 0%,100% { opacity:.15; transform:scale(1); } 50% { opacity:1; transform:scale(1.5); background:#E7DDD0; } }
+        @media (prefers-reduced-motion: reduce) { .boot-ring, .boot-ring-2, .boot-dot { animation: none; } }
     </style>
 </head>
 <body>
@@ -26,21 +83,31 @@
     <!-- شاشة التحميل ظاهرة فورًا من الـ HTML نفسه قبل ما الـ JS
          حتى يشتغل، عشان أول حاجة تتشاف تكون اللوجو مش صفحة فاضية. -->
     <div id="bootLoader">
-        <div class="boot-panel">
-            <div class="boot-mark"><img src="https://i.ibb.co/FLnH6Fw2/1cf98fc6-5c25-4af8-8af0-1e556340272f.jpg" class="boot-logo-img" alt="Toledo"></div>
-            <div class="boot-brand">TOLEDO</div>
-            <div class="boot-brand-sub">Operation System</div>
-            <div class="boot-progress-track"><div id="bootProgress" class="boot-progress-bar"></div></div>
-            <div id="bootStatus" class="boot-status">Preparing secure workspace…</div>
-            <div class="boot-steps"><i class="boot-step active"></i><i class="boot-step"></i><i class="boot-step"></i><i class="boot-step"></i></div>
+        <div class="boot-brand">TOLEDO</div>
+        <div class="boot-brand-sub">Operation System</div>
+
+        <div class="boot-emblem">
+            <div class="boot-ring"></div>
+            <div class="boot-ring boot-ring-2"></div>
+            <div class="boot-ring boot-ring-3"></div>
+            <div class="boot-logo-center">
+                <img src="https://i.ibb.co/FLnH6Fw2/1cf98fc6-5c25-4af8-8af0-1e556340272f.jpg" class="boot-logo-img" alt="Toledo">
+            </div>
+        </div>
+
+        <div class="boot-divider"></div>
+
+        <div class="boot-dots">
+            <div class="boot-dot"></div>
+            <div class="boot-dot"></div>
+            <div class="boot-dot"></div>
+            <div class="boot-dot"></div>
+            <div class="boot-dot"></div>
         </div>
     </div>
 
     <div id="app"></div>
 
-    <script>
-      (()=>{const b=document.getElementById('bootProgress'),t=document.getElementById('bootStatus'),d=[['Loading interface…',36],['Connecting services…',61],['Preparing your workspace…',84],['Almost ready…',94]];let i=0;window.__toledoBootTimer=setInterval(()=>{if(i>=d.length)return clearInterval(window.__toledoBootTimer);t.textContent=d[i][0];b.style.width=d[i][1]+'%';document.querySelectorAll('.boot-step').forEach((x,n)=>x.classList.toggle('active',n<=i));i++;},650)})();
-    </script>
     <script type="module" src="./assets/js/core/app.js"></script>
 </body>
 </html>

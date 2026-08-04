@@ -24,7 +24,7 @@ class ThemeManager {
         themeLink.rel = "stylesheet";
         // cache-busting: بنضيف رقم وقت عشوائي عشان المتصفح ميستخدمش
         // نسخة قديمة متخزنة من ملف الثيم بعد أي تعديل عليه.
-        themeLink.href = `${themePath}?v=${Date.now()}`;
+        themeLink.href = `${themePath}?v=3.0.0`;
 
         document.head.appendChild(themeLink);
 

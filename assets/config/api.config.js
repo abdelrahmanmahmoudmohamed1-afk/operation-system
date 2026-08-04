@@ -22,7 +22,7 @@ const API_CONFIG = Object.freeze({
     retry: {
         enabled: true,
         maxAttempts: 2,
-        delay: 700
+        delay: 650
     }
 
 });

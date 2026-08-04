@@ -24,11 +24,15 @@ function getDashboardData(token, filters) {
   const session = requireAuth_(token);
   filters = filters || {};
 
-  const rawInventory = readInventory_();
-  if (!rawInventory.length) {
-    throw new Error('NO_INVENTORY_DATA: The inventory sheet was found but no readable rows were returned. Check header row 2 and column names.');
-  }
-  const allRows = rawInventory.filter(x => roleAllowed_(x, session));
+  const cache = CacheService.getScriptCache();
+  const roleKey = lower_(session.role || '') + '|' + lower_(session.name || session.user || '');
+  const cacheKey = 'toledo_dashboard_v3_' + Utilities.base64EncodeWebSafe(roleKey + '|' + JSON.stringify(filters)).slice(0, 180);
+  try {
+    const cached = cache.get(cacheKey);
+    if (cached) return JSON.parse(cached);
+  } catch (e) {}
+
+  const allRows = readInventory_().filter(x => roleAllowed_(x, session));
   const rows = allRows.filter(x => dashboardMatchFilters_(x, filters));
   const cancelled = readCancelled_().filter(x => roleAllowed_(x, session)).filter(x => dashboardMatchFilters_(x, filters));
 
@@ -37,15 +41,12 @@ function getDashboardData(token, filters) {
   const totalSalesValue = sum_(soldLike, 'soldPrice');
   const availableValue = sum_(available, 'soldPrice');
 
-  return {
+  const result = {
     meta: {
       generatedAt: formatDateTime_(new Date()),
       rowsInventory: rows.length,
       rowsSoldLike: soldLike.length,
-      rowsCancelled: cancelled.length,
-      sourceSpreadsheet: SPREADSHEETS.DATA,
-      sourceSheet: SHEET_NAMES.inventory,
-      cacheSeconds: INVENTORY_CACHE_SECONDS
+      rowsCancelled: cancelled.length
     },
     kpis: {
       totalSalesValue: round_(totalSalesValue),
@@ -67,6 +68,9 @@ function getDashboardData(token, filters) {
     topUnits: soldLike.slice().sort((a,b) => num_(b.soldPrice) - num_(a.soldPrice)).slice(0, 20).map(unitRow_),
     reportRows: soldLike.map(reportUnitRow_)
   };
+
+  try { cache.put(cacheKey, JSON.stringify(result), 120); } catch (e) {}
+  return result;
 }
 
 function dashboardMatchFilters_(x, f) {

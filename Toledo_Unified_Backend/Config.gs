@@ -38,6 +38,7 @@ const SHEET_NAMES = {
 
   // من DATA
   inventory: 'Layana Inventory Management',
+  inventoryAliases: ['Layana Inventory Management', 'Inventory Management'],
   clientDb: 'Layana Transaction',
   cancelled: 'Cancelled Contracts',
   clientRegistration: 'Client Registration',
