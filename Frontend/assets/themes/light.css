@@ -1,0 +1,38 @@
+/* Light theme override */
+:root {
+    --bg: #f8fafc;
+    --bg-soft: #ffffff;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --text-muted: #64748b;
+    --accent: #af8100;
+    --brand: #7d0000;
+}
+
+body { background: var(--bg) !important; color: var(--text) !important; }
+
+.login-screen { background: radial-gradient(circle at 20% 20%, #e2e8f0, #f8fafc 60%) !important; }
+.login-card,
+.topbar,
+.main-content-wrap .app-footer,
+.kpi-card,
+.table-wrap,
+table.data-table,
+.modal-box,
+.placeholder-box,
+.card {
+    background: var(--bg-soft) !important;
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+}
+
+.data-table th { background: #f1f5f9 !important; color: #334155 !important; }
+.data-table tr:hover td { background: #f1f5f9 !important; }
+.sidebar { background: #ffffff !important; border-color: var(--border) !important; }
+.sidebar-nav a { color: #334155 !important; }
+.sidebar-nav a:hover { background: #f1f5f9 !important; }
+.filter-bar input, .filter-bar select, .form-grid input, .form-grid select, .form-grid textarea {
+    background: #f8fafc !important;
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+}

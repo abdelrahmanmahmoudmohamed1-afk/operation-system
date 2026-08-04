@@ -1,0 +1,11 @@
+/* Toledo ERP Light — Odoo-inspired clean workspace */
+:root {
+    --ink:#202428; --surface:#ffffff; --surface-2:#f7f8fa; --line:#dde2ea;
+    --text:#1f2937; --text-muted:#6b7280; --brass:#875A7B; --brass-soft:rgba(135,90,123,.12);
+    --up:#16a34a; --down:#dc2626; --font-display:'Raleway',Arial,sans-serif; --font-ui:'Raleway',Arial,sans-serif;
+}
+body{background:#f4f5f7!important;color:var(--text)!important;}
+.topbar,.sidebar-horizontal,.card,.table-wrap,.kpi-card,.modal-box,.settings-mini-card{background:#fff!important;color:var(--text)!important;border:1px solid var(--line)!important;box-shadow:0 8px 24px rgba(15,23,42,.06)!important;}
+.sidebar-horizontal{border-radius:14px!important}.sidebar-brand,.sidebar-label,.topbar-title{color:var(--text)!important}.sidebar-icon{color:#64748b!important}.sidebar-link.active{background:#f3eaf1!important}.sidebar-link.active .sidebar-icon,.sidebar-link.active .sidebar-label{color:#875A7B!important}.sidebar-link.active::after{background:#875A7B!important}
+.premium-input,.premium-select,input,select,textarea{background:#fff!important;color:var(--text)!important;border:1px solid #cfd7e3!important;box-shadow:none!important}.premium-input:focus,.premium-select:focus,input:focus,select:focus{border-color:#875A7B!important;box-shadow:0 0 0 4px rgba(135,90,123,.12)!important}
+.data-table th{background:#f7f8fa!important;color:#475569!important}.data-table td{color:#1f2937!important;border-color:#e5e7eb!important}.btn-primary{background:#875A7B!important;color:#fff!important}.btn-outline{background:#fff!important;color:#334155!important;border-color:#cbd5e1!important}

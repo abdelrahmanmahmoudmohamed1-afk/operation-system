@@ -1,0 +1,15 @@
+:root {
+    --ink: #020617;
+    --surface: #070b14;
+    --surface-2: #111827;
+    --line: rgba(255,255,255,.10);
+    --text: #f8fafc;
+    --text-muted: #94a3b8;
+    --brass: #e5e7eb;
+    --brass-soft: rgba(229,231,235,.12);
+    --font-display: 'Cinzel', Georgia, serif;
+    --font-ui: 'Raleway', Arial, sans-serif;
+}
+body { background: radial-gradient(circle at 50% 0%, rgba(255,255,255,.08), transparent 30%), linear-gradient(135deg,#000,#020617 45%,#111827) !important; color: var(--text) !important; }
+.card,.topbar,.sidebar,.table-wrap,.modal-box,.login-card { background: linear-gradient(145deg, rgba(255,255,255,.065), rgba(255,255,255,.018)) !important; backdrop-filter: blur(24px) !important; border: 1px solid rgba(255,255,255,.10) !important; box-shadow: 0 28px 80px rgba(0,0,0,.55) !important; }
+.btn-primary { background: linear-gradient(135deg,#f8fafc,#94a3b8) !important; color:#020617 !important; }

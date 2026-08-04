@@ -1,0 +1,12 @@
+/* Dark theme — matches the default colors already in style.css,
+   exists as an explicit theme file so ThemeManager always has
+   something to load and switching back to "dark" is instant. */
+:root {
+    --bg: #111827;
+    --bg-soft: #0b1220;
+    --border: #1f2937;
+    --text: #ffffff;
+    --text-muted: #94a3b8;
+    --accent: #af8100;
+    --brand: #7d0000;
+}

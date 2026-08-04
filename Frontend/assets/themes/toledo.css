@@ -1,0 +1,24 @@
+/* Toledo brand theme — maroon & gold, glass-style accents matching
+   the original Toledo dashboards (Executive Reports, EOI prints). */
+:root {
+    --bg: #171514;
+    --bg-soft: #1e1c19;
+    --border: #3a3530;
+    --text: #ffffff;
+    --text-muted: #d4c9b8;
+    --accent: #c9a84c;
+    --brand: #8b1e24;
+}
+
+body { background: var(--bg) !important; color: var(--text) !important; }
+
+.login-logo { color: var(--accent) !important; }
+.btn-primary { background: linear-gradient(135deg, var(--brand), #5a1216) !important; }
+.btn-primary:hover { filter: brightness(1.12); }
+.sidebar-nav a.active { background: var(--brand) !important; }
+.topbar { background: var(--bg-soft) !important; border-color: var(--border) !important; }
+.kpi-card, .table-wrap, table.data-table, .login-card, .modal-box, .placeholder-box, .card {
+    background: var(--bg-soft) !important;
+    border-color: var(--border) !important;
+}
+.data-table th { background: #141210 !important; color: var(--text-muted) !important; }
