@@ -3556,3 +3556,138 @@ html,body{overflow-x:hidden!important}
   .topbar-right{margin-left:auto!important}
   .global-project-filter{min-width:110px!important;max-width:135px!important}
 }
+
+/* ===========================================================
+   ENTERPRISE 1.0.1 — FIXED APP HEADER (FINAL OVERRIDE)
+   The application chrome is fixed to the viewport, not tied to any
+   dashboard/module scroll container. This avoids sticky breaking when
+   a parent changes overflow or height.
+   =========================================================== */
+:root{
+  --fixed-shell-edge:18px;
+  --fixed-topbar-h:76px;
+  --fixed-nav-h:86px;
+  --fixed-shell-gap:12px;
+  --fixed-shell-total:calc(var(--fixed-shell-edge) + var(--fixed-topbar-h) + var(--fixed-shell-gap) + var(--fixed-nav-h) + 18px);
+}
+
+html,body{scroll-padding-top:var(--fixed-shell-total)!important}
+
+.main-layout-horizontal{
+  position:relative!important;
+  display:block!important;
+  min-height:100vh!important;
+  padding:var(--fixed-shell-edge)!important;
+}
+
+.premium-topbar,
+.topbar{
+  position:fixed!important;
+  top:var(--fixed-shell-edge)!important;
+  left:var(--fixed-shell-edge)!important;
+  right:var(--fixed-shell-edge)!important;
+  width:auto!important;
+  height:var(--fixed-topbar-h)!important;
+  min-height:var(--fixed-topbar-h)!important;
+  margin:0!important;
+  z-index:5000!important;
+  overflow:hidden!important;
+}
+
+.sidebar-horizontal-wrap{
+  position:fixed!important;
+  top:calc(var(--fixed-shell-edge) + var(--fixed-topbar-h) + var(--fixed-shell-gap))!important;
+  left:var(--fixed-shell-edge)!important;
+  right:var(--fixed-shell-edge)!important;
+  width:auto!important;
+  height:var(--fixed-nav-h)!important;
+  min-height:var(--fixed-nav-h)!important;
+  margin:0!important;
+  padding:0!important;
+  z-index:4900!important;
+  overflow:hidden!important;
+  background:transparent!important;
+}
+
+.sidebar-horizontal,
+.premium-nav{
+  width:100%!important;
+  height:100%!important;
+  min-height:100%!important;
+  margin:0!important;
+  overflow:hidden!important;
+}
+
+.sidebar-nav-horizontal{
+  min-width:0!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  flex-wrap:nowrap!important;
+  overscroll-behavior-x:contain;
+  scrollbar-width:thin!important;
+}
+
+.main-content-wrap{
+  display:flex!important;
+  flex-direction:column!important;
+  min-height:calc(100vh - var(--fixed-shell-total))!important;
+  padding-top:var(--fixed-shell-total)!important;
+  overflow:visible!important;
+}
+
+.content{
+  position:relative!important;
+  padding-top:0!important;
+  overflow:visible!important;
+}
+
+/* Module header remains visible below the two fixed application bars. */
+.page-header,
+.enterprise-page-head,
+.overview-hero{
+  position:sticky!important;
+  top:calc(var(--fixed-shell-edge) + var(--fixed-topbar-h) + var(--fixed-shell-gap) + var(--fixed-nav-h) + 10px)!important;
+  z-index:4500!important;
+  isolation:isolate;
+}
+
+/* Prevent sticky/fixed clipping from old dashboard rules. */
+#app,
+#page-content,
+.dashboard-page,
+.page-content{
+  overflow:visible!important;
+  max-height:none!important;
+}
+
+@media(max-width:1100px){
+  :root{
+    --fixed-shell-edge:12px;
+    --fixed-topbar-h:72px;
+    --fixed-nav-h:82px;
+    --fixed-shell-gap:10px;
+  }
+  .premium-topbar,.topbar{padding:8px 12px!important}
+  .sidebar-horizontal,.premium-nav{padding:8px 10px!important}
+}
+
+@media(max-width:760px){
+  :root{
+    --fixed-shell-edge:8px;
+    --fixed-topbar-h:64px;
+    --fixed-nav-h:74px;
+    --fixed-shell-gap:8px;
+  }
+  .main-layout-horizontal{padding:var(--fixed-shell-edge)!important}
+  .premium-topbar,.topbar{border-radius:16px!important;padding:7px 9px!important}
+  .sidebar-horizontal,.premium-nav{border-radius:16px!important;padding:6px 8px!important}
+  .sidebar-nav-horizontal .sidebar-link{flex:0 0 76px!important;min-width:76px!important}
+  .global-project-filter{max-width:118px!important;min-width:104px!important}
+  .page-header,.enterprise-page-head,.overview-hero{border-radius:14px!important}
+}
+
+@media print{
+  .premium-topbar,.topbar,.sidebar-horizontal-wrap{position:static!important;display:none!important}
+  .main-content-wrap{padding-top:0!important}
+  .page-header,.enterprise-page-head,.overview-hero{position:static!important;top:auto!important}
+}
