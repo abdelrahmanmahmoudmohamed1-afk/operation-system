@@ -18,7 +18,8 @@ const TABLE_COLUMNS = [
     { key: "status", label: "Status" },
     { key: "soldPrice", label: "Value" },
     { key: "contractDate", label: "Contract Date" },
-    { key: "documents", label: "Documents" }
+    { key: "documents", label: "Documents" },
+    { key: "profile", label: "360" }
 ];
 
 function statusBadge(status) {
@@ -74,6 +75,7 @@ export function renderTableRows(rows) {
             <td>${Formatter.money(row.soldPrice)}</td>
             <td>${escapeHtml(row.contractDate || "-")}</td>
             <td><div class="row-actions"><button type="button" class="btn btn-outline btn-sm crm-view-documents" data-client='${escapeHtml(JSON.stringify({unitCode:row.unitCode,project:row.project,clientName:row.clientName}))}'>View</button><button type="button" class="btn btn-outline btn-sm crm-upload-contract" data-client='${escapeHtml(JSON.stringify({unitCode:row.unitCode,project:row.project,clientName:row.clientName}))}'>Upload</button></div></td>
+            <td><button type="button" class="btn btn-primary btn-sm crm-open-360" data-client-row='${escapeHtml(JSON.stringify(row))}'>Open</button></td>
         </tr>
     `).join("");
 }

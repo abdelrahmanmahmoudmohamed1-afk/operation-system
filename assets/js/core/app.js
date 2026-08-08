@@ -143,6 +143,7 @@ class App {
         this.bindPdfExport();
         this.bindLogout();
         this.bindGlobalSearch();
+        this.bindEnterpriseUX();
         this.bindLanguageSwitch();
         this.prefetchCommonModules();
         this.bindDetails();
@@ -340,16 +341,10 @@ class App {
 
         input.addEventListener("keydown", (e) => {
             if (e.key === "Enter") runSearch();
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-                e.preventDefault();
-                input.focus();
-            }
+
         });
         document.addEventListener("keydown", (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-                e.preventDefault();
-                input.focus();
-            }
+
         });
         clear?.addEventListener("click", () => { input.value = ""; input.focus(); });
     }
@@ -518,6 +513,80 @@ class App {
         });
         const search = document.getElementById("global-search-input");
         if (search && ar) search.placeholder = map["Search units, clients, EOI, reports..."];
+    }
+
+
+    bindEnterpriseUX() {
+        if (this.enterpriseUxBound) return;
+        this.enterpriseUxBound = true;
+        const store = Container.get("enterpriseStore");
+        const root = document.getElementById("enterprise-overlay-root") || document.body;
+
+        const updateBadge = () => {
+            const badge = document.getElementById("notification-count");
+            if (!badge) return;
+            const count = store.getNotifications().filter((x) => !x.read).length;
+            badge.textContent = String(count);
+            badge.classList.toggle("hidden", count === 0);
+        };
+
+        const openNotifications = () => {
+            const rows = store.getNotifications();
+            const html = rows.length ? rows.slice(0, 40).map((x) => `
+                <article class="notification-center-row ${x.read ? "" : "is-unread"}">
+                    <span class="notification-type ${this.escapeHTML(x.type || "info")}"></span>
+                    <div><strong>${this.escapeHTML(x.title)}</strong><p>${this.escapeHTML(x.message)}</p><small>${this.escapeHTML(new Date(x.createdAt).toLocaleString("en-GB"))}</small></div>
+                </article>`).join("") : `<div class="empty-state"><strong>Inbox zero</strong><span>No notifications yet.</span></div>`;
+            root.innerHTML = `<div class="enterprise-drawer-backdrop"><aside class="enterprise-drawer"><div class="enterprise-drawer-head"><div><span class="eyebrow">Notification Center</span><h2>Workspace Inbox</h2></div><button class="modal-close" id="enterprise-drawer-close">×</button></div><div class="enterprise-drawer-body">${html}</div><div class="enterprise-drawer-foot"><button class="btn btn-outline" id="notifications-mark-read">Mark all read</button><button class="btn btn-primary" data-route="commandcenter">Open Command Center</button></div></aside></div>`;
+            document.getElementById("enterprise-drawer-close")?.addEventListener("click", () => root.innerHTML = "");
+            document.getElementById("notifications-mark-read")?.addEventListener("click", () => { store.markNotificationsRead(); updateBadge(); root.innerHTML = ""; });
+        };
+
+        const quickCreate = (requestedType = "") => {
+            root.innerHTML = `<div class="modal-backdrop"><div class="modal-box enterprise-quick-create"><div class="modal-heading"><div><span class="eyebrow">Quick Create</span><h2>Create without leaving your page</h2></div><button class="modal-close" id="qc-close">×</button></div><div class="quick-create-type-grid">
+                <button class="quick-create-type ${requestedType === "task" ? "active" : ""}" data-qc-type="task"><strong>Task</strong><span>Follow-up or reminder</span></button>
+                <button class="quick-create-type" data-qc-type="approval"><strong>Approval</strong><span>Request a controlled decision</span></button>
+                <button class="quick-create-type" data-qc-type="note"><strong>Note</strong><span>Workspace note</span></button>
+                <button class="quick-create-type" data-qc-type="view"><strong>Saved View</strong><span>Remember current route and project</span></button>
+            </div><form id="qc-form"><input type="hidden" name="type" value="${this.escapeHTML(requestedType || "task")}"><div class="form-grid"><div class="field-full"><label>Title</label><input name="title" required></div><div><label>Reference</label><input name="reference" placeholder="Client, unit, lead..."></div><div><label>Due date</label><input name="dueDate" type="date"></div><div class="field-full"><label>Notes</label><textarea name="notes" rows="4"></textarea></div></div><div class="form-actions"><button type="button" class="btn btn-outline" id="qc-cancel">Cancel</button><button class="btn btn-primary">Create</button></div></form></div></div>`;
+            const close = () => root.innerHTML = "";
+            document.getElementById("qc-close")?.addEventListener("click", close);
+            document.getElementById("qc-cancel")?.addEventListener("click", close);
+            root.querySelectorAll("[data-qc-type]").forEach((btn) => btn.addEventListener("click", () => {
+                root.querySelectorAll("[data-qc-type]").forEach(x => x.classList.toggle("active", x === btn));
+                root.querySelector('#qc-form [name="type"]').value = btn.dataset.qcType;
+            }));
+            document.getElementById("qc-form")?.addEventListener("submit", (e) => {
+                e.preventDefault(); const data = Object.fromEntries(new FormData(e.currentTarget).entries());
+                if (data.type === "task") store.saveTask({ title: data.title, notes: data.notes, linkedRef: data.reference, linkedType: "General", dueDate: data.dueDate, priority: "Medium" });
+                else if (data.type === "approval") store.saveApproval({ title: data.title, notes: data.notes, reference: data.reference, requestedBy: Container.get("authManager").getUser()?.name || "Current user" });
+                else if (data.type === "view") store.saveView({ name: data.title, route: this.router?.currentRoute || "overview", project: sessionStorage.getItem("operation_global_project") || "ALL", note: data.notes });
+                else store.addActivity("Workspace note", data.title, { note: data.notes, reference: data.reference });
+                store.notify("Created", `${data.title} was added to the workspace.`, "success"); updateBadge(); close(); Container.get("notification")?.success("Created successfully");
+            });
+        };
+
+        const openPalette = () => {
+            const commands = [
+                ["Command Center", "commandcenter", "Executive workspace"], ["Overview", "overview", "Business overview"], ["Dashboard", "dashboard", "Sales dashboard"],
+                ["Inventory", "inventory", "Units and availability"], ["CRM", "crm", "Clients and profiles"], ["Leads", "leads", "Lead pipeline"], ["Tasks", "tasks", "Follow-ups"],
+                ["Analytics", "analytics", "Targets and finance"], ["Data Quality", "quality", "Health and data issues"], ["Reports", "reports", "Reporting center"],
+                ["Contracts", "contracts", "Contract records"], ["Documents", "documents", "Client document vault"], ["Users", "users", "Users and audit"], ["Settings", "settings", "Workspace settings"]
+            ].filter(([,route]) => Container.get("permissionManager").can(String(Container.get("authManager").getUser()?.role || "user").toLowerCase(), route));
+            root.innerHTML = `<div class="command-palette-backdrop"><div class="command-palette"><div class="command-palette-search"><span>⌕</span><input id="command-palette-input" placeholder="Search a page, client, unit, or action…" autocomplete="off"><kbd>ESC</kbd></div><div class="command-palette-results" id="command-palette-results"></div><div class="command-palette-foot"><span>Enter to open</span><span>Type any client, mobile or unit to search CRM</span></div></div></div>`;
+            const input = document.getElementById("command-palette-input"), results = document.getElementById("command-palette-results");
+            const paint = () => { const q = input.value.trim().toLowerCase(); const matches = commands.filter(x => !q || `${x[0]} ${x[2]}`.toLowerCase().includes(q)); results.innerHTML = matches.map((x,i)=>`<button class="command-result ${i===0?'active':''}" data-command-route="${x[1]}"><span><strong>${x[0]}</strong><small>${x[2]}</small></span><em>Open</em></button>`).join("") + (q && !matches.length ? `<button class="command-result active" data-global-search="${this.escapeHTML(input.value)}"><span><strong>Search “${this.escapeHTML(input.value)}”</strong><small>Search CRM, inventory and leads</small></span><em>Search</em></button>` : ""); };
+            paint(); input.focus(); input.addEventListener("input", paint);
+            results.addEventListener("click", async (e) => { const b=e.target.closest("button"); if(!b)return; const route=b.dataset.commandRoute; const q=b.dataset.globalSearch; root.innerHTML=""; if(route) await this.router.load(route); else if(q){ sessionStorage.setItem("operation_global_search",JSON.stringify({term:q,target:"all",ts:Date.now()})); await this.router.load("crm"); } });
+            input.addEventListener("keydown", async e => { if(e.key==="Escape") root.innerHTML=""; if(e.key==="Enter"){ const b=results.querySelector(".command-result"); if(b)b.click(); } });
+        };
+
+        document.getElementById("notification-center-btn")?.addEventListener("click", openNotifications);
+        document.getElementById("quick-create-btn")?.addEventListener("click", () => quickCreate());
+        window.addEventListener("operation:quick-create", (e) => quickCreate(e.detail?.type || "task"));
+        window.addEventListener("operation:enterprise-store", updateBadge);
+        document.addEventListener("keydown", (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); } if (e.key === "Escape" && root.innerHTML) root.innerHTML=""; });
+        updateBadge();
     }
 
     showStartupMessage() {

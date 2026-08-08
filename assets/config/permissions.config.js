@@ -1,5 +1,5 @@
 const PERMISSIONS = Object.freeze({
-    admin: ["overview", "dashboard", "inventory", "payment", "crm", "leads", "eoi", "achievement", "reports", "contracts", "users", "settings"],
-    user: ["overview", "dashboard", "inventory", "payment", "crm", "leads", "eoi", "achievement", "reports", "contracts", "settings"]
+    admin: ["commandcenter", "overview", "dashboard", "inventory", "payment", "crm", "leads", "eoi", "achievement", "reports", "contracts", "documents", "tasks", "analytics", "quality", "users", "settings"],
+    user: ["commandcenter", "overview", "dashboard", "inventory", "payment", "crm", "leads", "eoi", "achievement", "reports", "contracts", "documents", "tasks", "analytics", "quality", "settings"]
 });
 export default PERMISSIONS;

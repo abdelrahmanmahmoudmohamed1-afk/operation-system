@@ -8,7 +8,8 @@ const COLUMNS = [
     { key: "floor", label: "Floor" },
     { key: "status", label: "Status" },
     { key: "area", label: "Area" },
-    { key: "soldPrice", label: "Price" }
+    { key: "soldPrice", label: "Price" },
+    { key: "profile", label: "360" }
 ];
 
 function slugStatus(status) {
@@ -109,6 +110,7 @@ export function renderRows(rows) {
             <td>${statusBadge(r.status)}</td>
             <td>${Formatter.number(r.area)}</td>
             <td>${Formatter.money(r.soldPrice)}</td>
+            <td><button type="button" class="btn btn-primary btn-sm inv-open-360" data-unit-row='${escapeHtml(JSON.stringify(r))}'>Open</button></td>
         </tr>
     `).join("");
 }

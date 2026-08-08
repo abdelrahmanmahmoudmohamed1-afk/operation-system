@@ -1,6 +1,7 @@
 import Module from "../../core/module.js";
 import InventoryService from "./inventory.service.js";
 import { renderLayout, renderRows, renderKpis, renderStatusOptions } from "./inventory.view.js";
+import { openUnit360 } from "../../utils/profile360.js";
 import { renderLoading, renderEmptyRow, renderErrorRow } from "../../utils/state.js";
 
 class InventoryController extends Module {
@@ -71,12 +72,12 @@ class InventoryController extends Module {
             if (tbody) {
                 tbody.innerHTML = visibleUnits.length
                     ? renderRows(visibleUnits)
-                    : renderEmptyRow(7, "No units match the selected filters");
+                    : renderEmptyRow(8, "No units match the selected filters");
             }
             if (kpisBox) kpisBox.innerHTML = renderKpis(visibleUnits);
         } catch (error) {
             this.logger().error("Inventory load failed", error);
-            if (tbody) tbody.innerHTML = renderErrorRow(7, error.message);
+            if (tbody) tbody.innerHTML = renderErrorRow(8, error.message);
             this.notify().error(error.message);
         }
     }
@@ -103,6 +104,12 @@ class InventoryController extends Module {
         }
         if (statusFilter) statusFilter.addEventListener("change", () => this.loadUnits());
         if (refreshBtn) refreshBtn.addEventListener("click", () => this.loadUnits(true));
+        document.getElementById("inv-table-body")?.addEventListener("click", (e) => {
+            const btn = e.target.closest(".inv-open-360");
+            if (!btn) return;
+            e.stopPropagation();
+            try { openUnit360(JSON.parse(btn.dataset.unitRow || "{}")); } catch (_) {}
+        });
         window.addEventListener("operation:global-search", (e) => {
             const target = e.detail?.target || "all";
             if (target !== "all" && target !== "inventory") return;
@@ -110,7 +117,7 @@ class InventoryController extends Module {
             const tbody = document.getElementById("inv-table-body");
             const kpisBox = document.getElementById("inv-kpis");
             const visibleUnits = this.applySearch(this.units);
-            if (tbody) tbody.innerHTML = visibleUnits.length ? renderRows(visibleUnits) : renderEmptyRow(7, "No units match your search");
+            if (tbody) tbody.innerHTML = visibleUnits.length ? renderRows(visibleUnits) : renderEmptyRow(8, "No units match your search");
             if (kpisBox) kpisBox.innerHTML = renderKpis(visibleUnits);
         });
     }

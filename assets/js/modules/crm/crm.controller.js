@@ -1,6 +1,7 @@
 import Module from "../../core/module.js";
 import CrmService from "./crm.service.js";
 import { renderLayout, renderTableRows, renderRegisterForm, renderUploadContractModal, renderDocumentsModal } from "./crm.view.js";
+import { openClient360 } from "../../utils/profile360.js";
 import { renderLoading, renderEmptyRow, renderErrorRow } from "../../utils/state.js";
 
 class CRMController extends Module {
@@ -80,6 +81,13 @@ class CRMController extends Module {
         if (addBtn) addBtn.addEventListener("click", () => this.openRegisterModal());
 
         document.getElementById("crm-table-body")?.addEventListener("click", (event) => {
+            const open360 = event.target.closest(".crm-open-360");
+            if (open360) {
+                event.preventDefault();
+                event.stopPropagation();
+                try { openClient360(JSON.parse(open360.dataset.clientRow || "{}")); } catch (_) {}
+                return;
+            }
             const upload = event.target.closest(".crm-upload-contract");
             const view = event.target.closest(".crm-view-documents");
             const button = upload || view;

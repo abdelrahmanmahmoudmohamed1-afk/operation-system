@@ -54,4 +54,4 @@
 - فحص جميع import paths: لا توجد ملفات مفقودة.
 - فحص الموديولات الـ 12 المسجلة ومسارات controller/service/view: مكتملة.
 - فحص `oklab/oklch/color-mix`: لا توجد استخدامات.
-- فحص Branding النصي: لا توجد كلمة Toledo في ملفات المشروع.
+- فحص Branding النصي: لا توجد كلمة legacy brand في ملفات المشروع.

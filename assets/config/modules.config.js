@@ -101,6 +101,12 @@ const MODULES = Object.freeze({
         permissions: []
     },
 
+
+    documents: {
+        name: "Documents", route: "documents", folder: "documents",
+        controller: "documents.controller.js", service: "documents.service.js", view: "documents.view.js", permissions: []
+    },
+
     users: {
         name: "Users",
         route: "users",
@@ -109,6 +115,27 @@ const MODULES = Object.freeze({
         service: "users.service.js",
         view: "users.view.js",
         permissions: ["admin"]
+    },
+
+
+    commandcenter: {
+        name: "Command Center", route: "commandcenter", folder: "commandcenter",
+        controller: "commandcenter.controller.js", service: "commandcenter.service.js", view: "commandcenter.view.js", permissions: []
+    },
+
+    tasks: {
+        name: "Tasks", route: "tasks", folder: "tasks",
+        controller: "tasks.controller.js", service: "tasks.service.js", view: "tasks.view.js", permissions: []
+    },
+
+    analytics: {
+        name: "Analytics", route: "analytics", folder: "analytics",
+        controller: "analytics.controller.js", service: "analytics.service.js", view: "analytics.view.js", permissions: []
+    },
+
+    quality: {
+        name: "Data Quality", route: "quality", folder: "quality",
+        controller: "quality.controller.js", service: "quality.service.js", view: "quality.view.js", permissions: []
     },
 
     settings: {

@@ -19,6 +19,7 @@ import LoggerService from "../services/logger.service.js";
 import NotificationService from "../services/notification.service.js";
 import ApiService from "../services/api.service.js";
 import AuditService from "../services/audit.service.js";
+import EnterpriseStore from "../services/enterprise.store.js";
 
 import ThemeManager from "../managers/theme.manager.js";
 import SessionManager from "../managers/session.manager.js";
@@ -49,6 +50,7 @@ class ServiceProvider {
         Container.register("notification", NotificationService);
         Container.register("api", ApiService);
         Container.register("audit", AuditService);
+        Container.register("enterpriseStore", EnterpriseStore);
     }
 
     registerManagers() {

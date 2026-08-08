@@ -1,7 +1,8 @@
-const CACHE_NAME = "operation-system-enterprise-v2-20260808";
+const CACHE_NAME = "operation-system-enterprise-v3-20260808";
 const CORE = [
   "./", "./index.html", "./assets/css/style.css", "./layouts/login.html", "./layouts/main.html",
   "./assets/js/core/app.js", "./assets/js/core/router.js", "./assets/js/core/module-loader.js",
+  "./assets/js/services/enterprise.store.js", "./assets/js/services/enterprise.data.js",
   "./assets/themes/genius.css"
 ];
 self.addEventListener("install", event => {
