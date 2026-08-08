@@ -1,6 +1,6 @@
 /**
  * ===========================================================
- * OPERATION SYSTEM UNIFIED BACKEND — Dashboard.gs
+ * OPERATION SYSTEM BACKEND — Dashboard.gs
  * ===========================================================
  * Executive dashboard aggregations. Uses Inventory.gs readers
  * and Auth.gs role filtering.
@@ -10,8 +10,9 @@
 function getDashboardFilters(token) {
   requireAuth_(token);
   const rows = readInventory_();
+  const transactionRows = readClientDb_();
   return {
-    projects: all_(rows.map(r => r.project)),
+    projects: all_(rows.concat(transactionRows).map(r => r.project)),
     statuses: all_(rows.map(r => r.status)),
     sales: all_(rows.map(r => r.salesName)),
     managers: all_(rows.map(r => r.salesManager)),
@@ -26,13 +27,25 @@ function getDashboardData(token, filters) {
 
   const cache = CacheService.getScriptCache();
   const roleKey = lower_(session.role || '') + '|' + lower_(session.name || session.user || '');
-  const cacheKey = 'operation_dashboard_v3_' + Utilities.base64EncodeWebSafe(roleKey + '|' + JSON.stringify(filters)).slice(0, 180);
+  const cacheKey = 'operation_dashboard_v10_' + Utilities.base64EncodeWebSafe(roleKey + '|' + JSON.stringify(filters)).slice(0, 180);
   try {
     const cached = cache.get(cacheKey);
     if (cached) return JSON.parse(cached);
   } catch (e) {}
 
-  const allRows = readInventory_().filter(x => roleAllowed_(x, session));
+  const inventoryRows = readInventory_().filter(x => roleAllowed_(x, session));
+  const transactionRows = readClientDb_().filter(x => roleAllowed_(x, session));
+  const byUnit = {};
+  inventoryRows.forEach(function(x) {
+    const key = norm_(x.project) + '||' + norm_(x.unitCode);
+    if (key !== '||') byUnit[key] = x;
+  });
+  transactionRows.forEach(function(x) {
+    if (!isSoldLikeStatus_(x.status)) return;
+    const key = norm_(x.project) + '||' + norm_(x.unitCode);
+    if (key !== '||') byUnit[key] = Object.assign({}, byUnit[key] || {}, x);
+  });
+  const allRows = Object.keys(byUnit).map(function(k) { return byUnit[k]; });
   const rows = allRows.filter(x => dashboardMatchFilters_(x, filters));
   const cancelled = readCancelled_().filter(x => roleAllowed_(x, session)).filter(x => dashboardMatchFilters_(x, filters));
 
@@ -66,7 +79,7 @@ function getDashboardData(token, filters) {
     brokerPerformance: groupPerformance_(soldLike, 'brokerCompany', 'Broker'),
     trendMonthly: monthlyTrend_(soldLike, cancelled),
     topUnits: soldLike.slice().sort((a,b) => num_(b.soldPrice) - num_(a.soldPrice)).slice(0, 20).map(unitRow_),
-    reportRows: soldLike.map(reportUnitRow_)
+    reportRows: rows.map(reportUnitRow_)
   };
 
   try { cache.put(cacheKey, JSON.stringify(result), 120); } catch (e) {}
@@ -83,7 +96,8 @@ function dashboardMatchFilters_(x, f) {
 
   const from = f.fromDate ? startOfDay_(new Date(f.fromDate)) : null;
   const to = f.toDate ? endOfDay_(new Date(f.toDate)) : null;
-  const d = x.contractDate || x.reservationDate || x.holdDate || null;
+  const st = lower_(x.status);
+  const d = st === 'sold' ? (x.soldDate || x.contractDate || x.reservationDate) : st === 'contracted' ? (x.contractDate || x.reservationDate) : st === 'reserved' ? x.reservationDate : (x.contractDate || x.reservationDate || x.holdDate || null);
   if ((from || to) && !matchDate_(d, from, to)) return false;
   return true;
 }
@@ -170,6 +184,7 @@ function reportUnitRow_(x) {
     PaymentType: x.paymentType || '',
     ReservationDate: formatDate_(x.reservationDate),
     ContractDate: formatDate_(x.contractDate || x.reservationDate),
+    SoldDate: formatDate_(x.soldDate),
     Value: round_(x.soldPrice),
     RemainingDp: round_(x.remainingDp)
   };

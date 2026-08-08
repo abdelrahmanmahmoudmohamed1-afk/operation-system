@@ -1,4 +1,4 @@
-# سجل مراجعة Toledo Operation System
+# سجل مراجعة Operation System
 
 ## النسخة المُراجعة
 

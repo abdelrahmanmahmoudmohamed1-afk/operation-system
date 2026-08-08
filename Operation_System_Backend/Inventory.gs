@@ -1,6 +1,6 @@
 /**
  * ===========================================================
- * OPERATION SYSTEM UNIFIED BACKEND — Inventory.gs
+ * OPERATION SYSTEM BACKEND — Inventory.gs
  * ===========================================================
  * كل ما يخص الوحدات: قراءة المخزون، الوحدات المتاحة، تفاصيل
  * أي وحدة. كل القراءة بالاسم (header-based) مش بترقيم الأعمدة.
@@ -44,6 +44,7 @@ function getMergedDataBundle_() {
     const c = clientMap[norm_(x.project) + '||' + norm_(x.unitCode)] || {};
     return Object.assign({}, x, {
       contractDate: x.contractDate || c.contractDate || null,
+      soldDate: x.soldDate || c.soldDate || null,
       reservationDate: x.reservationDate || c.reservationDate || null,
       clientName: c.clientName || '',
       clientPhone: c.clientPhone || '',
@@ -146,14 +147,18 @@ function readClientDbFromSheet_(ss) {
   const lastRow = sh.getLastRow();
   const lastCol = sh.getLastColumn();
   if (lastRow <= HEADER_ROW.clientDb || lastCol < 1) return [];
-  const v = sh.getRange(1, 1, lastRow, lastCol).getValues();
+  const range = sh.getRange(1, 1, lastRow, lastCol);
+  const v = range.getValues();
+  const display = range.getDisplayValues();
   const dataRows = v.slice(HEADER_ROW.clientDb);
+  const displayRows = display.slice(HEADER_ROW.clientDb);
 
   return dataRows
-    .filter(r => rowHasAnyAlias_(r, headerMap, [
+    .map(function(r, rowIndex) { return { raw: r, display: displayRows[rowIndex] || r }; })
+    .filter(pair => rowHasAnyAlias_(pair.raw, headerMap, [
       FIELD_ALIASES.unitCode, FIELD_ALIASES.project, FIELD_ALIASES.clientName, FIELD_ALIASES.salesName
     ]))
-    .map(r => ({
+    .map(pair => { const r = pair.raw, d = pair.display; return ({
       sourceSheet: SHEET_NAMES.clientDb,
       unitCode: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.unitCode)),
       unitType: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.unitType)),
@@ -168,16 +173,16 @@ function readClientDbFromSheet_(ss) {
       salesManager: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.salesManager)),
       salesDirector: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.salesDirector)),
       clientName: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.clientName)),
-      clientPhone: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.clientPhone)),
-      clientPhone2: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.clientPhone2)),
-      clientAddress: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.clientAddress)),
+      clientPhone: normalizePhone_(getByAlias_(d, headerMap, FIELD_ALIASES.clientPhone)),
+      clientPhone2: normalizePhone_(getByAlias_(d, headerMap, FIELD_ALIASES.clientPhone2)),
+      clientAddress: clean_(getByAlias_(d, headerMap, FIELD_ALIASES.clientAddress)),
       brokerCompany: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.brokerCompany)),
       contractPlace: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.contractPlace)),
       clientType: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.clientType)),
       reservationDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.reservationDate)),
       contractDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.contractDate)),
       soldDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.soldDate))
-    }));
+    }); });
 }
 
 function readCancelled_() {
@@ -215,12 +220,11 @@ function readCancelledFromSheet_(ss) {
       salesDirector: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.salesDirector)),
       brokerCompany: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.brokerCompany)),
       clientName: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.clientName)),
-      clientPhone: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.clientPhone)),
-      clientPhone2: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.clientPhone2)),
-      clientAddress: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.clientAddress)),
+      clientPhone: normalizePhone_(getByAlias_(d, headerMap, FIELD_ALIASES.clientPhone)),
+      clientPhone2: normalizePhone_(getByAlias_(d, headerMap, FIELD_ALIASES.clientPhone2)),
+      clientAddress: clean_(getByAlias_(d, headerMap, FIELD_ALIASES.clientAddress)),
       reservationDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.reservationDate)),
       contractDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.contractDate)),
-      soldDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.soldDate)),
       cancellationDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.cancellationDate))
     }));
 }

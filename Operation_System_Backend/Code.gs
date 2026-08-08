@@ -1,16 +1,16 @@
 /**
  * ===========================================================
- * OPERATION SYSTEM UNIFIED BACKEND — Code.gs
+ * OPERATION SYSTEM BACKEND — Code.gs
  * ===========================================================
  * نقطة دخول الـ Web App الوحيدة لكل النظام. بيقدّم الفرونت إند
- * (Operation System System) وبيشغّل كل الـ API functions اللي الموديولات
+ * (Operation System) وبيشغّل كل الـ API functions اللي الموديولات
  * المختلفة (Dashboard, CRM, Inventory, EOI...) بتناديها عن طريق
  * google.script.run.
  * ===========================================================
  */
 
 /**
- * الفرونت إند بتاعك (Operation System System) مستضاف لوحده ومش جوه Apps
+ * الفرونت إند بتاعك (Operation System) مستضاف لوحده ومش جوه Apps
  * Script، وبيكلم الباك إند بـ fetch() عادي بنظام { action, ...payload }
  * (شوف api.service.js). فالباك إند هنا شغّال كـ JSON API بس، مش
  * بيقدّم صفحة HTML.
@@ -54,6 +54,8 @@ const ACTION_MAP = {
   getManagerDirector: (p) => { requireAuth_(p.token); return getManagerDirector(p.salesName); },
   saveClientRegistration: (p) => saveClientRegistration(p.token, p.data),
   getClients: (p) => getClients(p.token, p.filters),
+  uploadClientContract: (p) => uploadClientContract(p.token, p.data),
+  getClientDocuments: (p) => getClientDocuments(p.token, p.filters),
 
   // Inventory
   getInventoryData: (p) => getInventoryData(p.token, p.filters),
@@ -74,12 +76,8 @@ const ACTION_MAP = {
 
   // Leads
   getLeadsData: (p) => getLeadsData(p.token, p.filters),
-  importLeadsBulk: (p) => importLeadsBulk(p.token, p.rows, p.duplicateMode),
-  bulkUpdateLeadStatus: (p) => bulkUpdateLeadStatus(p.token, p.rowNumbers, p.status),
-
-  // Client documents
-  uploadClientContract: (p) => uploadClientContract(p.token, p.data),
-  getClientDocuments: (p) => getClientDocuments(p.token, p.filters)
+  bulkUpdateLeadStatus: (p) => bulkUpdateLeadStatus(p.token, p.data),
+  importLeads: (p) => importLeads(p.token, p.data)
 };
 
 function handleRequest_(params) {

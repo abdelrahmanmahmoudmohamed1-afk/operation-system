@@ -1,6 +1,6 @@
 /**
  * ===========================================================
- * OPERATION SYSTEM UNIFIED BACKEND — Auth.gs
+ * OPERATION SYSTEM BACKEND — Auth.gs
  * ===========================================================
  * تسجيل دخول واحد لكل الموديولات. بيرجع توكن (session token)
  * بدل ما كل صفحة تبعت اليوزر/الباسورد تاني في كل طلب، وده
@@ -56,11 +56,11 @@ function login(username, password) {
         const user = {
           name: clean_(getByAlias_(row, headerMap, nameAliases)),
           user: clean_(getByAlias_(row, headerMap, usernameAliases)),
-          role: clean_(getByAlias_(row, headerMap, roleAliases)),
+          role: norm_(getByAlias_(row, headerMap, roleAliases)) === 'admin' ? 'Admin' : 'User',
           salesManager: clean_(getByAlias_(row, headerMap, managerAliases)),
           salesDirector: clean_(getByAlias_(row, headerMap, directorAliases))
         };
-        user.isOwner = isSystemOwnerIdentity_(user);
+        user.isAdmin = isSystemAdmin_(user);
 
         const token = Utilities.getUuid();
         cache.remove(attemptKey);
@@ -170,25 +170,11 @@ function changeOwnPassword(token, oldPassword, newPassword) {
 }
 
 /**
- * فلترة الصفوف حسب صلاحية الدور — منطق موحّد يستخدمه أي موديول
- * (CRM, Inventory, Dashboard...) عشان السيلز يشوف بياناته بس،
- * المانجر يشوف فريقه، الديركتور يشوف إدارته، والأدمن يشوف الكل.
+ * Admin و User يشاهدان البيانات التشغيلية؛ الفرق بينهما في صلاحيات الإدارة.
+ * Admin فقط يستطيع إدارة المستخدمين ومراجعة سجلهم من موديول Users.
  */
 function roleAllowed_(row, session) {
-  if (!session || !session.role) return true;
-  const role = lower_(session.role);
-
-  if (ROLES.ADMIN.indexOf(role) !== -1) return true;
-
-  if (ROLES.DIRECTOR.indexOf(role) !== -1) {
-    return norm_(row.salesDirector) === norm_(session.salesDirector || session.name) ||
-           norm_(row.salesName) === norm_(session.name);
-  }
-
-  if (ROLES.MANAGER.indexOf(role) !== -1) {
-    return norm_(row.salesManager) === norm_(session.salesManager || session.name) ||
-           norm_(row.salesName) === norm_(session.name);
-  }
-
-  return norm_(row.salesName) === norm_(session.name) || norm_(row.salesName) === norm_(session.user);
+  if (!session || !session.role) return false;
+  const role = norm_(session.role);
+  return role === 'admin' || role === 'user';
 }

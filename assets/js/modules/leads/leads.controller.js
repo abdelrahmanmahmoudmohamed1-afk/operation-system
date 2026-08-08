@@ -1,51 +1,17 @@
 import Module from "../../core/module.js";
 import LeadsService from "./leads.service.js";
 import { renderLayout, renderRows, renderImportModal } from "./leads.view.js";
-import { renderLoading, renderErrorRow } from "../../utils/state.js";
-
 class LeadsController extends Module {
-  constructor(){ super(); this.rows=[]; this.importRows=[]; }
-  async render(){ this.container.innerHTML=renderLayout(); await this.load(); }
-  async load(search=''){
-    const body=document.getElementById('leads-body'); if(body) body.innerHTML=renderLoading({rows:11});
-    try{ this.rows=await LeadsService.load({search}); if(body) body.innerHTML=renderRows(this.rows); }
-    catch(e){ if(body) body.innerHTML=renderErrorRow(11,e.message); this.notify().error(e.message); }
-  }
-  bindEvents(){
-    let timer; document.getElementById('leads-search')?.addEventListener('input',e=>{clearTimeout(timer);timer=setTimeout(()=>this.load(e.target.value),300);});
-    document.getElementById('leads-refresh')?.addEventListener('click',()=>this.load(document.getElementById('leads-search')?.value||''));
-    document.getElementById('leads-select-all')?.addEventListener('change',e=>document.querySelectorAll('.lead-check').forEach(x=>x.checked=e.target.checked));
-    document.getElementById('leads-apply-status')?.addEventListener('click',()=>this.applyBulkStatus());
-    document.getElementById('leads-import-open')?.addEventListener('click',()=>this.openImport());
-  }
-  async applyBulkStatus(){
-    const ids=[...document.querySelectorAll('.lead-check:checked')].map(x=>Number(x.value)).filter(Boolean); const status=document.getElementById('leads-bulk-status')?.value||'';
-    if(!ids.length) return this.notify().warning('Select at least one lead.'); if(!status) return this.notify().warning('Select the new status.');
-    try{ const r=await LeadsService.bulkStatus(ids,status); this.notify().success(`${r.updated||ids.length} leads updated`); await this.load(document.getElementById('leads-search')?.value||''); }
-    catch(e){ this.notify().error(e.message); }
-  }
-  openImport(){
-    const root=document.getElementById('leads-modal-root'); root.innerHTML=renderImportModal();
-    document.getElementById('leads-import-cancel').addEventListener('click',()=>root.innerHTML='');
-    document.getElementById('leads-import-backdrop').addEventListener('click',e=>{if(e.target.id==='leads-import-backdrop')root.innerHTML='';});
-    document.getElementById('leads-excel-file').addEventListener('change',e=>this.readExcel(e.target.files?.[0]));
-    document.getElementById('leads-import-save').addEventListener('click',()=>this.saveImport(root));
-  }
-  async readExcel(file){
-    const err=document.getElementById('leads-import-error'); err.classList.add('hidden'); this.importRows=[];
-    if(!file) return; try{
-      const buffer=await file.arrayBuffer(); const wb=window.XLSX.read(buffer,{type:'array',cellDates:true}); const ws=wb.Sheets[wb.SheetNames[0]];
-      this.importRows=window.XLSX.utils.sheet_to_json(ws,{defval:''}); if(!this.importRows.length) throw new Error('The selected sheet has no data rows.');
-      const cols=Object.keys(this.importRows[0]); document.getElementById('leads-preview-head').innerHTML='<tr>'+cols.slice(0,8).map(c=>`<th>${this.escape(c)}</th>`).join('')+'</tr>';
-      document.getElementById('leads-preview-body').innerHTML=this.importRows.slice(0,20).map(r=>'<tr>'+cols.slice(0,8).map(c=>`<td>${this.escape(r[c])}</td>`).join('')+'</tr>').join('');
-      const summary=document.getElementById('leads-import-summary'); summary.textContent=`${this.importRows.length} rows detected in ${wb.SheetNames[0]}`; summary.classList.remove('hidden'); document.getElementById('leads-import-save').disabled=false;
-    }catch(e){ err.textContent=e.message;err.classList.remove('hidden');document.getElementById('leads-import-save').disabled=true; }
-  }
-  escape(v){ return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
-  async saveImport(root){
-    const btn=document.getElementById('leads-import-save'); const err=document.getElementById('leads-import-error'); btn.disabled=true;btn.textContent='Importing...';
-    try{ const mode=document.getElementById('leads-duplicate-mode').value; const r=await LeadsService.importRows(this.importRows,mode); this.notify().success(`Import complete: ${r.added} added, ${r.updated} updated, ${r.skipped} skipped`); root.innerHTML=''; await this.load(); }
-    catch(e){err.textContent=e.message;err.classList.remove('hidden');btn.disabled=false;btn.textContent='Import Leads';}
-  }
+  constructor(){super();this.rows=[];this.importRows=[];}
+  async render(){this.container.innerHTML=renderLayout();await this.load();}
+  async load(force=false){try{const search=document.getElementById("leads-search")?.value||"";const status=document.getElementById("leads-status-filter")?.value||"ALL";const d=await LeadsService.load({search,status,force});this.rows=d.rows||[];const sel=document.getElementById("leads-status-filter");if(sel&&sel.options.length<=1)(d.statuses||[]).forEach(x=>sel.insertAdjacentHTML("beforeend",`<option value="${x}">${x}</option>`));document.getElementById("leads-body").innerHTML=renderRows(this.rows);this.updateSelected();}catch(e){this.notify().error(e.message);}}
+  bindEvents(){let t;document.getElementById("leads-search")?.addEventListener("input",()=>{clearTimeout(t);t=setTimeout(()=>this.load(),300)});document.getElementById("leads-status-filter")?.addEventListener("change",()=>this.load());document.getElementById("leads-refresh")?.addEventListener("click",()=>this.load(true));document.getElementById("leads-body")?.addEventListener("change",()=>this.updateSelected());document.getElementById("leads-select-all")?.addEventListener("change",e=>{document.querySelectorAll(".lead-check").forEach(x=>x.checked=e.target.checked);this.updateSelected();});document.getElementById("leads-apply-status")?.addEventListener("click",()=>this.bulkUpdate());document.getElementById("leads-import-btn")?.addEventListener("click",()=>this.openImport());}
+  selected(){return [...document.querySelectorAll(".lead-check:checked")].map(x=>x.value);}
+  updateSelected(){const el=document.getElementById("leads-selected-count");if(el)el.textContent=this.selected().length;}
+  async bulkUpdate(){const ids=this.selected(),status=document.getElementById("leads-bulk-status")?.value;if(!ids.length||!status)return this.notify().warning("Select leads and a new status first.");try{await LeadsService.bulkStatus(ids,status);this.notify().success(`${ids.length} leads updated`);await this.load(true);}catch(e){this.notify().error(e.message);}}
+  openImport(){const root=document.getElementById("leads-modal-root");root.innerHTML=renderImportModal();document.getElementById("leads-import-cancel")?.addEventListener("click",()=>root.innerHTML="");document.getElementById("leads-import-backdrop")?.addEventListener("click",e=>{if(e.target.id==="leads-import-backdrop")root.innerHTML=""});document.getElementById("leads-file")?.addEventListener("change",e=>this.readFile(e.target.files?.[0]));document.getElementById("leads-import-save")?.addEventListener("click",()=>this.commitImport(root));}
+  async readFile(file){if(!file)return;const err=document.getElementById("leads-import-error");try{let rows=[];if(file.name.toLowerCase().endsWith(".csv")){const text=await file.text();rows=this.parseCSV(text);}else{if(!window.XLSX)throw new Error("Excel reader is not loaded. Refresh the page and try again.");const data=await file.arrayBuffer();const wb=window.XLSX.read(data,{type:"array"});rows=window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});}this.importRows=rows.filter(Boolean);document.getElementById("leads-import-preview").innerHTML=`<strong>${this.importRows.length} rows ready</strong><small>${Object.keys(this.importRows[0]||{}).slice(0,12).join(" · ")}</small>`;document.getElementById("leads-import-save").disabled=!this.importRows.length;err?.classList.add("hidden");}catch(e){if(err){err.textContent=e.message;err.classList.remove("hidden")}}}
+  parseCSV(text){const lines=text.split(/\r?\n/).filter(Boolean);if(!lines.length)return[];const split=l=>l.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(v=>v.replace(/^"|"$/g,"").replace(/""/g,'"'));const h=split(lines[0]);return lines.slice(1).map(l=>Object.fromEntries(split(l).map((v,i)=>[h[i]||`Col${i+1}`,v])));}
+  async commitImport(root){try{const mode=document.getElementById("leads-import-mode")?.value||"skip";const res=await LeadsService.importRows(this.importRows,mode);this.notify().success(`Import complete: ${res.added||0} added, ${res.updated||0} updated, ${res.skipped||0} skipped`);root.innerHTML="";await this.load(true);}catch(e){this.notify().error(e.message);}}
 }
 export default new LeadsController();

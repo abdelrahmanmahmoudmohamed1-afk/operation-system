@@ -8,7 +8,7 @@ class ReportsController extends Module {
     constructor() {
         super();
         this.data = null;
-        this.savedKey = "toledo_saved_reports_enterprise_v3";
+        this.savedKey = "operation_saved_reports_enterprise_v3";
     }
 
     async render() {
@@ -32,11 +32,16 @@ class ReportsController extends Module {
 
     normalizeData(data = {}) {
         const smartRows = [];
-        const candidates = ["reportRows", "topUnits", "inventory", "units", "contracts", "clients", "eoi"];
-        candidates.forEach((key) => {
-            const arr = Array.isArray(data[key]) ? data[key] : [];
-            arr.forEach((row) => smartRows.push(this.normalizeRow(row, key)));
-        });
+        const primary = Array.isArray(data.reportRows) ? data.reportRows : [];
+        if (primary.length) {
+            primary.forEach((row) => smartRows.push(this.normalizeRow(row, "reportRows")));
+        } else {
+            const candidates = ["topUnits", "inventory", "units", "contracts", "clients", "eoi"];
+            candidates.forEach((key) => {
+                const arr = Array.isArray(data[key]) ? data[key] : [];
+                arr.forEach((row) => smartRows.push(this.normalizeRow(row, key)));
+            });
+        }
         if (!smartRows.length) {
             ["projectPerformance", "salesPerformance", "brokerPerformance", "managerPerformance", "directorPerformance", "statusMix", "trendMonthly"].forEach((key) => {
                 const arr = Array.isArray(data[key]) ? data[key] : [];
@@ -63,7 +68,7 @@ class ReportsController extends Module {
             OutdoorArea: Number(pick("OutdoorArea", "Outdoor Area", "Out Door Area", "Terrace Area", "Garden Area")) || 0,
             AvgSalesPrice: 0,
             Client: pick("Client", "ClientName", "Client Name", "client"),
-            Phone: pick("Phone", "Client Phone", "ClientPhone", "Mobile"),
+            Phone: pick("Phone", "Client Phone", "Client Phone Number", "ClientPhone", "Mobile"),
             Sales: pick("Sales", "SalesName", "Sales Name", "Sales Agent", "sales"),
             Broker: pick("Broker", "BrokerCompany", "Broker Company", "broker"),
             Manager: pick("Manager", "SalesManager", "Sales Manager"),
@@ -71,7 +76,8 @@ class ReportsController extends Module {
             Source: pick("Source", "Sourse", "Lead Source"),
             Channel: pick("Channel", "Source Breakdown", "sourceBreakdown"),
             ReservationDate: pick("ReservationDate", "Reservation Date", "Reservition Date"),
-            ContractDate: pick("ContractDate", "Contract Date", "Sold Date"),
+            ContractDate: pick("ContractDate", "Contract Date"),
+            SoldDate: pick("SoldDate", "Sold Date"),
             CreatedAt: pick("CreatedAt", "Created At", "Date"),
             Month: pick("Month", "month"),
             Units: Number(pick("Units", "units")) || 1,
@@ -215,7 +221,8 @@ class ReportsController extends Module {
             const from = config.fromDate ? new Date(config.fromDate) : null;
             const to = config.toDate ? new Date(config.toDate + "T23:59:59") : null;
             rows = rows.filter((r) => {
-                const raw = r.ContractDate || r.ReservationDate || r.CreatedAt || r.Month;
+                const status = String(r.Status || r.ContractStatus || "").toLowerCase();
+                const raw = status === "sold" ? (r.SoldDate || r.ContractDate || r.ReservationDate) : status === "contracted" ? (r.ContractDate || r.ReservationDate) : status === "reserved" ? r.ReservationDate : (r.ContractDate || r.ReservationDate || r.CreatedAt || r.Month);
                 if (!raw) return false;
                 const d = new Date(raw);
                 if (Number.isNaN(d.getTime())) return false;
@@ -247,9 +254,43 @@ class ReportsController extends Module {
         if (output) output.innerHTML = config.group && config.group !== "None"
             ? renderGroupedReport(title, rows, config.group)
             : renderCustomReport(title, rows, config.source, config.columns);
-        document.getElementById("report-export-csv")?.addEventListener("click", () => this.exportCsv(rows, title));
-        document.getElementById("report-export-json")?.addEventListener("click", () => this.exportJson(rows, title));
+        this.currentReportRows = rows;
+        this.bindReportSelection(rows);
+        document.getElementById("report-export-csv")?.addEventListener("click", () => this.exportCsv(this.selectedReportRows(rows), title));
+        document.getElementById("report-export-json")?.addEventListener("click", () => this.exportJson(this.selectedReportRows(rows), title));
         document.getElementById("report-print")?.addEventListener("click", () => window.print());
+    }
+
+    selectedReportRows(rows = this.currentReportRows || []) {
+        const checks = [...document.querySelectorAll(".report-row-check")];
+        if (!checks.length) return rows;
+        return checks.filter((x) => x.checked).map((x) => rows[Number(x.dataset.reportIndex)]).filter(Boolean);
+    }
+
+    bindReportSelection(rows) {
+        const all = document.getElementById("report-select-all");
+        const checks = [...document.querySelectorAll(".report-row-check")];
+        if (!checks.length) return;
+        const update = () => {
+            checks.forEach((x) => x.closest("tr")?.classList.toggle("report-row-excluded", !x.checked));
+            const selected = this.selectedReportRows(rows);
+            const value = selected.reduce((sum, row) => sum + Number(row.Value || row.SalesValue || 0), 0);
+            const units = selected.reduce((sum, row) => sum + Number(row.Units || 1), 0);
+            const countEl = document.getElementById("report-summary-rows"); const valueEl = document.getElementById("report-summary-value"); const unitsEl = document.getElementById("report-summary-units");
+            if (countEl) countEl.textContent = selected.length;
+            if (valueEl) valueEl.textContent = new Intl.NumberFormat("en-US", { style: "currency", currency: "EGP", maximumFractionDigits: 0 }).format(value);
+            if (unitsEl) unitsEl.textContent = units;
+            const countStatus = (name) => selected.filter((r) => String(r.Status || r.ContractStatus || "").toLowerCase() === name).length;
+            const soldEl = document.getElementById("report-kpi-sold"), contractedEl = document.getElementById("report-kpi-contracted"), reservedEl = document.getElementById("report-kpi-reserved"), activeValueEl = document.getElementById("report-kpi-active-value");
+            if (soldEl) soldEl.textContent = countStatus("sold");
+            if (contractedEl) contractedEl.textContent = countStatus("contracted");
+            if (reservedEl) reservedEl.textContent = countStatus("reserved");
+            if (activeValueEl) activeValueEl.textContent = new Intl.NumberFormat("en-US", { style: "currency", currency: "EGP", maximumFractionDigits: 0 }).format(value);
+            if (all) { all.checked = selected.length === checks.length; all.indeterminate = selected.length > 0 && selected.length < checks.length; }
+        };
+        all?.addEventListener("change", () => { checks.forEach((x) => x.checked = all.checked); update(); });
+        checks.forEach((x) => x.addEventListener("change", update));
+        update();
     }
 
     saveReport() {

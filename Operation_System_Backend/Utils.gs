@@ -180,3 +180,13 @@ function matchDate_(date, from, to) {
   if (to && d > to) return false;
   return true;
 }
+
+
+function normalizePhone_(value) {
+  let s = clean_(value).replace(/\s+/g, '').replace(/[^0-9+]/g, '');
+  if (!s) return '';
+  if (/^1\d{9}$/.test(s)) s = '0' + s;
+  if (/^20(1\d{9})$/.test(s)) s = '0' + s.slice(2);
+  if (/^\+20(1\d{9})$/.test(s)) s = '0' + s.slice(3);
+  return s;
+}

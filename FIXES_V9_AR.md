@@ -8,4 +8,4 @@
 - تحسين شريط الموديولات ليقبل التمرير الأفقي ويُظهر Users وSettings.
 
 ## مهم
-ارفع Frontend إلى GitHub، وارفع كل ملفات Toledo_Unified_Backend إلى Apps Script ثم New Version Deploy. بعد الرفع اعمل Hard Refresh مرة واحدة Ctrl+Shift+R.
+ارفع Frontend إلى GitHub، وارفع كل ملفات Operation_System_Backend إلى Apps Script ثم New Version Deploy. بعد الرفع اعمل Hard Refresh مرة واحدة Ctrl+Shift+R.

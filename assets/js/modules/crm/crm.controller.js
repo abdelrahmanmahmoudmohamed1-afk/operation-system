@@ -15,8 +15,8 @@ class CRMController extends Module {
         document.getElementById("crm-table-body").innerHTML = renderLoading({ rows: 6 });
 
         // لو جاي من بار البحث العام فوق، نطبّق الكلمة على طول
-        const pendingSearch = sessionStorage.getItem("toledo_pending_search");
-        const globalSearch = sessionStorage.getItem("toledo_global_search");
+        const pendingSearch = sessionStorage.getItem("operation_pending_search");
+        const globalSearch = sessionStorage.getItem("operation_global_search");
         let searchTerm = pendingSearch || "";
         if (globalSearch) {
             try {
@@ -25,7 +25,7 @@ class CRMController extends Module {
             } catch { /* ignore */ }
         }
         if (searchTerm) {
-            sessionStorage.removeItem("toledo_pending_search");
+            sessionStorage.removeItem("operation_pending_search");
             const searchInput = document.getElementById("crm-search");
             if (searchInput) searchInput.value = searchTerm;
             await this.loadClients(searchTerm);
@@ -68,7 +68,7 @@ class CRMController extends Module {
         }
 
         if (refreshBtn) refreshBtn.addEventListener("click", () => this.loadClients());
-        window.addEventListener("toledo:global-search", (e) => {
+        window.addEventListener("operation:global-search", (e) => {
             const term = e.detail?.term || "";
             const target = e.detail?.target || "all";
             if (target === "all" || target === "crm") {
@@ -101,6 +101,7 @@ class CRMController extends Module {
         });
         document.getElementById("crm-contract-upload-form")?.addEventListener("submit", async (event) => {
             event.preventDefault();
+            const form = event.currentTarget;
             const file = document.getElementById("crm-contract-file")?.files?.[0];
             const errorBox = document.getElementById("crm-contract-error");
             const submit = document.getElementById("crm-contract-submit");
@@ -111,7 +112,7 @@ class CRMController extends Module {
             if (errorBox) errorBox.classList.add("hidden");
             try {
                 const base64 = await this.fileToBase64(file);
-                const documentType = new FormData(event.currentTarget).get("documentType") || "Contract";
+                const documentType = form?.elements?.documentType?.value || "Contract";
                 const result = await CrmService.uploadContract({
                     ...client,
                     documentType,

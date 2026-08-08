@@ -10,7 +10,7 @@ class ApiService {
         this.retry = API_CONFIG.retry || { enabled: false, maxAttempts: 1, delay: 0 };
         this.inFlight = new Map();
         this.memory = new Map();
-        this.cachePrefix = "operation_api_v9:";
+        this.cachePrefix = "operation_api_v10:";
         this.readPolicies = new Map([
             ["getDashboardFilters", 5 * 60 * 1000],
             ["getDashboardData", 90 * 1000],
@@ -25,13 +25,20 @@ class ApiService {
             ["getEOIFormBootstrap", 5 * 60 * 1000],
             ["getEOIData", 90 * 1000],
             ["getUsersData", 60 * 1000],
-            ["getAuditHistory", 30 * 1000]
+            ["getAuditHistory", 30 * 1000],
+            ["getLeadsData", 60 * 1000]
         ]);
-        this.mutations = new Set(["login", "logout", "changeOwnPassword", "saveClientRegistration", "uploadClientContract", "saveEOI", "refreshAvailableLayanaUnits"]);
+        this.mutations = new Set(["login", "logout", "changeOwnPassword", "saveClientRegistration", "uploadClientContract", "saveEOI", "refreshAvailableLayanaUnits", "bulkUpdateLeadStatus", "importLeads"]);
     }
 
     post(action, payload = {}, options = {}) {
-        return this.request({ method: "POST", body: { action, ...payload }, action, ...options });
+        const scoped = new Set(["getDashboardData","getInventoryData","getClients","getClientDocuments","getEOIData","getLeadsData"]);
+        const project = sessionStorage.getItem("operation_selected_project") || "ALL";
+        let bodyPayload = { ...payload };
+        if (scoped.has(action) && project !== "ALL") {
+            bodyPayload.filters = { ...(bodyPayload.filters || {}), project };
+        }
+        return this.request({ method: "POST", body: { action, ...bodyPayload }, action, ...options });
     }
 
     get(action, params = {}, options = {}) {
@@ -94,7 +101,7 @@ class ApiService {
             const semanticOk = response.ok && data?.ok !== false;
             if (!semanticOk) {
                 if (semanticStatus === 401 || data?.message === "AUTH_REQUIRED" || data?.message === "SESSION_EXPIRED") {
-                    window.dispatchEvent(new CustomEvent("toledo:session-expired", { detail: data }));
+                    window.dispatchEvent(new CustomEvent("operation:session-expired", { detail: data }));
                 }
                 return this.failure(semanticStatus, this.getStatusMessage(semanticStatus, data), data);
             }
@@ -170,7 +177,10 @@ class ApiService {
     failure(status, message, data = null) { return { ok: false, status, message, data }; }
     sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
     getStatusMessage(status, data = null) {
-        if (data?.message) return data.message;
+        if (data?.message) {
+            if (/^Unknown action:/i.test(data.message)) return "This feature needs the latest backend deployment.";
+            return data.message;
+        }
         return ({ 400: "Bad request", 401: "Session expired", 403: "Forbidden", 404: "API endpoint not found", 429: "Too many requests", 500: "Internal server error" })[status] || "API request failed";
     }
 }

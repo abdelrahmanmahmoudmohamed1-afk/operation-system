@@ -1,0 +1,27 @@
+Operation System V10 — Final Checklist
+
+تم تنفيذ:
+- إصلاح Upload PDF والعقود إلى Google Drive.
+- Users Module للـ Admin فقط + Create User + Audit History.
+- Leads Module + Excel/CSV Import + Bulk Status Update.
+- CRM: Mobile 1 / Mobile 2 / Residence address + Reservation/Contract/Sold dates.
+- Reports: مصدر Transaction للحالات البيعية + منع التكرار + Status بجوار الوحدة + Checkbox Selection + Recalculated Value + PDF لكل الصفوف.
+- Global Project Filter على مستوى النظام.
+- EOI: Project + Housing Topic.
+- Overview: تبسيط البيانات + Quick Actions تعمل.
+- الضغط على اللوجو يرجع Overview.
+- Header/Navigation ثابتين أثناء Scroll.
+- Logout animation (door/light/person).
+- Notifications في منتصف الشاشة وإخفاء Unknown action الخام.
+- إزالة كلمة اسم الشركة نصيًا من المشروع والإبقاء على اللوجو فقط.
+- اسم الباك إند: Operation_System_Backend.
+
+الصلاحيات:
+Admin: كل الموديولات + Users.
+User: كل الموديولات التشغيلية بدون Users.
+
+بعد الرفع:
+1) GitHub: ارفع كل ملفات Frontend واعمل Commit + Push.
+2) Apps Script: انسخ كل ملفات Operation_System_Backend بما فيها Leads.gs واعمل New Version Deploy.
+3) اعمل Ctrl+Shift+R مرة واحدة.
+4) اعمل Logout/Login بعد تغيير Role.

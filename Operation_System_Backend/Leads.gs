@@ -1,121 +1,48 @@
-/** Leads management: list, import and bulk status updates. */
-
-const LEAD_ALIASES_ = {
-  id: ['Lead ID','ID','LeadId'],
-  date: ['Date','Lead Date','Created Date','Creation Date','Date and Time','Timestamp'],
-  name: ['Full Name','Client Name','Name'],
-  phone: ['Client Phone Number','Client Phone','Phone','Mobile','Mobile Number'],
-  phone2: ['Client Phone Number 2','Client Phone 2','Phone 2','Mobile 2'],
-  address: ['Residence address','Residence Address','Client Address','Address','Full Address'],
-  project: ['Project Name','Project'],
-  sales: ['Assigned To','Sales Name','Sales'],
-  manager: ['Sales Manager','Manager'],
-  director: ['Sales Director','Director'],
-  status: ['Lead Status','Status'],
-  stage: ['Lead Stage','Stage'],
-  source: ['Lead Source Information','Lead Source','Source'],
-  campaign: ['Campaign Name','Campaign'],
-  comment: ['Last Comment','Latest Comment','Comment','Comments']
-};
-
-function getLeadsSheet_() {
+function getLeadsData(token, filters) {
+  requireAuth_(token); filters = filters || {};
   const ss = SpreadsheetApp.openById(SPREADSHEETS.LEADS);
   const sh = ss.getSheetByName(SHEET_NAMES.leads);
-  if (!sh) throw new Error('Leads sheet not found: ' + SHEET_NAMES.leads);
-  return sh;
+  if (!sh || sh.getLastRow() < 2) return { rows: [], statuses: [] };
+  const range = sh.getDataRange(), raw = range.getValues(), disp = range.getDisplayValues();
+  const headers = raw[0].map(normalizeHeader_);
+  const idxAny = function(names){ for (let i=0;i<names.length;i++){ const x=headers.indexOf(normalizeHeader_(names[i])); if(x>-1)return x;} return -1; };
+  const cols = {
+    id: idxAny(['Lead ID','ID']), name: idxAny(['Full Name','Client Name','Name']), phone: idxAny(['Client Phone','Phone','Mobile','Client Phone Number']),
+    project: idxAny(['Project Name','Project']), sales: idxAny(['Assigned To','Sales Name','Sales']), status: idxAny(['Lead Status','Status']),
+    stage: idxAny(['Lead Stage','Stage']), comment: idxAny(['Last Comment','Latest Comment','Comment']), date: idxAny(['Date','Lead Date','Created Date'])
+  };
+  let rows = raw.slice(1).map(function(r,i){ const d=disp[i+1]||r; return {
+    rowNumber:i+2, id: cols.id>-1?clean_(d[cols.id]):('LD-'+(i+2)), clientName:cols.name>-1?clean_(d[cols.name]):'',
+    phone:cols.phone>-1?normalizePhone_(d[cols.phone]):'', project:cols.project>-1?clean_(d[cols.project]):'', salesName:cols.sales>-1?clean_(d[cols.sales]):'',
+    status:cols.status>-1?clean_(d[cols.status]):'', stage:cols.stage>-1?clean_(d[cols.stage]):'', lastComment:cols.comment>-1?clean_(d[cols.comment]):'',
+    date:cols.date>-1?clean_(d[cols.date]):''
+  };}).filter(x=>x.clientName||x.phone||x.salesName||x.status);
+  if(filters.project&&filters.project!=='ALL')rows=rows.filter(x=>norm_(x.project)===norm_(filters.project));
+  if(filters.status&&filters.status!=='ALL')rows=rows.filter(x=>norm_(x.status)===norm_(filters.status));
+  if(filters.search){const q=norm_(filters.search);rows=rows.filter(x=>norm_([x.clientName,x.phone,x.project,x.salesName,x.status,x.stage,x.lastComment].join(' ')).indexOf(q)>-1);}
+  return {rows:rows,statuses:all_(rows.map(x=>x.status))};
 }
 
-function readLeads_() {
-  const sh = getLeadsSheet_();
-  const lastRow = sh.getLastRow(), lastCol = sh.getLastColumn();
-  if (lastRow < 2 || lastCol < 1) return [];
-  const values = sh.getRange(1,1,lastRow,lastCol).getValues();
-  const headers = values[0].map(normalizeHeader_);
-  function idx(aliases){ for (let i=0;i<aliases.length;i++){ const n=normalizeHeader_(aliases[i]); const p=headers.indexOf(n); if(p>=0)return p; } return -1; }
-  function val(r, aliases){ const i=idx(aliases); return i>=0 ? r[i] : ''; }
-  return values.slice(1).map(function(r,i){
-    return {
-      rowNumber: i+2,
-      leadId: clean_(val(r, LEAD_ALIASES_.id)) || ('LD-' + (i+2)),
-      date: formatDate_(date_(val(r, LEAD_ALIASES_.date))),
-      clientName: clean_(val(r, LEAD_ALIASES_.name)),
-      clientPhone: clean_(val(r, LEAD_ALIASES_.phone)),
-      clientPhone2: clean_(val(r, LEAD_ALIASES_.phone2)),
-      clientAddress: clean_(val(r, LEAD_ALIASES_.address)),
-      project: clean_(val(r, LEAD_ALIASES_.project)),
-      salesName: clean_(val(r, LEAD_ALIASES_.sales)),
-      manager: clean_(val(r, LEAD_ALIASES_.manager)),
-      director: clean_(val(r, LEAD_ALIASES_.director)),
-      status: clean_(val(r, LEAD_ALIASES_.status)),
-      stage: clean_(val(r, LEAD_ALIASES_.stage)),
-      source: clean_(val(r, LEAD_ALIASES_.source)),
-      campaign: clean_(val(r, LEAD_ALIASES_.campaign)),
-      lastComment: clean_(val(r, LEAD_ALIASES_.comment))
-    };
-  }).filter(function(x){ return x.clientName || x.clientPhone || x.project || x.salesName || x.status; });
+function bulkUpdateLeadStatus(token, data) {
+  const session=requireAuth_(token); data=data||{}; const ids=(data.ids||[]).map(clean_); const status=clean_(data.status);
+  if(!ids.length||!status)throw new Error('Select leads and status.');
+  const ss=SpreadsheetApp.openById(SPREADSHEETS.LEADS), sh=ss.getSheetByName(SHEET_NAMES.leads); if(!sh)throw new Error('Feedback Leads sheet not found.');
+  const range=sh.getDataRange(), vals=range.getValues(), headers=vals[0].map(normalizeHeader_);
+  const idCol=Math.max(headers.indexOf(normalizeHeader_('Lead ID')),headers.indexOf(normalizeHeader_('ID')));
+  let statusCol=headers.indexOf(normalizeHeader_('Lead Status')); if(statusCol<0)statusCol=headers.indexOf(normalizeHeader_('Status')); if(statusCol<0)throw new Error('Lead Status column not found.');
+  let updated=0; for(let i=1;i<vals.length;i++){const id=idCol>-1?clean_(vals[i][idCol]):('LD-'+(i+1));if(ids.indexOf(id)>-1){sh.getRange(i+1,statusCol+1).setValue(status);updated++;}}
+  return {updated:updated,status:status,by:session.name||session.user||''};
 }
 
-function getLeadsData(token, filters) {
-  const session = requireAuth_(token);
-  filters = filters || {};
-  let rows = readLeads_();
-  const role = lower_(session.role);
-  if (ROLES.DIRECTOR.some(function(x){return role.indexOf(x)!==-1;})) rows = rows.filter(function(x){ return norm_(x.director)===norm_(session.salesDirector||session.name) || norm_(x.salesName)===norm_(session.name); });
-  else if (ROLES.MANAGER.some(function(x){return role.indexOf(x)!==-1;})) rows = rows.filter(function(x){ return norm_(x.manager)===norm_(session.salesManager||session.name) || norm_(x.salesName)===norm_(session.name); });
-  else if (!ROLES.ADMIN.includes(role)) rows = rows.filter(function(x){ return norm_(x.salesName)===norm_(session.name); });
-  if (filters.search) { const q=norm_(filters.search); rows=rows.filter(function(x){ return [x.leadId,x.clientName,x.clientPhone,x.clientPhone2,x.clientAddress,x.project,x.salesName,x.status,x.stage,x.source].map(norm_).join(' ').indexOf(q)!==-1; }); }
-  if (filters.status) rows=rows.filter(function(x){return norm_(x.status)===norm_(filters.status);});
-  if (filters.project) rows=rows.filter(function(x){return norm_(x.project)===norm_(filters.project);});
-  return rows;
-}
-
-function ensureLeadColumns_(sh) {
-  const required=['Date','Full Name','Client Phone Number','Client Phone Number 2','Residence address','Project Name','Assigned To','Sales Manager','Sales Director','Lead Status','Lead Stage','Lead Source Information','Campaign Name','Last Comment'];
-  let headers=sh.getRange(1,1,1,Math.max(1,sh.getLastColumn())).getValues()[0].map(clean_);
-  const normalized=headers.map(normalizeHeader_);
-  required.forEach(function(h){ if(normalized.indexOf(normalizeHeader_(h))===-1){ headers.push(h); normalized.push(normalizeHeader_(h)); sh.getRange(1,headers.length).setValue(h); } });
-  return headers;
-}
-
-function importLeadsBulk(token, rows, duplicateMode) {
-  requireAuth_(token);
-  if (!Array.isArray(rows) || !rows.length) throw new Error('No lead rows supplied.');
-  if (rows.length > 3000) throw new Error('Maximum 3000 rows per import.');
-  const sh=getLeadsSheet_();
-  const headers=ensureLeadColumns_(sh), normalized=headers.map(normalizeHeader_);
-  const existing=readLeads_();
-  const phoneMap={}; existing.forEach(function(x){ if(x.clientPhone) phoneMap[norm_(x.clientPhone)]=x.rowNumber; });
-  let added=0, updated=0, skipped=0; const errors=[];
-  function pick(obj,names){ for(let i=0;i<names.length;i++){ for(const k in obj){ if(normalizeHeader_(k)===normalizeHeader_(names[i])) return obj[k]; } } return ''; }
-  function set(arr,h,v){ const i=normalized.indexOf(normalizeHeader_(h)); if(i>=0)arr[i]=v; }
-  rows.forEach(function(obj,index){
-    try {
-      const name=clean_(pick(obj,LEAD_ALIASES_.name)); const phone=clean_(pick(obj,LEAD_ALIASES_.phone));
-      if(!name && !phone){ skipped++; errors.push({row:index+2,message:'Missing name and phone'}); return; }
-      const data=new Array(headers.length).fill('');
-      set(data,'Date',date_(pick(obj,LEAD_ALIASES_.date))||new Date()); set(data,'Full Name',name);
-      set(data,'Client Phone Number',phone); set(data,'Client Phone Number 2',clean_(pick(obj,LEAD_ALIASES_.phone2)));
-      set(data,'Residence address',clean_(pick(obj,LEAD_ALIASES_.address))); set(data,'Project Name',clean_(pick(obj,LEAD_ALIASES_.project)));
-      set(data,'Assigned To',clean_(pick(obj,LEAD_ALIASES_.sales))); set(data,'Sales Manager',clean_(pick(obj,LEAD_ALIASES_.manager)));
-      set(data,'Sales Director',clean_(pick(obj,LEAD_ALIASES_.director))); set(data,'Lead Status',clean_(pick(obj,LEAD_ALIASES_.status))||'Not Contacted');
-      set(data,'Lead Stage',clean_(pick(obj,LEAD_ALIASES_.stage))); set(data,'Lead Source Information',clean_(pick(obj,LEAD_ALIASES_.source)));
-      set(data,'Campaign Name',clean_(pick(obj,LEAD_ALIASES_.campaign))); set(data,'Last Comment',clean_(pick(obj,LEAD_ALIASES_.comment)));
-      const existingRow=phone ? phoneMap[norm_(phone)] : null;
-      if(existingRow && duplicateMode==='update'){ sh.getRange(existingRow,1,1,data.length).setValues([data]); updated++; }
-      else if(existingRow && duplicateMode!=='new'){ skipped++; }
-      else { sh.appendRow(data); added++; }
-    } catch(e){ skipped++; errors.push({row:index+2,message:e.message}); }
-  });
-  return {success:true,added:added,updated:updated,skipped:skipped,errors:errors.slice(0,100)};
-}
-
-function bulkUpdateLeadStatus(token, rowNumbers, status) {
-  requireAuth_(token);
-  if (!Array.isArray(rowNumbers) || !rowNumbers.length) throw new Error('Select at least one lead.');
-  status=clean_(status); if(!status) throw new Error('Select a new status.');
-  const sh=getLeadsSheet_(); const headers=sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0].map(normalizeHeader_);
-  let statusCol=-1; LEAD_ALIASES_.status.some(function(a){ const i=headers.indexOf(normalizeHeader_(a)); if(i>=0){statusCol=i+1;return true;} return false; });
-  if(statusCol<0){ statusCol=sh.getLastColumn()+1; sh.getRange(1,statusCol).setValue('Lead Status'); }
-  rowNumbers.map(Number).filter(function(n){return n>=2;}).forEach(function(r){ sh.getRange(r,statusCol).setValue(status); });
-  return {success:true,updated:rowNumbers.length,status:status};
+function importLeads(token, data) {
+  requireAuth_(token); data=data||{}; const rows=data.rows||[], mode=clean_(data.mode)||'skip'; if(!rows.length)throw new Error('No rows to import.');
+  const ss=SpreadsheetApp.openById(SPREADSHEETS.LEADS), sh=ss.getSheetByName(SHEET_NAMES.leads); if(!sh)throw new Error('Feedback Leads sheet not found.');
+  const headerRaw=sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0], headers=headerRaw.map(normalizeHeader_);
+  const phoneCol=(function(){for(const n of ['Client Phone','Phone','Mobile','Client Phone Number']){const i=headers.indexOf(normalizeHeader_(n));if(i>-1)return i;}return -1;})();
+  const existing={}; if(phoneCol>-1&&sh.getLastRow()>1){sh.getRange(2,phoneCol+1,sh.getLastRow()-1,1).getDisplayValues().forEach((r,i)=>{const p=normalizePhone_(r[0]);if(p)existing[p]=i+2;});}
+  let added=0,updated=0,skipped=0;
+  rows.forEach(function(obj){ const normalized={}; Object.keys(obj||{}).forEach(k=>normalized[normalizeHeader_(k)]=obj[k]); const out=new Array(headers.length).fill(''); headers.forEach((h,i)=>{ if(normalized[h]!==undefined)out[i]=normalized[h]; });
+    let phone=''; for(const n of ['Client Phone','Phone','Mobile','Client Phone Number']){const v=normalized[normalizeHeader_(n)];if(v){phone=normalizePhone_(v);break;}}
+    const rowNo=phone&&existing[phone]; if(rowNo&&mode==='skip'){skipped++;return;} if(rowNo&&mode==='update'){sh.getRange(rowNo,1,1,out.length).setValues([out]);updated++;return;} sh.appendRow(out);added++; if(phone)existing[phone]=sh.getLastRow(); });
+  return {added:added,updated:updated,skipped:skipped};
 }

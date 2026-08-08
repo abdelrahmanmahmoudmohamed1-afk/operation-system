@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="./assets/css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600;700;800&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.2/dist/html2pdf.bundle.min.js"></script>
 
     <!-- ستايل شاشة التحميل مكتوب inline هنا (مش في ملف الثيم) عشان
          يتطبق فورًا من أول رسمة للصفحة، قبل ما الجافاسكريبت يشتغل
@@ -90,8 +92,8 @@
         const dots=[...document.querySelectorAll('.boot-pulses i')];
         const stages=[['Loading interface…',36],['Connecting secure services…',61],['Preparing dashboards…',84],['Finalizing workspace…',95]];
         let i=0;
-        window.__toledoBootTimer=setInterval(()=>{
-          if(i>=stages.length){clearInterval(window.__toledoBootTimer);return;}
+        window.__operationBootTimer=setInterval(()=>{
+          if(i>=stages.length){clearInterval(window.__operationBootTimer);return;}
           status.textContent=stages[i][0];bar.style.width=stages[i][1]+'%';dots.forEach((d,n)=>d.classList.toggle('active',n<=i));i++;
         },650);
       })();

@@ -50,6 +50,17 @@ const MODULES = Object.freeze({
         permissions: []
     },
 
+
+    leads: {
+        name: "Leads",
+        route: "leads",
+        folder: "leads",
+        controller: "leads.controller.js",
+        service: "leads.service.js",
+        view: "leads.view.js",
+        permissions: []
+    },
+
     eoi: {
         name: "EOI",
         route: "eoi",

@@ -1,6 +1,6 @@
 /**
  * ===========================================================
- * OPERATION SYSTEM UNIFIED BACKEND — Config.gs
+ * OPERATION SYSTEM BACKEND — Config.gs
  * ===========================================================
  * كل الـ Spreadsheet IDs وأسماء الشيتات في مكان واحد فقط.
  * أي تغيير في أي ID أو اسم شيت يتم هنا فقط، باقي الملفات
@@ -27,7 +27,7 @@ const SPREADSHEETS = {
   // All Brokers + Request (الكروبات والطلبات والزيارات)
   BROKERS: '1C13-OWI5fOnqW-LO4Kb7bOq1wyE44nIbAp6jbm5OYTA',
 
-  // Leads source
+  // Lead database
   LEADS: '1SzaCVURxxKxGcBLVtlYtH6M4u-npDfjIV1Q7BXO63ec'
 };
 
@@ -59,9 +59,8 @@ const SHEET_NAMES = {
   allBrokers: 'All Brokers',
   request: 'Request',
 
-  // Leads & documents
-  leads: 'Feedback Leads',
-  clientDocuments: 'Client Documents'
+  // Leads
+  leads: 'Feedback Leads'
 };
 
 // صف العناوين (Headers) في كل شيت — لو اتغير الصف ده بس اللي يتعدل
@@ -75,30 +74,17 @@ const HEADER_ROW = {
   orientation: 1
 };
 
-// أدوار النظام، موحّدة في مكان واحد
+// أدوار النظام المعتمدة داخل النظام.
+// Admin: صلاحيات كاملة، بما فيها إدارة المستخدمين وسجل النشاط.
+// User: استخدام الموديولات التشغيلية بدون إدارة المستخدمين.
 const ROLES = {
-  ADMIN: ['admin', 'owner', 'ceo', 'operation', 'operations'],
-  DIRECTOR: ['director'],
-  MANAGER: ['manager'],
-  SALES: ['sales']
+  ADMIN: ['admin'],
+  USER: ['user']
 };
 
-
-
-// الحساب الوحيد المسموح له بفتح وإدارة موديول Users.
-// يفضّل كتابة Username الدقيق في ownerUsernames لزيادة الدقة.
-const SYSTEM_OWNER = Object.freeze({
-  ownerUsernames: [],
-  ownerNames: ['Abdelrahman Mahmoud']
-});
-
-function isSystemOwnerIdentity_(user) {
+function isSystemAdmin_(user) {
   user = user || {};
-  const username = norm_(user.user || user.username);
-  const name = norm_(user.name);
-  const usernames = (SYSTEM_OWNER.ownerUsernames || []).map(norm_).filter(Boolean);
-  const names = (SYSTEM_OWNER.ownerNames || []).map(norm_).filter(Boolean);
-  return (username && usernames.indexOf(username) !== -1) || (name && names.indexOf(name) !== -1);
+  return norm_(user.role) === 'admin';
 }
 
 // إعدادات عامة بتتقرأ من الفرونت إند (datalist options ثابتة)
@@ -109,7 +95,8 @@ const STATIC_LISTS = {
   sourceOptions: ["Direct", "Ambassador", "Broker"],
   sourceBreakdowns: ["Personal", "Walk In", "Social Media"],
   socialMediaOptions: ["Facebook", "Instagram", "WhatsApp", "Website", "Other"],
-  interestOptions: ["Studio", "1 Bedroom", "2 Bedroom"]
+  interestOptions: ["Studio", "1 Bedroom", "2 Bedroom", "3 Bedroom"],
+  housingOptions: ["Primary Residence", "Investment", "Second Home", "Other"]
 };
 
 // خرائط أسماء الحقول (aliases) — بتسمح إن أي عمود يتسمى بأكتر من اسم
@@ -145,7 +132,7 @@ const FIELD_ALIASES = {
   clientType: ['Client Type', 'Clint Type', 'Contract Type'],
   clientName: ['Client Name English', 'Client Name Arabic', 'Client Name'],
   clientPhone: ['Client Phone Number', 'Client Phone', 'Phone', 'Mobile', 'Mobile Number', 'Primary Mobile'],
-  clientPhone2: ['Client Phone Number 2', 'Client Phone 2', 'Client Phone  2', 'Secondary Mobile', 'Mobile 2', 'Alternate Phone'],
+  clientPhone2: ['Client Phone Number 2', 'Client Phone 2', 'Secondary Mobile', 'Mobile 2', 'Alternate Phone'],
   clientAddress: ['Residence address', 'Residence Address', 'Client Address', 'Address', 'Full Address'],
   gender: ['Client Gender', 'Gender', 'Sex'],
   salesTeamName: ['Sales Name', 'Sales', 'Name'],

@@ -30,12 +30,12 @@ class EOIController extends Module {
             if (tbody) {
                 tbody.innerHTML = this.data.rows.length
                     ? renderRows(this.data.rows)
-                    : renderEmptyRow(7, "No EOI records yet");
+                    : renderEmptyRow(9, "No EOI records yet");
             }
             if (kpisBox) kpisBox.innerHTML = renderKpis(this.data);
         } catch (error) {
             this.logger().error("EOI load failed", error);
-            if (tbody) tbody.innerHTML = renderErrorRow(7, error.message);
+            if (tbody) tbody.innerHTML = renderErrorRow(9, error.message);
             this.notify().error(error.message);
         }
     }

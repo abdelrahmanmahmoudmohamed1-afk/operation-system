@@ -5,6 +5,8 @@ const COLUMNS = [
     { key: "Date", label: "Date" },
     { key: "ClientName", label: "Client" },
     { key: "Phone", label: "Phone" },
+    { key: "Project", label: "Project" },
+    { key: "Housing", label: "Housing" },
     { key: "Interest", label: "Interest" },
     { key: "Deposit", label: "Deposit" },
     { key: "Sales", label: "Sales" },
@@ -57,6 +59,8 @@ export function renderRows(rows) {
             <td>${escapeHtml(r.Date)}</td>
             <td>${escapeHtml(r.ClientName)}</td>
             <td>${escapeHtml(r.Phone)}</td>
+            <td>${escapeHtml(r.Project || "-")}</td>
+            <td>${escapeHtml(r.Housing || "-")}</td>
             <td>${escapeHtml(r.Interest)}</td>
             <td>${Formatter.money(r.Deposit)}</td>
             <td>${escapeHtml(r.Sales)}</td>
@@ -70,6 +74,7 @@ export function renderForm({ salesOptions, lists }) {
     const sourceOpts = (lists.sourceOptions || []).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
     const interestOpts = (lists.interestOptions || []).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
     const paymentOpts = (lists.paymentMethods || []).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+    const housingOpts = (lists.housingOptions || []).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
 
     return `
         <div class="modal-backdrop" id="eoi-modal-backdrop">
@@ -80,6 +85,8 @@ export function renderForm({ salesOptions, lists }) {
                     <div class="form-grid">
                         <div><label>Client Name</label><input type="text" name="clientName1" required></div>
                         <div><label>Client Phone</label><input type="text" name="clientPhone" placeholder="01xxxxxxxxx" required></div>
+                        <div><label>Project</label><input type="text" name="project" placeholder="Project name"></div>
+                        <div><label>Housing</label><select name="housingTopic"><option value="">Select</option>${housingOpts}</select></div>
                         <div><label>Interest</label><select name="interest" required><option value="">Select</option>${interestOpts}</select></div>
                         <div><label>Sales Name</label><select name="salesName1" required><option value="">Select</option>${salesOpts}</select></div>
                         <div><label>Source</label><select name="source" required><option value="">Select</option>${sourceOpts}</select></div>

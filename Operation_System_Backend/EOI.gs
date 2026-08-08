@@ -1,6 +1,6 @@
 /**
  * ===========================================================
- * OPERATION SYSTEM UNIFIED BACKEND — EOI.gs
+ * OPERATION SYSTEM BACKEND — EOI.gs
  * ===========================================================
  * كل ما يخص EOI (Expression of Interest): حفظ، قراءة، تحليلات.
  * ===========================================================
@@ -36,6 +36,9 @@ function saveEOI(token, obj) {
   set('Local/Overseas', obj.localOverseas || '');
   set('Client Nationality', obj.clientNationality || '');
   set('Client Residence', obj.clientResidence || '');
+  set('Project', obj.project || '');
+  set('Housing', obj.housingTopic || '');
+  set('Housing Topic', obj.housingTopic || '');
   set('Interest', obj.interest || '');
   set("Deposit EOI'S", obj.depositEOI || '');
   set("Deposit EOI'S 2", obj.depositEOI2 || '');
@@ -51,7 +54,7 @@ function saveEOI(token, obj) {
   set('Broker Agent Name', obj.brokerAgentName || '');
 
   sheet.appendRow(row);
-  return { success: true, message: 'تم حفظ الـ EOI بنجاح' };
+  return { success: true, message: 'EOI saved successfully.' };
 }
 
 function validateEOI_(o) {
@@ -93,6 +96,8 @@ function getEOIRows_(fromDate, toDate) {
   const dateCol = idx('Date and Time');
   const cn1Col = idx('Client Name 1');
   const cpCol = idx('Client Phone');
+  const projectCol = idx('Project');
+  const housingCol = idx('Housing') > -1 ? idx('Housing') : idx('Housing Topic');
   const interestCol = idx('Interest');
   const depositCol = idx("Deposit EOI'S");
   const deposit2Col = idx("Deposit EOI'S 2");
@@ -119,6 +124,8 @@ function getEOIRows_(fromDate, toDate) {
       date: d,
       clientName: cn1Col > -1 ? clean_(r[cn1Col]) : '',
       clientPhone: cpCol > -1 ? clean_(r[cpCol]) : '',
+      project: projectCol > -1 ? clean_(r[projectCol]) : '',
+      housingTopic: housingCol > -1 ? clean_(r[housingCol]) : '',
       interest: interestCol > -1 ? clean_(r[interestCol]) : '',
       deposit: totalDep,
       paymentMethod: pmCol > -1 ? clean_(r[pmCol]) : '',
@@ -143,7 +150,8 @@ function getEOIData(token, filters) {
   const from = filters.fromDate ? new Date(filters.fromDate) : null;
   const to = filters.toDate ? new Date(filters.toDate) : null;
 
-  const rows = getEOIRows_(from, to).filter(x => roleAllowed_(x, session));
+  let rows = getEOIRows_(from, to).filter(x => roleAllowed_(x, session));
+  if (filters.project && filters.project !== 'ALL') rows = rows.filter(x => !x.project || norm_(x.project) === norm_(filters.project));
 
   const total = rows.length;
   const totalDeposit = sum_(rows, 'deposit');
@@ -162,6 +170,8 @@ function getEOIData(token, filters) {
       Date: formatDate_(r.date),
       ClientName: r.clientName,
       Phone: r.clientPhone,
+      Project: r.project,
+      Housing: r.housingTopic,
       Interest: r.interest,
       Deposit: round_(r.deposit),
       Payment: r.paymentMethod,

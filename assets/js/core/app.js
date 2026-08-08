@@ -26,6 +26,7 @@ import Container from "./container.js";
 
 import ServiceProvider from "../providers/service-provider.js";
 import AuthService from "../services/auth.service.js";
+import DashboardService from "../services/dashboard.service.js";
 
 class App {
     constructor() {
@@ -138,8 +139,11 @@ class App {
         await this.router.load(initialRoute);
 
         this.bindNavigation();
+        this.bindLogoHome();
+        await this.bindGlobalProjectFilter();
         this.bindLogout();
         this.bindGlobalSearch();
+        this.bindCurrentViewPdf();
         this.bindLanguageSwitch();
         this.prefetchCommonModules();
         this.bindDetails();
@@ -166,24 +170,57 @@ class App {
     }
 
     bindNavigation() {
-        document
-            .querySelectorAll("[data-route]")
-            .forEach((button) => {
-                button.addEventListener("click", async () => {
-                    const routeName = button.getAttribute("data-route");
-                    this.setBusy(true, `Opening ${routeName}...`);
-                    try {
-                        Container.get("audit")?.record("Open module", routeName, { route: routeName });
-                        await this.router.load(routeName);
-                        this.applyLanguageLabels();
-                    } catch (error) {
-                        Container.get("notification")?.error(error.message || "Failed to open module");
-                        throw error;
-                    } finally {
-                        this.setBusy(false);
-                    }
-                });
-            });
+        if (this.navigationBound) return;
+        this.navigationBound = true;
+        document.addEventListener("click", async (event) => {
+            const button = event.target.closest("[data-route]");
+            if (!button || button.disabled) return;
+            const routeName = button.getAttribute("data-route");
+            if (!routeName) return;
+            event.preventDefault();
+            this.setBusy(true, `Opening ${routeName}...`);
+            try {
+                Container.get("audit")?.record("Open module", routeName, { route: routeName });
+                await this.router.load(routeName);
+                this.applyLanguageLabels();
+            } catch (error) {
+                Container.get("notification")?.error(error.message || "Failed to open module");
+            } finally {
+                this.setBusy(false);
+            }
+        });
+    }
+
+    bindLogoHome() {
+        if (this.logoHomeBound) return;
+        this.logoHomeBound = true;
+        document.addEventListener("click", async (event) => {
+            const logo = event.target.closest("[data-home], .sidebar-brand-logo");
+            if (!logo || !this.router) return;
+            event.preventDefault();
+            await this.router.load("overview");
+        });
+    }
+
+    async bindGlobalProjectFilter() {
+        const select = document.getElementById("global-project-filter");
+        const status = document.getElementById("global-project-status");
+        if (!select) return;
+        let projects = [];
+        try { projects = (await DashboardService.getFilters())?.projects || []; } catch (_) {}
+        const saved = sessionStorage.getItem("operation_selected_project") || "ALL";
+        select.innerHTML = `<option value="ALL">All Projects</option>` + projects.map((p) => `<option value="${this.escapeHTML(p)}">${this.escapeHTML(p)}</option>`).join("");
+        select.value = projects.includes(saved) ? saved : "ALL";
+        const syncStatus = () => { if (status) status.textContent = select.value === "ALL" ? "Whole system" : `Filtered: ${select.value}`; };
+        syncStatus();
+        select.addEventListener("change", async () => {
+            sessionStorage.setItem("operation_selected_project", select.value);
+            Container.get("api")?.clearReadCache?.();
+            syncStatus();
+            window.dispatchEvent(new CustomEvent("operation:project-change", { detail: { project: select.value } }));
+            const route = this.router?.currentRoute || "overview";
+            await this.router.load(route, false);
+        });
     }
 
     bindLogout() {
@@ -191,8 +228,15 @@ class App {
             .querySelectorAll("[data-logout]")
             .forEach((button) => {
                 button.addEventListener("click", async () => {
-                    this.setBusy(true, "Logging out...");
+                    if (document.getElementById("logout-scene")) return;
+                    const scene = document.createElement("div");
+                    scene.id = "logout-scene";
+                    scene.className = "logout-scene";
+                    scene.innerHTML = `<div class="logout-room"><div class="logout-lamp"></div><div class="logout-person"><i></i></div><div class="logout-door-frame"><div class="logout-door"></div></div><div class="logout-goodbye">See you soon</div></div>`;
+                    document.body.appendChild(scene);
+                    requestAnimationFrame(() => scene.classList.add("play"));
                     Container.get("audit")?.record("Logout", "Auth", {});
+                    await new Promise((resolve) => setTimeout(resolve, 1650));
                     await AuthService.logout();
                     location.reload();
                 });
@@ -209,13 +253,13 @@ class App {
             const term = input.value.trim();
             if (!term) return;
             const target = type?.value || "all";
-            sessionStorage.setItem("toledo_global_search", JSON.stringify({ term, target, ts: Date.now() }));
+            sessionStorage.setItem("operation_global_search", JSON.stringify({ term, target, ts: Date.now() }));
 
-            const route = target === "inventory" ? "inventory" : target === "eoi" ? "eoi" : target === "reports" ? "reports" : "crm";
+            const route = target === "inventory" ? "inventory" : target === "leads" ? "leads" : target === "eoi" ? "eoi" : target === "reports" ? "reports" : "crm";
             if (location.hash.replace("#", "") !== route) {
                 await this.router.load(route);
             } else {
-                window.dispatchEvent(new CustomEvent("toledo:global-search", { detail: { term, target } }));
+                window.dispatchEvent(new CustomEvent("operation:global-search", { detail: { term, target } }));
             }
         };
 
@@ -235,15 +279,45 @@ class App {
         clear?.addEventListener("click", () => { input.value = ""; input.focus(); });
     }
 
+    bindCurrentViewPdf() {
+        const button = document.getElementById("download-current-pdf");
+        if (!button) return;
+        button.addEventListener("click", async () => {
+            const source = document.getElementById("page-content");
+            if (!source || !window.html2pdf) return Container.get("notification")?.error("PDF engine is not ready. Refresh and try again.");
+            button.disabled = true; button.textContent = "...";
+            const clone = source.cloneNode(true);
+            clone.querySelectorAll(".report-row-excluded").forEach((row) => row.remove());
+            clone.querySelectorAll("input[type=checkbox], .no-pdf, button").forEach((el) => el.remove());
+            clone.querySelectorAll(".table-wrap,.report-table-scroll,.audit-table-scroll,.users-list").forEach((el) => { el.style.overflow = "visible"; el.style.maxHeight = "none"; el.style.height = "auto"; });
+            const wrap = document.createElement("div");
+            wrap.className = "pdf-export-stage";
+            wrap.appendChild(clone);
+            document.body.appendChild(wrap);
+            const route = this.router?.currentRoute || "report";
+            try {
+                await window.html2pdf().set({
+                    margin: [7,7,8,7], filename: `Operation_System_${route}_${new Date().toISOString().slice(0,10)}.pdf`,
+                    image: { type: "jpeg", quality: .96 },
+                    html2canvas: { scale: 1.45, useCORS: true, backgroundColor: "#120d0b", windowWidth: Math.max(1400, clone.scrollWidth || 1400) },
+                    jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
+                    pagebreak: { mode: ["css", "legacy"], avoid: ["tr", ".kpi-card"] }
+                }).from(wrap).save();
+                Container.get("audit")?.record("PDF exported", route, { project: sessionStorage.getItem("operation_selected_project") || "ALL" });
+            } catch (error) { Container.get("notification")?.error(error.message || "PDF export failed"); }
+            finally { wrap.remove(); button.disabled = false; button.textContent = "PDF"; }
+        });
+    }
+
     bindLanguageSwitch() {
         const select = document.getElementById("language-switcher");
         if (!select) return;
-        const saved = localStorage.getItem("toledo_language") || "en";
+        const saved = localStorage.getItem("operation_language") || "en";
         select.value = saved;
         document.documentElement.lang = saved;
         document.documentElement.dir = saved === "ar" ? "rtl" : "ltr";
         select.addEventListener("change", () => {
-            localStorage.setItem("toledo_language", select.value);
+            localStorage.setItem("operation_language", select.value);
             document.documentElement.lang = select.value;
             document.documentElement.dir = select.value === "ar" ? "rtl" : "ltr";
             location.reload();
@@ -361,17 +435,17 @@ class App {
     bindSessionExpiry() {
         if (this.sessionExpiryBound) return;
         this.sessionExpiryBound = true;
-        window.addEventListener("toledo:session-expired", () => {
+        window.addEventListener("operation:session-expired", () => {
             Container.get("authManager")?.logout();
             location.reload();
         });
     }
 
     setBusy(active, message = "Loading...") {
-        let overlay = document.getElementById("toledo-action-loader");
+        let overlay = document.getElementById("operation-action-loader");
         if (!overlay) {
             overlay = document.createElement("div");
-            overlay.id = "toledo-action-loader";
+            overlay.id = "operation-action-loader";
             overlay.className = "action-loader hidden";
             overlay.innerHTML = `<div class="action-loader-box"><span class="action-spinner"></span><strong></strong></div>`;
             document.body.appendChild(overlay);
@@ -381,11 +455,11 @@ class App {
     }
 
     applyLanguageLabels() {
-        const lang = localStorage.getItem("toledo_language") || "en";
+        const lang = localStorage.getItem("operation_language") || "en";
         const ar = lang === "ar";
         const map = ar ? {
             "Overview": "نظرة عامة", "Dashboard": "لوحة التحكم", "Inventory": "المخزون", "Payment": "خطط السداد",
-            "CRM": "إدارة العملاء", "EOI": "طلبات الاهتمام", "Reports": "التقارير", "Contracts": "العقود", "Settings": "الإعدادات",
+            "CRM": "إدارة العملاء", "Leads": "العملاء المحتملون", "Users": "المستخدمون", "EOI": "طلبات الاهتمام", "Reports": "التقارير", "Contracts": "العقود", "Settings": "الإعدادات",
             "Logout": "تسجيل الخروج", "Log Out": "تسجيل الخروج", "Search units, clients, EOI, reports...": "ابحث عن وحدة أو عميل أو طلب أو تقرير...",
             "Run Report": "تشغيل التقرير", "Save View": "حفظ العرض", "Apply": "تطبيق", "Reset": "إعادة ضبط", "Filters": "الفلاتر", "Columns": "الأعمدة", "Saved Views": "العروض المحفوظة"
         } : {};

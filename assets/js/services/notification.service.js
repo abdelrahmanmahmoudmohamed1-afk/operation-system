@@ -17,11 +17,12 @@ class NotificationService {
     show(message, type = 'info', duration = this.defaultDuration) {
         this.init();
         const toast = document.createElement('div');
+        if (/^Unknown action:/i.test(String(message || ""))) return null;
         toast.className = `toast toast-${type} notification notification-${type}`;
         toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
         toast.innerHTML = `
-            <span class="toast-dot"></span>
-            <span class="toast-message">${this.escape(message || '')}</span>
+            <span class="toast-icon">${type === 'success' ? '✓' : type === 'error' ? '!' : type === 'warning' ? '⚠' : 'i'}</span>
+            <span class="toast-copy"><strong>${type === 'success' ? 'Done' : type === 'error' ? 'Something went wrong' : type === 'warning' ? 'Attention' : 'Operation System'}</strong><span class="toast-message">${this.escape(message || '')}</span></span>
             <button class="toast-close" type="button" aria-label="Close">×</button>
         `;
         toast.querySelector('.toast-close')?.addEventListener('click', () => this.close(toast));

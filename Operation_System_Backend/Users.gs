@@ -8,9 +8,9 @@ const AUDIT_HEADERS_ = [
   'Details', 'Success', 'Duration Ms'
 ];
 
-function requireOwner_(token) {
+function requireAdmin_(token) {
   const session = requireAuth_(token);
-  if (!isSystemOwnerIdentity_(session)) throw new Error('FORBIDDEN');
+  if (!isSystemAdmin_(session)) throw new Error('FORBIDDEN');
   return session;
 }
 
@@ -100,7 +100,7 @@ function readUsers_() {
       rowNumber: index + HEADER_ROW.users + 1,
       name: name,
       username: username,
-      role: clean_(getByAlias_(row, headerMap, aliases.role)),
+      role: norm_(getByAlias_(row, headerMap, aliases.role)) === 'admin' ? 'Admin' : 'User',
       manager: clean_(getByAlias_(row, headerMap, aliases.manager)),
       director: clean_(getByAlias_(row, headerMap, aliases.director)),
       email: clean_(getByAlias_(row, headerMap, aliases.email)),
@@ -111,7 +111,7 @@ function readUsers_() {
 }
 
 function getUsersData(token) {
-  requireOwner_(token);
+  requireAdmin_(token);
   const users = readUsers_();
   const byRole = {};
   users.forEach(function(u) {
@@ -131,7 +131,7 @@ function getUsersData(token) {
 }
 
 function getAuditHistory(token, filters) {
-  requireOwner_(token);
+  requireAdmin_(token);
   filters = filters || {};
   const sh = getOrCreateAuditSheet_();
   const lastRow = sh.getLastRow();
@@ -189,12 +189,13 @@ function ensureUserColumns_(sh) {
 }
 
 function createSystemUser(token, data) {
-  const owner = requireOwner_(token);
+  const admin = requireAdmin_(token);
   data = data || {};
   const name = clean_(data.name);
   const username = clean_(data.username);
   const password = clean_(data.password);
-  const role = clean_(data.role || 'user');
+  const roleInput = norm_(data.role || 'user');
+  const role = roleInput === 'admin' ? 'Admin' : 'User';
   if (!name || !username || !password) throw new Error('Name, username and password are required.');
   if (password.length < 6) throw new Error('Password must be at least 6 characters.');
 

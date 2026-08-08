@@ -58,28 +58,19 @@ export function renderKpis(data) {
     const contracted = statusSum(mix, ["Contracted"]);
     const sold = statusSum(mix, ["Sold"]);
     const reserved = statusSum(mix, ["Reserved"]);
-    const contractedSold = statusSum(mix, ["Contracted", "Sold"]);
-    const soldReserved = statusSum(mix, ["Sold", "Reserved"]);
-    const allThree = statusSum(mix, ["Contracted", "Sold", "Reserved"]);
-
+    const active = statusSum(mix, ["Contracted", "Sold", "Reserved"]);
     const items = [
-        ["Total Sales Value", Formatter.money(k.totalSalesValue || allThree.value)],
+        ["Active Sales Value", Formatter.money(active.value)],
         ["Contracted", contracted.units, Formatter.money(contracted.value)],
         ["Sold", sold.units, Formatter.money(sold.value)],
         ["Reserved", reserved.units, Formatter.money(reserved.value)],
-        ["Contracted + Sold", contractedSold.units, Formatter.money(contractedSold.value)],
-        ["Sold + Reserved", soldReserved.units, Formatter.money(soldReserved.value)],
-        ["All Three", allThree.units, Formatter.money(allThree.value)],
-        ["Available Units", k.availableUnits || 0, Formatter.money(k.availableValue || 0)]
+        ["Available Units", k.availableUnits || 0, Formatter.money(k.availableValue || 0)],
+        ["Cancelled", k.cancelledUnits || 0, `${Number(k.cancellationRate || 0).toLocaleString()}% cancellation rate`]
     ];
-
     return items.map(([title, value, sub]) => `
         <div class="kpi-card detail-card" data-detail-title="${escapeHtml(title)}" data-detail-value="${escapeHtml(value)}" data-detail-sub="${escapeHtml(sub || "")}">
-            <div class="kpi-title">${escapeHtml(title)}</div>
-            <div class="kpi-value">${escapeHtml(value)}</div>
-            ${sub ? `<div class="kpi-sub">${escapeHtml(sub)}</div>` : ""}
-        </div>
-    `).join("");
+            <div class="kpi-title">${escapeHtml(title)}</div><div class="kpi-value">${escapeHtml(value)}</div>${sub ? `<div class="kpi-sub">${escapeHtml(sub)}</div>` : ""}
+        </div>`).join("");
 }
 
 export function renderPipeline(statusMix) {
