@@ -3,6 +3,7 @@ const MENU = Object.freeze([
     { label: "Overview", route: "overview", code: "OVR", icon: "⌂" },
     { label: "Dashboard", route: "dashboard", code: "DSH", icon: "◈" },
     { label: "Inventory", route: "inventory", code: "INV", icon: "▦" },
+    { label: "Digital Twin", route: "digitaltwin", code: "DTW", icon: "▥" },
     { label: "Payment", route: "payment", code: "PAY", icon: "◍" },
     { label: "CRM", route: "crm", code: "CRM", icon: "☻" },
     { label: "Leads", route: "leads", code: "LDS", icon: "◎" },

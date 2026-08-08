@@ -30,6 +30,17 @@ const MODULES = Object.freeze({
         permissions: []
     },
 
+
+    digitaltwin: {
+        name: "Digital Twin",
+        route: "digitaltwin",
+        folder: "digitaltwin",
+        controller: "digitaltwin.controller.js",
+        service: "digitaltwin.service.js",
+        view: "digitaltwin.view.js",
+        permissions: []
+    },
+
     payment: {
         name: "Payment",
         route: "payment",

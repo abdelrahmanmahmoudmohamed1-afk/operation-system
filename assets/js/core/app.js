@@ -144,6 +144,7 @@ class App {
         this.bindLogout();
         this.bindGlobalSearch();
         this.bindEnterpriseUX();
+        this.bindOpsCopilot();
         this.bindLanguageSwitch();
         this.prefetchCommonModules();
         this.bindDetails();
@@ -375,6 +376,7 @@ class App {
         const run = () => Promise.allSettled([
             import("../modules/dashboard/dashboard.controller.js"),
             import("../modules/inventory/inventory.controller.js"),
+            import("../modules/digitaltwin/digitaltwin.controller.js"),
             import("../modules/reports/reports.controller.js")
         ]);
         if ("requestIdleCallback" in window) requestIdleCallback(run, { timeout: 3500 });
@@ -569,7 +571,7 @@ class App {
         const openPalette = () => {
             const commands = [
                 ["Command Center", "commandcenter", "Executive workspace"], ["Overview", "overview", "Business overview"], ["Dashboard", "dashboard", "Sales dashboard"],
-                ["Inventory", "inventory", "Units and availability"], ["CRM", "crm", "Clients and profiles"], ["Leads", "leads", "Lead pipeline"], ["Tasks", "tasks", "Follow-ups"],
+                ["Inventory", "inventory", "Units and availability"], ["Digital Twin", "digitaltwin", "Live building and unit map"], ["CRM", "crm", "Clients and profiles"], ["Leads", "leads", "Lead pipeline"], ["Tasks", "tasks", "Follow-ups"],
                 ["Analytics", "analytics", "Targets and finance"], ["Data Quality", "quality", "Health and data issues"], ["Reports", "reports", "Reporting center"],
                 ["Contracts", "contracts", "Contract records"], ["Documents", "documents", "Client document vault"], ["Users", "users", "Users and audit"], ["Settings", "settings", "Workspace settings"]
             ].filter(([,route]) => Container.get("permissionManager").can(String(Container.get("authManager").getUser()?.role || "user").toLowerCase(), route));
@@ -587,6 +589,57 @@ class App {
         window.addEventListener("operation:enterprise-store", updateBadge);
         document.addEventListener("keydown", (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); } if (e.key === "Escape" && root.innerHTML) root.innerHTML=""; });
         updateBadge();
+    }
+
+    bindOpsCopilot() {
+        if (this.opsCopilotBound) return;
+        this.opsCopilotBound = true;
+        const root = document.getElementById("enterprise-overlay-root") || document.body;
+        const open = async (seed = "") => {
+            root.innerHTML = `<div class="copilot-backdrop"><aside class="ops-copilot"><div class="copilot-head"><div><span class="eyebrow">Workspace intelligence</span><h2>Ops Copilot</h2><p>Ask about units, clients, sales performance, pipeline or data quality.</p></div><button class="modal-close" id="copilot-close">×</button></div><div class="copilot-suggestions"><button data-copilot-prompt="Give me an executive summary">Executive summary</button><button data-copilot-prompt="Show available units">Available units</button><button data-copilot-prompt="Who is the top sales?">Top sales</button><button data-copilot-prompt="Which clients are missing mobile numbers?">CRM quality</button></div><div id="copilot-conversation" class="copilot-conversation"><div class="copilot-message assistant"><span>AI</span><div><strong>Ready</strong><p>I analyze the data already loaded by Operation System. Try “available units in Mersea” or “top sales”.</p></div></div></div><div class="copilot-composer"><button id="copilot-voice" type="button" title="Voice input">◉</button><input id="copilot-input" placeholder="Ask Operation System…" autocomplete="off"><button id="copilot-send" type="button">Ask</button></div></aside></div>`;
+            const close = () => root.innerHTML = "";
+            document.getElementById("copilot-close")?.addEventListener("click", close);
+            const input = document.getElementById("copilot-input");
+            const convo = document.getElementById("copilot-conversation");
+            const ask = async (prompt) => {
+                const q = String(prompt || input.value || "").trim(); if (!q) return;
+                input.value = "";
+                convo.insertAdjacentHTML("beforeend", `<div class="copilot-message user"><span>YOU</span><div><p>${this.escapeHTML(q)}</p></div></div><div class="copilot-thinking"><i></i><i></i><i></i></div>`);
+                convo.scrollTop = convo.scrollHeight;
+                try {
+                    const mod = await import("../services/ops.copilot.service.js");
+                    const result = await mod.default.ask(q);
+                    convo.querySelector(".copilot-thinking")?.remove();
+                    const rows = (result.rows || []).map((x) => `<button class="copilot-result-row" ${result.route ? `data-route="${this.escapeHTML(result.route)}"` : ""}><strong>${this.escapeHTML(x.label)}</strong><span>${this.escapeHTML(x.value)}</span></button>`).join("");
+                    convo.insertAdjacentHTML("beforeend", `<div class="copilot-message assistant"><span>AI</span><div><strong>${this.escapeHTML(result.title || "Result")}</strong><p>${this.escapeHTML(result.answer || "")}</p>${rows ? `<div class="copilot-result-list">${rows}</div>` : ""}${result.route ? `<button class="copilot-open-route" data-route="${this.escapeHTML(result.route)}">Open ${this.escapeHTML(result.route)}</button>` : ""}</div></div>`);
+                } catch (error) {
+                    convo.querySelector(".copilot-thinking")?.remove();
+                    convo.insertAdjacentHTML("beforeend", `<div class="copilot-message assistant error"><span>!</span><div><strong>Could not analyze this request</strong><p>${this.escapeHTML(error.message || String(error))}</p></div></div>`);
+                }
+                convo.scrollTop = convo.scrollHeight;
+            };
+            document.getElementById("copilot-send")?.addEventListener("click", () => ask());
+            input?.addEventListener("keydown", (e) => { if (e.key === "Enter") ask(); if (e.key === "Escape") close(); });
+            root.querySelectorAll("[data-copilot-prompt]").forEach((b) => b.addEventListener("click", () => ask(b.dataset.copilotPrompt)));
+            const voice = document.getElementById("copilot-voice");
+            voice?.addEventListener("click", () => {
+                const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!Speech) { Container.get("notification")?.info("Voice search is not supported by this browser."); return; }
+                const recognition = new Speech(); recognition.lang = document.documentElement.lang === "ar" ? "ar-EG" : "en-US"; recognition.interimResults = false;
+                voice.classList.add("listening"); recognition.onresult = (e) => { const text = e.results?.[0]?.[0]?.transcript || ""; input.value = text; ask(text); }; recognition.onend = () => voice.classList.remove("listening"); recognition.onerror = () => voice.classList.remove("listening"); recognition.start();
+            });
+            if (seed) { input.value = seed; setTimeout(() => ask(seed), 50); } else input?.focus();
+        };
+        document.getElementById("ops-copilot-btn")?.addEventListener("click", () => open());
+        document.getElementById("voice-search-btn")?.addEventListener("click", () => {
+            const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const input = document.getElementById("global-search-input");
+            if (!Speech) { open("Give me an executive summary"); return; }
+            const recognition = new Speech(); recognition.lang = document.documentElement.lang === "ar" ? "ar-EG" : "en-US"; recognition.interimResults = false;
+            recognition.onresult = (e) => { const text = e.results?.[0]?.[0]?.transcript || ""; if (input) input.value = text; open(text); };
+            recognition.start();
+        });
+        window.addEventListener("operation:open-copilot", (e) => open(e.detail?.prompt || ""));
     }
 
     showStartupMessage() {
