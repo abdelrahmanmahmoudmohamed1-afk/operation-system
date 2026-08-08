@@ -17,9 +17,7 @@ const TABLE_COLUMNS = [
     { key: "salesName", label: "Sales" },
     { key: "status", label: "Status" },
     { key: "soldPrice", label: "Value" },
-    { key: "reservationDate", label: "Reservation Date" },
     { key: "contractDate", label: "Contract Date" },
-    { key: "soldDate", label: "Sold Date" },
     { key: "documents", label: "Documents" }
 ];
 
@@ -74,9 +72,7 @@ export function renderTableRows(rows) {
             <td>${escapeHtml(row.salesName)}</td>
             <td>${statusBadge(row.status)}</td>
             <td>${Formatter.money(row.soldPrice)}</td>
-            <td>${escapeHtml(row.reservationDate || "-")}</td>
             <td>${escapeHtml(row.contractDate || "-")}</td>
-            <td>${escapeHtml(row.soldDate || "-")}</td>
             <td><button type="button" class="btn btn-outline btn-sm crm-upload-contract" data-client='${escapeHtml(JSON.stringify({unitCode:row.unitCode,project:row.project,clientName:row.clientName}))}'>Upload PDF</button></td>
         </tr>
     `).join("");

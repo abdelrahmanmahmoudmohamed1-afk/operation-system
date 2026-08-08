@@ -1,6 +1,6 @@
 /**
  * ===========================================================
- * OPERATION SYSTEM BACKEND — Code.gs
+ * OPERATION SYSTEM UNIFIED BACKEND — Code.gs
  * ===========================================================
  * نقطة دخول الـ Web App الوحيدة لكل النظام. بيقدّم الفرونت إند
  * (Operation System) وبيشغّل كل الـ API functions اللي الموديولات
@@ -42,10 +42,13 @@ const ACTION_MAP = {
   login: (p) => login(p.username, p.password),
   logout: (p) => logout(p.token),
   changeOwnPassword: (p) => changeOwnPassword(p.token, p.oldPassword, p.newPassword),
+  getSystemInfo: (p) => { requireAuth_(p.token); return getSystemInfo_(); },
+  recordUserActivity: (p) => recordUserActivity(p.token, p.data),
 
   // Dashboard
   getDashboardFilters: (p) => getDashboardFilters(p.token),
   getDashboardData: (p) => getDashboardData(p.token, p.filters),
+  getAchievementData: (p) => getAchievementData(p.token, p.filters),
 
   // CRM / Client
   getClientFormBootstrap: (p) => { requireAuth_(p.token); return getClientFormBootstrap(); },
@@ -69,16 +72,26 @@ const ACTION_MAP = {
   saveEOI: (p) => saveEOI(p.token, p.data),
   getEOIData: (p) => getEOIData(p.token, p.filters),
 
-  // Users & Audit
-  getUsersData: (p) => getUsersData(p.token),
-  createSystemUser: (p) => createSystemUser(p.token, p.data),
-  getAuditHistory: (p) => getAuditHistory(p.token, p.filters),
-
   // Leads
   getLeadsData: (p) => getLeadsData(p.token, p.filters),
   bulkUpdateLeadStatus: (p) => bulkUpdateLeadStatus(p.token, p.data),
-  importLeads: (p) => importLeads(p.token, p.data)
+  importLeads: (p) => importLeads(p.token, p.data),
+
+  // Users & Audit
+  getUsersData: (p) => getUsersData(p.token),
+  createSystemUser: (p) => createSystemUser(p.token, p.data),
+  getAuditHistory: (p) => getAuditHistory(p.token, p.filters)
 };
+
+const AUDITED_API_ACTIONS_ = {
+  login:1, logout:1, changeOwnPassword:1, saveClientRegistration:1,
+  uploadClientContract:1, saveEOI:1, bulkUpdateLeadStatus:1, importLeads:1,
+  createSystemUser:1
+};
+
+function shouldAuditApiAction_(action) {
+  return !!AUDITED_API_ACTIONS_[String(action || '')];
+}
 
 function handleRequest_(params) {
   const action = params.action;
@@ -94,11 +107,11 @@ function handleRequest_(params) {
   try {
     payload = normalizeParams_(params);
     const result = handler(payload);
-    try { recordApiAudit_(action, payload, true, '', Date.now() - startMs, startedAt); } catch (auditErr) {}
+    if (shouldAuditApiAction_(action)) { try { recordApiAudit_(action, payload, true, '', Date.now() - startMs, startedAt); } catch (auditErr) {} }
     return jsonOutput_({ ok: true, message: 'OK', data: result });
   } catch (err) {
     const message = err && err.message ? err.message : String(err);
-    try { recordApiAudit_(action, payload || params, false, message, Date.now() - startMs, startedAt); } catch (auditErr) {}
+    if (shouldAuditApiAction_(action)) { try { recordApiAudit_(action, payload || params, false, message, Date.now() - startMs, startedAt); } catch (auditErr) {} }
 
     // رسايل مخصوصة لانتهاء الجلسة عشان الفرونت إند يرجّع لصفحة اللوجين
     if (message === 'AUTH_REQUIRED' || message === 'SESSION_EXPIRED') {

@@ -10,10 +10,12 @@ class ApiService {
         this.retry = API_CONFIG.retry || { enabled: false, maxAttempts: 1, delay: 0 };
         this.inFlight = new Map();
         this.memory = new Map();
-        this.cachePrefix = "operation_api_v10:";
+        this.cachePrefix = "operation_api_enterprise_v1:";
         this.readPolicies = new Map([
+            ["getSystemInfo", 10 * 60 * 1000],
             ["getDashboardFilters", 5 * 60 * 1000],
             ["getDashboardData", 90 * 1000],
+            ["getAchievementData", 90 * 1000],
             ["getInventoryData", 2 * 60 * 1000],
             ["getInventoryProjects", 10 * 60 * 1000],
             ["getAvailableUnitsByProject", 2 * 60 * 1000],
@@ -28,17 +30,11 @@ class ApiService {
             ["getAuditHistory", 30 * 1000],
             ["getLeadsData", 60 * 1000]
         ]);
-        this.mutations = new Set(["login", "logout", "changeOwnPassword", "saveClientRegistration", "uploadClientContract", "saveEOI", "refreshAvailableLayanaUnits", "bulkUpdateLeadStatus", "importLeads"]);
+        this.mutations = new Set(["login", "logout", "changeOwnPassword", "saveClientRegistration", "uploadClientContract", "saveEOI", "refreshAvailableLayanaUnits", "bulkUpdateLeadStatus", "importLeads", "createSystemUser"]);
     }
 
     post(action, payload = {}, options = {}) {
-        const scoped = new Set(["getDashboardData","getInventoryData","getClients","getClientDocuments","getEOIData","getLeadsData"]);
-        const project = sessionStorage.getItem("operation_selected_project") || "ALL";
-        let bodyPayload = { ...payload };
-        if (scoped.has(action) && project !== "ALL") {
-            bodyPayload.filters = { ...(bodyPayload.filters || {}), project };
-        }
-        return this.request({ method: "POST", body: { action, ...bodyPayload }, action, ...options });
+        return this.request({ method: "POST", body: { action, ...payload }, action, ...options });
     }
 
     get(action, params = {}, options = {}) {
@@ -53,6 +49,7 @@ class ApiService {
         }
 
         const action = options.action || options.body?.action || options.params?.action || "request";
+        this.applyGlobalProject(options, action);
         const cacheTTL = options.cacheTTL ?? this.readPolicies.get(action) ?? 0;
         const key = this.makeKey(options);
 
@@ -110,6 +107,24 @@ class ApiService {
             if (error.name === "AbortError") return this.failure(0, "API request timeout");
             return this.failure(0, error.message || "Network error");
         } finally { clearTimeout(timeoutId); }
+    }
+
+
+    applyGlobalProject(options, action) {
+        const projectAware = new Set(["getDashboardData", "getAchievementData", "getInventoryData", "getClients", "getEOIData", "getClientDocuments", "getLeadsData"]);
+        if (!projectAware.has(action)) return;
+        const selected = sessionStorage.getItem("operation_global_project") || "ALL";
+        if (!selected || selected === "ALL") return;
+        if (options.body) {
+            const filters = (options.body.filters && typeof options.body.filters === "object") ? { ...options.body.filters } : {};
+            if (!filters.project || filters.project === "ALL") filters.project = selected;
+            options.body = { ...options.body, filters };
+        }
+        if (options.params) {
+            const filters = (options.params.filters && typeof options.params.filters === "object") ? { ...options.params.filters } : {};
+            if (!filters.project || filters.project === "ALL") filters.project = selected;
+            options.params = { ...options.params, filters };
+        }
     }
 
     makeKey(options) {
@@ -177,10 +192,7 @@ class ApiService {
     failure(status, message, data = null) { return { ok: false, status, message, data }; }
     sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
     getStatusMessage(status, data = null) {
-        if (data?.message) {
-            if (/^Unknown action:/i.test(data.message)) return "This feature needs the latest backend deployment.";
-            return data.message;
-        }
+        if (data?.message) return data.message;
         return ({ 400: "Bad request", 401: "Session expired", 403: "Forbidden", 404: "API endpoint not found", 429: "Too many requests", 500: "Internal server error" })[status] || "API request failed";
     }
 }

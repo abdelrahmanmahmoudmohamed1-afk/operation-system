@@ -1,6 +1,6 @@
 /**
  * ===========================================================
- * OPERATION SYSTEM BACKEND — EOI.gs
+ * OPERATION SYSTEM UNIFIED BACKEND — EOI.gs
  * ===========================================================
  * كل ما يخص EOI (Expression of Interest): حفظ، قراءة، تحليلات.
  * ===========================================================
@@ -18,7 +18,13 @@ function saveEOI(token, obj) {
   const sheet = ss.getSheetByName(SHEET_NAMES.eoiForm);
   if (!sheet) throw new Error('EOI Form sheet not found');
 
-  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  let headers = sheet.getRange(1, 1, 1, Math.max(1, sheet.getLastColumn())).getValues()[0];
+  ['Project','Housing'].forEach(function(requiredHeader) {
+    if (headers.findIndex(function(x){ return normalizeHeader_(x) === normalizeHeader_(requiredHeader); }) === -1) {
+      headers.push(requiredHeader);
+      sheet.getRange(1, headers.length).setValue(requiredHeader);
+    }
+  });
   const row = new Array(headers.length).fill('');
 
   function set(h, v) {
@@ -37,8 +43,7 @@ function saveEOI(token, obj) {
   set('Client Nationality', obj.clientNationality || '');
   set('Client Residence', obj.clientResidence || '');
   set('Project', obj.project || '');
-  set('Housing', obj.housingTopic || '');
-  set('Housing Topic', obj.housingTopic || '');
+  set('Housing', obj.housing || '');
   set('Interest', obj.interest || '');
   set("Deposit EOI'S", obj.depositEOI || '');
   set("Deposit EOI'S 2", obj.depositEOI2 || '');
@@ -63,10 +68,11 @@ function validateEOI_(o) {
   if (!o.clientPhone) missing.push('Client Phone');
   if (!o.salesName1) missing.push('Sales Name 1');
   if (!o.source) missing.push('Source');
+  if (!o.project) missing.push('Project');
   if (!o.interest) missing.push('Interest');
-  if (missing.length) throw new Error('بيانات ناقصة: ' + missing.join(', '));
+  if (missing.length) throw new Error('Missing data: ' + missing.join(', '));
   if (o.clientPhone && !/^01\d{9}$/.test(o.clientPhone)) {
-    throw new Error('رقم الهاتف يجب أن يبدأ بـ 01 ويتكون من 11 رقم');
+    throw new Error('Phone number must start with 01 and contain 11 digits.');
   }
 }
 
@@ -97,7 +103,7 @@ function getEOIRows_(fromDate, toDate) {
   const cn1Col = idx('Client Name 1');
   const cpCol = idx('Client Phone');
   const projectCol = idx('Project');
-  const housingCol = idx('Housing') > -1 ? idx('Housing') : idx('Housing Topic');
+  const housingCol = idx('Housing');
   const interestCol = idx('Interest');
   const depositCol = idx("Deposit EOI'S");
   const deposit2Col = idx("Deposit EOI'S 2");
@@ -124,8 +130,8 @@ function getEOIRows_(fromDate, toDate) {
       date: d,
       clientName: cn1Col > -1 ? clean_(r[cn1Col]) : '',
       clientPhone: cpCol > -1 ? clean_(r[cpCol]) : '',
-      project: projectCol > -1 ? clean_(r[projectCol]) : '',
-      housingTopic: housingCol > -1 ? clean_(r[housingCol]) : '',
+      project: projectCol > -1 ? clean_(r[projectCol]) : 'Mersea',
+      housing: housingCol > -1 ? clean_(r[housingCol]) : '',
       interest: interestCol > -1 ? clean_(r[interestCol]) : '',
       deposit: totalDep,
       paymentMethod: pmCol > -1 ? clean_(r[pmCol]) : '',
@@ -151,7 +157,7 @@ function getEOIData(token, filters) {
   const to = filters.toDate ? new Date(filters.toDate) : null;
 
   let rows = getEOIRows_(from, to).filter(x => roleAllowed_(x, session));
-  if (filters.project && filters.project !== 'ALL') rows = rows.filter(x => !x.project || norm_(x.project) === norm_(filters.project));
+  if (filters.project && filters.project !== 'ALL') rows = rows.filter(x => norm_(x.project) === norm_(filters.project));
 
   const total = rows.length;
   const totalDeposit = sum_(rows, 'deposit');
@@ -171,7 +177,7 @@ function getEOIData(token, filters) {
       ClientName: r.clientName,
       Phone: r.clientPhone,
       Project: r.project,
-      Housing: r.housingTopic,
+      Housing: r.housing,
       Interest: r.interest,
       Deposit: round_(r.deposit),
       Payment: r.paymentMethod,

@@ -19,8 +19,8 @@ const SOURCE_OPTIONS = [
 ];
 
 const DEFAULT_COLUMNS = {
-    auto: ["UnitCode", "Project", "Status", "ContractStatus", "Orientation", "UnitType", "Client", "Sales", "Broker", "ContractDate", "SoldDate", "ReservationDate", "Value"],
-    reportRows: ["UnitCode", "Project", "Status", "ContractStatus", "Orientation", "UnitType", "Client", "Sales", "Broker", "ContractDate", "SoldDate", "ReservationDate", "Value"],
+    auto: ["UnitCode", "Project", "Status", "ContractStatus", "Orientation", "UnitType", "Client", "Sales", "Broker", "ContractDate", "ReservationDate", "Value"],
+    reportRows: ["UnitCode", "Project", "Status", "ContractStatus", "Orientation", "UnitType", "Client", "Sales", "Broker", "ContractDate", "ReservationDate", "Value"],
     projectPerformance: ["Project", "Units", "Value", "AvgUnitPrice"],
     salesPerformance: ["Sales", "Units", "Value", "AvgUnitPrice"],
     brokerPerformance: ["Broker", "Units", "Value", "AvgUnitPrice"],
@@ -117,11 +117,10 @@ function table(title, rows, columns, summary = {}) {
         `;
     }
 
-    const selectable = rows.some((r) => r && r.UnitCode);
-    const head = `${selectable ? `<th class="report-select-col"><input type="checkbox" id="report-select-all" checked aria-label="Select all report rows"></th>` : ""}` + columns.map((c) => `<th>${escapeHtml(c)}</th>`).join("");
+    const head = `<th class="report-select-col"><input type="checkbox" id="report-select-all" checked></th>` + columns.map((c) => `<th>${escapeHtml(c)}</th>`).join("");
     const body = rows.map((r, index) => `
         <tr class="detail-row report-click-row" data-report-index="${index}" data-detail='${escapeHtml(JSON.stringify(r))}'>
-            ${selectable ? `<td class="report-select-col"><input type="checkbox" class="report-row-check" data-report-index="${index}" checked aria-label="Include row in report"></td>` : ""}
+            <td class="report-select-col"><input type="checkbox" class="report-row-select" value="${index}" checked></td>
             ${columns.map((c) => `<td>${formatCell(c, r[c])}</td>`).join("")}
         </tr>
     `).join("");
@@ -131,8 +130,8 @@ function table(title, rows, columns, summary = {}) {
             <div class="report-table-header">
                 <div>
                     <div class="dash-chart-title">${escapeHtml(title)}</div>
-                    <strong id="report-summary-rows">${rows.length}</strong> rows selected
-                    <span class="report-summary-note">Total value: <b id="report-summary-value">${Formatter.money(summary.value || 0)}</b> · Units: <b id="report-summary-units">${summary.units || rows.length}</b></span>
+                    <strong id="report-selected-rows">${rows.length}</strong> selected / ${rows.length} rows
+                    <span class="report-summary-note" id="report-selected-summary">Total value: ${Formatter.money(summary.value || 0)} · Units: ${summary.units || rows.length}</span>
                 </div>
                 <div class="report-actions-mini">
                     <button class="btn btn-outline" id="report-export-json">Export JSON</button>
@@ -156,9 +155,10 @@ function countBy(rows, field, value) {
 
 function kpiCards(data) {
     const rows = data?.__smartRows || data?.reportRows || [];
-    const sold = rows.filter((r) => String(r.Status || r.ContractStatus || "").toLowerCase() === "sold").length;
-    const contracted = rows.filter((r) => String(r.Status || r.ContractStatus || "").toLowerCase() === "contracted").length;
-    const reserved = rows.filter((r) => String(r.Status || r.ContractStatus || "").toLowerCase() === "reserved").length;
+    const statusOf = (r) => String(r.ContractStatus || r.Status || "").toLowerCase();
+    const sold = rows.filter((r) => statusOf(r) === "sold").length;
+    const contracted = rows.filter((r) => statusOf(r) === "contracted").length;
+    const reserved = rows.filter((r) => statusOf(r) === "reserved").length;
     const activeRows = rows.filter((r) => ["sold", "contracted", "reserved"].includes(String(r.Status || r.ContractStatus || "").toLowerCase()));
     const totalValue = activeRows.reduce((s, r) => s + Number(r.Value || r.SalesValue || 0), 0);
     const totalArea = activeRows.reduce((s, r) => s + Number(r.Area || r.IndoorArea || 0), 0);
@@ -166,13 +166,13 @@ function kpiCards(data) {
     const avgArea = activeRows.length ? Math.round(totalArea / activeRows.length) : 0;
     return `
         <div class="kpi-grid report-kpi-grid enterprise-report-kpis">
-            <div class="kpi-card detail-card" data-detail-title="Contracted" data-detail-value="${contracted}" data-detail-sub="Contract status"><div class="kpi-title">Contracted</div><div class="kpi-value" id="report-kpi-contracted">${contracted}</div><div class="kpi-sub">contract base</div></div>
-            <div class="kpi-card detail-card" data-detail-title="Sold" data-detail-value="${sold}" data-detail-sub="Sold stock"><div class="kpi-title">Sold</div><div class="kpi-value" id="report-kpi-sold">${sold}</div><div class="kpi-sub">sold stock</div></div>
-            <div class="kpi-card detail-card" data-detail-title="Reserved" data-detail-value="${reserved}" data-detail-sub="Reserved units"><div class="kpi-title">Reserved</div><div class="kpi-value" id="report-kpi-reserved">${reserved}</div><div class="kpi-sub">reserved units</div></div>
+            <div class="kpi-card detail-card" data-detail-title="Contracted" data-detail-value="${contracted}" data-detail-sub="Contract status"><div class="kpi-title">Contracted</div><div class="kpi-value">${contracted}</div><div class="kpi-sub">contract base</div></div>
+            <div class="kpi-card detail-card" data-detail-title="Sold" data-detail-value="${sold}" data-detail-sub="Sold stock"><div class="kpi-title">Sold</div><div class="kpi-value">${sold}</div><div class="kpi-sub">sold stock</div></div>
+            <div class="kpi-card detail-card" data-detail-title="Reserved" data-detail-value="${reserved}" data-detail-sub="Reserved units"><div class="kpi-title">Reserved</div><div class="kpi-value">${reserved}</div><div class="kpi-sub">reserved units</div></div>
             <div class="kpi-card detail-card" data-detail-title="Contracted + Sold" data-detail-value="${contracted + sold}" data-detail-sub="Closed base"><div class="kpi-title">Contracted + Sold</div><div class="kpi-value">${contracted + sold}</div><div class="kpi-sub">closed base</div></div>
             <div class="kpi-card detail-card" data-detail-title="Sold + Reserved" data-detail-value="${sold + reserved}" data-detail-sub="Movement base"><div class="kpi-title">Sold + Reserved</div><div class="kpi-value">${sold + reserved}</div><div class="kpi-sub">movement base</div></div>
             <div class="kpi-card detail-card" data-detail-title="Total C + S + R" data-detail-value="${contracted + sold + reserved}" data-detail-sub="Full active base"><div class="kpi-title">Total C + S + R</div><div class="kpi-value">${contracted + sold + reserved}</div><div class="kpi-sub">full active base</div></div>
-            <div class="kpi-card detail-card"><div class="kpi-title">Active Value</div><div class="kpi-value" id="report-kpi-active-value">${Formatter.money(totalValue)}</div><div class="kpi-sub">filtered value pool</div></div>
+            <div class="kpi-card detail-card"><div class="kpi-title">Active Value</div><div class="kpi-value">${Formatter.money(totalValue)}</div><div class="kpi-sub">filtered value pool</div></div>
             <div class="kpi-card detail-card"><div class="kpi-title">Total Area</div><div class="kpi-value">${Formatter.number(totalArea)}</div><div class="kpi-sub">sqm active stock</div></div>
             <div class="kpi-card detail-card"><div class="kpi-title">Avg Selling / m²</div><div class="kpi-value">${Formatter.money(avgSalesM2)}</div><div class="kpi-sub">value divided by area</div></div>
             <div class="kpi-card detail-card"><div class="kpi-title">Avg Area / Unit</div><div class="kpi-value">${Formatter.number(avgArea)}</div><div class="kpi-sub">sqm per active unit</div></div>
@@ -269,7 +269,7 @@ export function renderReports(data, savedReports = []) {
                     <div class="filter-field report-filter-field">
                         <label>Sort By</label>
                         <div class="select-shell"><select id="report-sort" class="premium-select">
-                            ${["Value", "Units", "AvgUnitPrice", "ContractDate", "ReservationDate", "Project", "Status", "Orientation", "Sales"].map((v) => option(v, v)).join("")}
+                            ${["Value", "Units", "AvgUnitPrice", "ContractDate", "SoldDate", "ReservationDate", "Project", "Status", "Orientation", "Sales"].map((v) => option(v, v)).join("")}
                         </select></div>
                     </div>
                     <div class="filter-field report-filter-field">

@@ -1,6 +1,6 @@
 /**
  * ===========================================================
- * OPERATION SYSTEM BACKEND — Auth.gs
+ * OPERATION SYSTEM UNIFIED BACKEND — Auth.gs
  * ===========================================================
  * تسجيل دخول واحد لكل الموديولات. بيرجع توكن (session token)
  * بدل ما كل صفحة تبعت اليوزر/الباسورد تاني في كل طلب، وده
@@ -46,6 +46,7 @@ function login(username, password) {
     const roleAliases = ['Role'];
     const managerAliases = ['Sales Manager', 'Manager'];
     const directorAliases = ['Sales Director', 'Director'];
+    const activeAliases = ['Active', 'Status', 'Enabled'];
 
     for (let i = HEADER_ROW.users; i < data.length; i++) {
       const row = data[i];
@@ -53,6 +54,9 @@ function login(username, password) {
       const rowPass = clean_(getByAlias_(row, headerMap, passwordAliases));
 
       if (rowUser === u && rowPass === p) {
+        const rawActive = lower_(getByAlias_(row, headerMap, activeAliases));
+        const isActive = !rawActive || ['active','yes','true','1','enabled'].indexOf(rawActive) !== -1;
+        if (!isActive) return { success: false, message: 'This account is inactive. Contact the administrator.' };
         const user = {
           name: clean_(getByAlias_(row, headerMap, nameAliases)),
           user: clean_(getByAlias_(row, headerMap, usernameAliases)),

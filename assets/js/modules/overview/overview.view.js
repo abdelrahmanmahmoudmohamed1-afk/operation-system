@@ -34,10 +34,11 @@ export function renderLayout() {
             <div class="card overview-panel">
                 <div class="dash-chart-title">Quick Actions</div>
                 <div class="quick-actions-grid">
-                    <button class="quick-action" data-route="crm">Add / View Clients</button>
+                    <button class="quick-action" data-route="crm">Clients & Contracts</button>
+                    <button class="quick-action" data-route="leads">Leads</button>
                     <button class="quick-action" data-route="eoi">Manage EOI</button>
                     <button class="quick-action" data-route="payment">Payment Plans</button>
-                    <button class="quick-action" data-route="settings">System Settings</button>
+                    <button class="quick-action" data-route="reports">Build Report</button>
                 </div>
             </div>
         </div>
@@ -58,19 +59,25 @@ export function renderKpis(data) {
     const contracted = statusSum(mix, ["Contracted"]);
     const sold = statusSum(mix, ["Sold"]);
     const reserved = statusSum(mix, ["Reserved"]);
-    const active = statusSum(mix, ["Contracted", "Sold", "Reserved"]);
+
     const items = [
-        ["Active Sales Value", Formatter.money(active.value)],
+        ["Total Sales Value", Formatter.money(k.totalSalesValue || 0), "Reserved + Contracted + Sold"],
         ["Contracted", contracted.units, Formatter.money(contracted.value)],
         ["Sold", sold.units, Formatter.money(sold.value)],
         ["Reserved", reserved.units, Formatter.money(reserved.value)],
         ["Available Units", k.availableUnits || 0, Formatter.money(k.availableValue || 0)],
-        ["Cancelled", k.cancelledUnits || 0, `${Number(k.cancellationRate || 0).toLocaleString()}% cancellation rate`]
+        ["Cancelled", k.cancelledUnits || 0, `${Number(k.cancellationRate || 0).toFixed(1)}% cancellation rate`],
+        ["Average Unit Price", Formatter.money(k.avgUnitPrice || 0), "Closed pipeline average"],
+        ["Remaining DP", Formatter.money(k.remainingDp || 0), "Outstanding down payment"]
     ];
+
     return items.map(([title, value, sub]) => `
         <div class="kpi-card detail-card" data-detail-title="${escapeHtml(title)}" data-detail-value="${escapeHtml(value)}" data-detail-sub="${escapeHtml(sub || "")}">
-            <div class="kpi-title">${escapeHtml(title)}</div><div class="kpi-value">${escapeHtml(value)}</div>${sub ? `<div class="kpi-sub">${escapeHtml(sub)}</div>` : ""}
-        </div>`).join("");
+            <div class="kpi-title">${escapeHtml(title)}</div>
+            <div class="kpi-value">${escapeHtml(value)}</div>
+            ${sub ? `<div class="kpi-sub">${escapeHtml(sub)}</div>` : ""}
+        </div>
+    `).join("");
 }
 
 export function renderPipeline(statusMix) {

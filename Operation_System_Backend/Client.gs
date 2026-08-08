@@ -1,6 +1,6 @@
 /**
  * ===========================================================
- * OPERATION SYSTEM BACKEND — Client.gs
+ * OPERATION SYSTEM UNIFIED BACKEND — Client.gs
  * ===========================================================
  * كل ما يخص موديول CRM: قائمة السيلز، الشركات المرتبطة بكل
  * سيلز، المدير والديركتور بتوعه، تسجيل عميل جديد، وقراءة كل
@@ -120,7 +120,7 @@ function saveClientRegistration(token, obj) {
 
   sheet.appendRow(row);
   clearInventoryCache_();
-  return { success: true, message: 'Client saved successfully.' };
+  return { success: true, message: 'تم حفظ بيانات العميل بنجاح' };
 }
 
 function validateClientRegistration_(o) {
@@ -129,9 +129,9 @@ function validateClientRegistration_(o) {
   if (!o.unitCode) missing.push('Unit Code');
   if (!o.clientName) missing.push('Client Name');
   if (!o.clientPhone) missing.push('Client Phone');
-  if (missing.length) throw new Error('Missing fields: ' + missing.join(', '));
+  if (missing.length) throw new Error('بيانات ناقصة: ' + missing.join(', '));
   if (o.clientPhone && !/^01\d{9}$/.test(o.clientPhone)) {
-    throw new Error('Phone number must start with 01 and contain 11 digits.');
+    throw new Error('رقم الهاتف يجب أن يبدأ بـ 01 ويتكون من 11 رقم');
   }
 }
 
@@ -147,7 +147,7 @@ function getClients(token, filters) {
 
   filters = filters || {};
   if (filters.project && filters.project !== 'ALL') {
-    rows = rows.filter(x => x.project === filters.project);
+    rows = rows.filter(x => norm_(x.project) === norm_(filters.project));
   }
   if (filters.search) {
     const q = norm_(filters.search);

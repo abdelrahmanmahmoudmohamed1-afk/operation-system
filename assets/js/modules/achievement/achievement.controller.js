@@ -1,0 +1,18 @@
+import Module from "../../core/module.js";
+import AchievementService from "./achievement.service.js";
+import { renderLayout,renderKpis,renderRows } from "./achievement.view.js";
+import { renderLoading,renderErrorRow } from "../../utils/state.js";
+
+class AchievementController extends Module{
+  constructor(){super();this.data={rows:[]};}
+  async render(){this.container.innerHTML=renderLayout();document.getElementById('ach-body').innerHTML=renderLoading({rows:11});await this.load();}
+  filters(){return {period:document.getElementById('ach-period')?.value||'all',month:Number(document.getElementById('ach-month')?.value||0),year:Number(document.getElementById('ach-year')?.value||0),day:Number(document.getElementById('ach-day')?.value||0),dateFrom:document.getElementById('ach-from')?.value||'',dateTo:document.getElementById('ach-to')?.value||'',project:sessionStorage.getItem('operation_global_project')||'ALL'};}
+  async load(){const body=document.getElementById('ach-body');if(body)body.innerHTML=renderLoading({rows:11});try{this.data=await AchievementService.load(this.filters());document.getElementById('ach-kpis').innerHTML=renderKpis(this.data);body.innerHTML=renderRows(this.data.rows||[]);this.updateSelection();}catch(e){if(body)body.innerHTML=renderErrorRow(11,e.message);this.notify().error(e.message);}}
+  bindEvents(){const reload=()=>this.load();['ach-month','ach-year','ach-day'].forEach(id=>document.getElementById(id)?.addEventListener('change',reload));document.getElementById('ach-period')?.addEventListener('change',()=>{this.toggleCustom();reload();});document.getElementById('ach-from')?.addEventListener('change',reload);document.getElementById('ach-to')?.addEventListener('change',reload);document.getElementById('ach-refresh')?.addEventListener('click',reload);document.getElementById('ach-body')?.addEventListener('change',e=>{if(e.target.classList.contains('ach-select'))this.updateSelection();});document.getElementById('ach-select-all-btn')?.addEventListener('click',()=>{document.querySelectorAll('.ach-select').forEach(x=>x.checked=true);this.updateSelection();});document.getElementById('ach-clear-btn')?.addEventListener('click',()=>{document.querySelectorAll('.ach-select').forEach(x=>x.checked=false);this.updateSelection();});document.getElementById('ach-print')?.addEventListener('click',()=>this.printSelected());this._projectHandler=reload;window.addEventListener('operation:project-change',this._projectHandler);this.toggleCustom();}
+  toggleCustom(){const custom=document.getElementById('ach-period')?.value==='custom';document.querySelectorAll('.ach-custom').forEach(x=>x.classList.toggle('hidden',!custom));}
+  selectedRows(){return Array.from(document.querySelectorAll('.ach-select:checked')).map(x=>this.data.rows[Number(x.value)]).filter(Boolean);}
+  updateSelection(){const rows=this.selectedRows();const total=rows.reduce((s,r)=>s+Number(r.Value||0),0);const c=document.getElementById('ach-selected'),v=document.getElementById('ach-selected-value');if(c)c.textContent=rows.length;if(v)v.textContent=`Total value: ${new Intl.NumberFormat('en-US').format(Math.round(total))} EGP`;document.querySelectorAll('.achievement-row').forEach(tr=>{const cb=tr.querySelector('.ach-select');tr.classList.toggle('achievement-unselected',cb&&!cb.checked);});}
+  printSelected(){document.body.classList.add('print-achievement-selection');const cleanup=()=>document.body.classList.remove('print-achievement-selection');window.addEventListener('afterprint',cleanup,{once:true});requestAnimationFrame(()=>setTimeout(()=>window.print(),40));}
+  async destroy(){if(this._projectHandler)window.removeEventListener('operation:project-change',this._projectHandler);await super.destroy();}
+}
+export default new AchievementController();

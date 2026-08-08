@@ -1,8 +1,7 @@
 <div class="main-layout main-layout-horizontal">
-    <div class="sticky-app-header">
     <header class="topbar premium-topbar">
         <div class="topbar-left">
-            <span class="topbar-title" id="page-title">Operation System</span>
+            <button type="button" class="topbar-logo-home" id="home-logo-btn" title="Back to Overview" aria-label="Back to Overview"><img src="https://i.ibb.co/FLnH6Fw2/1cf98fc6-5c25-4af8-8af0-1e556340272f.jpg" alt="Company logo"></button><span class="topbar-title" id="page-title">Operation System</span>
             <div class="global-search premium-search">
                 <span class="search-icon">⌕</span>
                 <select id="global-search-type" aria-label="Search Type">
@@ -20,6 +19,8 @@
         </div>
 
         <div class="topbar-right">
+            <select id="global-project-filter" class="global-project-filter premium-select" title="Project"><option value="ALL">All Projects</option></select>
+            <button class="pdf-btn" id="global-pdf-btn" type="button" title="Print / Save current view as PDF">PDF</button>
             <select id="language-switcher" class="language-switcher" title="Language">
                 <option value="en">EN</option>
                 <option value="ar">AR</option>
@@ -27,7 +28,6 @@
             <span class="topbar-clock" id="topbar-clock"></span>
             <span class="topbar-user" id="topbar-user-name">-</span>
             <span class="topbar-role" id="topbar-user-role"></span>
-            <button class="topbar-pdf-btn" id="download-current-pdf" type="button" title="Download current view as PDF">PDF</button>
             <button class="logout-btn animated-logout-btn" data-logout type="button" aria-label="Logout">
                 <span class="logout-text">Log Out</span>
                 <span class="logout-animation" aria-hidden="true">
@@ -40,14 +40,6 @@
     </header>
 
     <nav id="sidebar-container" class="sidebar-horizontal-wrap"></nav>
-    <div class="global-project-strip">
-        <label for="global-project-filter">Project</label>
-        <select id="global-project-filter" class="global-project-filter" aria-label="Filter whole system by project">
-            <option value="ALL">All Projects</option>
-        </select>
-        <span id="global-project-status" class="global-project-status">Whole system</span>
-    </div>
-</div>
 
     <div class="main-content-wrap">
         <main class="content">

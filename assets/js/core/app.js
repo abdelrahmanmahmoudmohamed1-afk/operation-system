@@ -26,7 +26,6 @@ import Container from "./container.js";
 
 import ServiceProvider from "../providers/service-provider.js";
 import AuthService from "../services/auth.service.js";
-import DashboardService from "../services/dashboard.service.js";
 
 class App {
     constructor() {
@@ -139,17 +138,17 @@ class App {
         await this.router.load(initialRoute);
 
         this.bindNavigation();
-        this.bindLogoHome();
-        await this.bindGlobalProjectFilter();
+        this.bindGlobalProjectFilter();
+        this.bindPdfExport();
         this.bindLogout();
         this.bindGlobalSearch();
-        this.bindCurrentViewPdf();
         this.bindLanguageSwitch();
         this.prefetchCommonModules();
         this.bindDetails();
         this.bindActionFeedback();
         this.bindConnectivityStatus();
         this.bindSessionExpiry();
+        this.checkBackendCompatibility();
         this.applyLanguageLabels();
 
         EventBus.emit("app:started", {
@@ -189,58 +188,76 @@ class App {
                 this.setBusy(false);
             }
         });
-    }
 
-    bindLogoHome() {
-        if (this.logoHomeBound) return;
-        this.logoHomeBound = true;
-        document.addEventListener("click", async (event) => {
-            const logo = event.target.closest("[data-home], .sidebar-brand-logo");
-            if (!logo || !this.router) return;
-            event.preventDefault();
+        document.getElementById("home-logo-btn")?.addEventListener("click", async () => {
             await this.router.load("overview");
         });
     }
 
     async bindGlobalProjectFilter() {
         const select = document.getElementById("global-project-filter");
-        const status = document.getElementById("global-project-status");
         if (!select) return;
-        let projects = [];
-        try { projects = (await DashboardService.getFilters())?.projects || []; } catch (_) {}
-        const saved = sessionStorage.getItem("operation_selected_project") || "ALL";
-        select.innerHTML = `<option value="ALL">All Projects</option>` + projects.map((p) => `<option value="${this.escapeHTML(p)}">${this.escapeHTML(p)}</option>`).join("");
-        select.value = projects.includes(saved) ? saved : "ALL";
-        const syncStatus = () => { if (status) status.textContent = select.value === "ALL" ? "Whole system" : `Filtered: ${select.value}`; };
-        syncStatus();
+        const saved = sessionStorage.getItem("operation_global_project") || "ALL";
+        try {
+            const api = Container.get("api");
+            const token = Container.get("authManager").getToken();
+            const res = await api.post("getDashboardFilters", { token }, { forceRefresh: true });
+            const projects = (res?.data?.data?.projects || []).filter((p) => p && String(p).toUpperCase() !== "ALL");
+            select.innerHTML = `<option value="ALL">All Projects</option>${projects.map((p) => `<option value="${this.escapeHTML(p)}">${this.escapeHTML(p)}</option>`).join("")}`;
+        } catch (_) {}
+        select.value = Array.from(select.options).some((o) => o.value === saved) ? saved : "ALL";
+        sessionStorage.setItem("operation_global_project", select.value);
         select.addEventListener("change", async () => {
-            sessionStorage.setItem("operation_selected_project", select.value);
+            sessionStorage.setItem("operation_global_project", select.value || "ALL");
             Container.get("api")?.clearReadCache?.();
-            syncStatus();
-            window.dispatchEvent(new CustomEvent("operation:project-change", { detail: { project: select.value } }));
-            const route = this.router?.currentRoute || "overview";
-            await this.router.load(route, false);
+            window.dispatchEvent(new CustomEvent("operation:project-change", { detail: { project: select.value || "ALL" } }));
+            const current = this.router?.currentRoute || location.hash.replace("#", "") || "overview";
+            await this.router.load(current, false);
+        });
+    }
+
+    async checkBackendCompatibility() {
+        try {
+            const api = Container.get("api");
+            const token = Container.get("authManager").getToken();
+            const res = await api.post("getSystemInfo", { token });
+            const info = res?.data?.data;
+            if (!res.ok || !info || !Array.isArray(info.features) || !info.features.includes("contract-pdf")) {
+                const message = /Unknown action/i.test(res?.message || res?.data?.message || "")
+                    ? "Backend update required: deploy every file in Operation_System_Backend as a new Apps Script version."
+                    : "Backend and frontend versions do not match. Deploy the included backend before using reports or PDF uploads.";
+                Container.get("notification")?.warning(message);
+            }
+        } catch (_) {
+            // Normal module requests will surface any network problem. Do not block startup.
+        }
+    }
+
+    bindPdfExport() {
+        document.getElementById("global-pdf-btn")?.addEventListener("click", () => {
+            document.body.classList.add("print-current-view");
+            const cleanup = () => document.body.classList.remove("print-current-view");
+            window.addEventListener("afterprint", cleanup, { once: true });
+            requestAnimationFrame(() => setTimeout(() => window.print(), 40));
         });
     }
 
     bindLogout() {
-        document
-            .querySelectorAll("[data-logout]")
-            .forEach((button) => {
-                button.addEventListener("click", async () => {
-                    if (document.getElementById("logout-scene")) return;
-                    const scene = document.createElement("div");
-                    scene.id = "logout-scene";
-                    scene.className = "logout-scene";
-                    scene.innerHTML = `<div class="logout-room"><div class="logout-lamp"></div><div class="logout-person"><i></i></div><div class="logout-door-frame"><div class="logout-door"></div></div><div class="logout-goodbye">See you soon</div></div>`;
-                    document.body.appendChild(scene);
-                    requestAnimationFrame(() => scene.classList.add("play"));
-                    Container.get("audit")?.record("Logout", "Auth", {});
-                    await new Promise((resolve) => setTimeout(resolve, 1650));
-                    await AuthService.logout();
-                    location.reload();
-                });
+        document.querySelectorAll("[data-logout]").forEach((button) => {
+            button.addEventListener("click", async () => {
+                if (document.getElementById("logout-scene")) return;
+                const scene = document.createElement("div");
+                scene.id = "logout-scene";
+                scene.className = "logout-scene";
+                scene.innerHTML = `<div class="logout-room"><div class="logout-light"></div><div class="logout-person"><i></i></div><div class="logout-exit-door"><span></span></div><p>See you soon</p></div>`;
+                document.body.appendChild(scene);
+                requestAnimationFrame(() => scene.classList.add("play"));
+                Container.get("audit")?.record("Logout", "Auth", {});
+                await new Promise((resolve) => setTimeout(resolve, 1700));
+                try { await AuthService.logout(); } catch (_) { Container.get("authManager")?.logout(); }
+                location.reload();
             });
+        });
     }
 
     bindGlobalSearch() {
@@ -277,36 +294,6 @@ class App {
             }
         });
         clear?.addEventListener("click", () => { input.value = ""; input.focus(); });
-    }
-
-    bindCurrentViewPdf() {
-        const button = document.getElementById("download-current-pdf");
-        if (!button) return;
-        button.addEventListener("click", async () => {
-            const source = document.getElementById("page-content");
-            if (!source || !window.html2pdf) return Container.get("notification")?.error("PDF engine is not ready. Refresh and try again.");
-            button.disabled = true; button.textContent = "...";
-            const clone = source.cloneNode(true);
-            clone.querySelectorAll(".report-row-excluded").forEach((row) => row.remove());
-            clone.querySelectorAll("input[type=checkbox], .no-pdf, button").forEach((el) => el.remove());
-            clone.querySelectorAll(".table-wrap,.report-table-scroll,.audit-table-scroll,.users-list").forEach((el) => { el.style.overflow = "visible"; el.style.maxHeight = "none"; el.style.height = "auto"; });
-            const wrap = document.createElement("div");
-            wrap.className = "pdf-export-stage";
-            wrap.appendChild(clone);
-            document.body.appendChild(wrap);
-            const route = this.router?.currentRoute || "report";
-            try {
-                await window.html2pdf().set({
-                    margin: [7,7,8,7], filename: `Operation_System_${route}_${new Date().toISOString().slice(0,10)}.pdf`,
-                    image: { type: "jpeg", quality: .96 },
-                    html2canvas: { scale: 1.45, useCORS: true, backgroundColor: "#120d0b", windowWidth: Math.max(1400, clone.scrollWidth || 1400) },
-                    jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
-                    pagebreak: { mode: ["css", "legacy"], avoid: ["tr", ".kpi-card"] }
-                }).from(wrap).save();
-                Container.get("audit")?.record("PDF exported", route, { project: sessionStorage.getItem("operation_selected_project") || "ALL" });
-            } catch (error) { Container.get("notification")?.error(error.message || "PDF export failed"); }
-            finally { wrap.remove(); button.disabled = false; button.textContent = "PDF"; }
-        });
     }
 
     bindLanguageSwitch() {
@@ -459,7 +446,7 @@ class App {
         const ar = lang === "ar";
         const map = ar ? {
             "Overview": "نظرة عامة", "Dashboard": "لوحة التحكم", "Inventory": "المخزون", "Payment": "خطط السداد",
-            "CRM": "إدارة العملاء", "Leads": "العملاء المحتملون", "Users": "المستخدمون", "EOI": "طلبات الاهتمام", "Reports": "التقارير", "Contracts": "العقود", "Settings": "الإعدادات",
+            "CRM": "إدارة العملاء", "EOI": "طلبات الاهتمام", "Reports": "التقارير", "Contracts": "العقود", "Settings": "الإعدادات",
             "Logout": "تسجيل الخروج", "Log Out": "تسجيل الخروج", "Search units, clients, EOI, reports...": "ابحث عن وحدة أو عميل أو طلب أو تقرير...",
             "Run Report": "تشغيل التقرير", "Save View": "حفظ العرض", "Apply": "تطبيق", "Reset": "إعادة ضبط", "Filters": "الفلاتر", "Columns": "الأعمدة", "Saved Views": "العروض المحفوظة"
         } : {};

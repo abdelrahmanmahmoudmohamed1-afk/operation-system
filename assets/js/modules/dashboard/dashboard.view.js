@@ -134,12 +134,12 @@ export function renderLayout() {
 
 export function renderKpis(k = {}) {
     const items = [
-        ["Total Sales Value", Formatter.money(k.totalSalesValue || 0)],
+        ["Active Sales Value", Formatter.money(k.totalSalesValue || 0)],
+        ["Contracted Units", k.contractedUnits || 0],
         ["Sold Units", k.soldUnits || 0],
+        ["Reserved Units", k.reservedUnits || 0],
         ["Available Units", k.availableUnits || 0],
-        ["Available Value", Formatter.money(k.availableValue || 0)],
         ["Cancelled Units", k.cancelledUnits || 0],
-        ["Cancellation Rate", Formatter.percent(k.cancellationRate || 0)],
         ["Avg Unit Price", Formatter.money(k.avgUnitPrice || 0)],
         ["Remaining DP", Formatter.money(k.remainingDp || 0)]
     ];

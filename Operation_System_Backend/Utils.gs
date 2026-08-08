@@ -20,6 +20,17 @@ function norm_(v) {
   return lower_(v).replace(/\s+/g, ' ');
 }
 
+function phone_(v) {
+  let s = clean_(v);
+  if (!s) return '';
+  s = s.replace(/[٠-٩]/g, function(d){ return String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)); });
+  s = s.replace(/\.0$/, '').replace(/[^0-9+]/g, '');
+  if (s.indexOf('+20') === 0) s = '0' + s.slice(3);
+  if (s.indexOf('20') === 0 && s.length === 12) s = '0' + s.slice(2);
+  if (/^1\d{9}$/.test(s)) s = '0' + s;
+  return s;
+}
+
 function num_(v) {
   if (typeof v === 'number') return v;
   return Number(String(v || '').replace(/,/g, '').replace(/EGP/gi, '').replace(/جنيه/g, '').trim()) || 0;
@@ -179,14 +190,4 @@ function matchDate_(date, from, to) {
   if (from && d < from) return false;
   if (to && d > to) return false;
   return true;
-}
-
-
-function normalizePhone_(value) {
-  let s = clean_(value).replace(/\s+/g, '').replace(/[^0-9+]/g, '');
-  if (!s) return '';
-  if (/^1\d{9}$/.test(s)) s = '0' + s;
-  if (/^20(1\d{9})$/.test(s)) s = '0' + s.slice(2);
-  if (/^\+20(1\d{9})$/.test(s)) s = '0' + s.slice(3);
-  return s;
 }

@@ -1,6 +1,6 @@
 /**
  * ===========================================================
- * OPERATION SYSTEM BACKEND — Config.gs
+ * OPERATION SYSTEM UNIFIED BACKEND — Config.gs
  * ===========================================================
  * كل الـ Spreadsheet IDs وأسماء الشيتات في مكان واحد فقط.
  * أي تغيير في أي ID أو اسم شيت يتم هنا فقط، باقي الملفات
@@ -27,9 +27,34 @@ const SPREADSHEETS = {
   // All Brokers + Request (الكروبات والطلبات والزيارات)
   BROKERS: '1C13-OWI5fOnqW-LO4Kb7bOq1wyE44nIbAp6jbm5OYTA',
 
-  // Lead database
+  // Leads
   LEADS: '1SzaCVURxxKxGcBLVtlYtH6M4u-npDfjIV1Q7BXO63ec'
 };
+
+
+// Unified project sources. Add future projects here without changing readers.
+const PROJECT_SOURCES = [
+  {
+    key: 'Layana',
+    spreadsheetId: '1Dfz8g9zijDKTqEEn_t2gx3x2PvIVZ5BPDhCv_01QsCE',
+    inventorySheet: 'Layana Inventory Management',
+    transactionSheet: 'Layana Transaction',
+    cancelledSheet: 'Cancelled Contracts',
+    headerRowInventory: 2,
+    headerRowTransaction: 2,
+    headerRowCancelled: 1
+  },
+  {
+    key: 'Mersea',
+    spreadsheetId: '1-QId0GNeIfn_jB1XdGBFbgvn9LsNFVi4d1nh_oV_ek4',
+    inventorySheet: 'Mersea Inventory Management',
+    transactionSheet: 'Mersea Transaction',
+    cancelledSheet: '',
+    headerRowInventory: 2,
+    headerRowTransaction: 2,
+    headerRowCancelled: 1
+  }
+];
 
 const SHEET_NAMES = {
   // من SETTINGS
@@ -58,8 +83,6 @@ const SHEET_NAMES = {
   // من BROKERS
   allBrokers: 'All Brokers',
   request: 'Request',
-
-  // Leads
   leads: 'Feedback Leads'
 };
 
@@ -96,7 +119,8 @@ const STATIC_LISTS = {
   sourceBreakdowns: ["Personal", "Walk In", "Social Media"],
   socialMediaOptions: ["Facebook", "Instagram", "WhatsApp", "Website", "Other"],
   interestOptions: ["Studio", "1 Bedroom", "2 Bedroom", "3 Bedroom"],
-  housingOptions: ["Primary Residence", "Investment", "Second Home", "Other"]
+  housingOptions: ["Housing", "Investment", "Second Home", "Other"],
+  projectOptions: ["Layana", "Mersea"]
 };
 
 // خرائط أسماء الحقول (aliases) — بتسمح إن أي عمود يتسمى بأكتر من اسم
@@ -139,3 +163,13 @@ const FIELD_ALIASES = {
   salesTeamManager: ['Manager', 'Sales Manager'],
   salesTeamDirector: ['Director', 'Sales Director']
 };
+
+
+function getSystemInfo_() {
+  return {
+    name: 'Operation System',
+    version: 'Enterprise 1.0-r2',
+    projects: (PROJECT_SOURCES || []).map(function(x){ return x.key; }),
+    features: ['unified-projects','users','audit','leads','contract-pdf','achievement','housing-eoi']
+  };
+}

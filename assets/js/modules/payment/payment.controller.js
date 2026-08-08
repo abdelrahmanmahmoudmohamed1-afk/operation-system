@@ -6,7 +6,7 @@ class PaymentController extends Module {
     constructor() {
         super();
         this.units = [];
-        this.savedKey = "operation_saved_payment_scenarios_v2";
+        this.savedKey = "operation_saved_payment_scenarios_v1";
     }
 
     async render() {

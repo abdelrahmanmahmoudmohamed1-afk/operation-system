@@ -1,3 +1,5 @@
+import Container from "../core/container.js";
+
 class AuditService {
     constructor() {
         this.key = "operation_audit_history_v1";
@@ -36,7 +38,24 @@ class AuditService {
         const list = [item, ...this.list(this.max - 1)];
         localStorage.setItem(this.key, JSON.stringify(list));
         window.dispatchEvent(new CustomEvent("operation:audit", { detail: item }));
+        this.syncImportantActivity(item);
         return item;
+    }
+
+    syncImportantActivity(item) {
+        const shouldSync = /^(Open module|Report .*exported|Frontend error|Unhandled error)$/i.test(item.action || "");
+        if (!shouldSync) return;
+        try {
+            const api = Container.get("api");
+            const auth = Container.get("authManager");
+            const token = auth?.getToken?.();
+            if (!api || !token) return;
+            // Fire-and-forget: audit must never slow navigation or exports.
+            Promise.resolve().then(() => api.post("recordUserActivity", {
+                token,
+                data: { action: item.action, module: item.module, details: item.details, route: item.url }
+            }, { cacheTTL: 0 })).catch(() => {});
+        } catch (_) {}
     }
 
     clear() {

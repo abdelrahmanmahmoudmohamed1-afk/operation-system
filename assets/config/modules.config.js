@@ -50,17 +50,6 @@ const MODULES = Object.freeze({
         permissions: []
     },
 
-
-    leads: {
-        name: "Leads",
-        route: "leads",
-        folder: "leads",
-        controller: "leads.controller.js",
-        service: "leads.service.js",
-        view: "leads.view.js",
-        permissions: []
-    },
-
     eoi: {
         name: "EOI",
         route: "eoi",
@@ -71,6 +60,16 @@ const MODULES = Object.freeze({
         permissions: []
     },
 
+    achievement: {
+        name: "Achievement",
+        route: "achievement",
+        folder: "achievement",
+        controller: "achievement.controller.js",
+        service: "achievement.service.js",
+        view: "achievement.view.js",
+        permissions: []
+    },
+
     reports: {
         name: "Reports",
         route: "reports",
@@ -78,6 +77,17 @@ const MODULES = Object.freeze({
         controller: "reports.controller.js",
         service: "reports.service.js",
         view: "reports.view.js",
+        permissions: []
+    },
+
+
+    leads: {
+        name: "Leads",
+        route: "leads",
+        folder: "leads",
+        controller: "leads.controller.js",
+        service: "leads.service.js",
+        view: "leads.view.js",
         permissions: []
     },
 

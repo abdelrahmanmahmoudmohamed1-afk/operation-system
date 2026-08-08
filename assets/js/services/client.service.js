@@ -32,6 +32,10 @@ class ClientService {
 
     async uploadContract(data) {
         const res = await this.api().post(ENDPOINTS.UPLOAD_CLIENT_CONTRACT, { token: this.token(), data }, { cacheTTL: 0 });
+        const msg = res?.data?.message || res?.message || "";
+        if (!res.ok && /Unknown action:\s*uploadClientContract/i.test(msg)) {
+            throw new Error("The backend deployment is outdated. Deploy all files from Operation_System_Backend as a new version, then try again.");
+        }
         return this.unwrap(res);
     }
 

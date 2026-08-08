@@ -4,23 +4,24 @@ import Formatter from "../../utils/formatter.js";
 const COLUMNS = [
     { key: "Date", label: "Date" },
     { key: "ClientName", label: "Client" },
-    { key: "Phone", label: "Phone" },
     { key: "Project", label: "Project" },
     { key: "Housing", label: "Housing" },
+    { key: "Phone", label: "Phone" },
     { key: "Interest", label: "Interest" },
     { key: "Deposit", label: "Deposit" },
     { key: "Sales", label: "Sales" },
     { key: "Source", label: "Source" }
 ];
 
-export function renderLayout() {
+export function renderLayout(projects = []) {
+    const projectOptions = (projects || []).map((p) => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("");
     return `
         <div class="page-header">
             <div>
                 <h1>EOI</h1>
                 <p>Expression of Interest entries</p>
             </div>
-            <button class="btn btn-primary" id="eoi-add-btn">+ New EOI</button>
+            <div class="page-header-actions"><select id="eoi-project-filter" class="premium-select"><option value="ALL">All Projects</option>${projectOptions}</select><button class="btn btn-primary" id="eoi-add-btn">+ New EOI</button></div>
         </div>
 
         <div class="kpi-grid" id="eoi-kpis"></div>
@@ -58,9 +59,9 @@ export function renderRows(rows) {
         <tr>
             <td>${escapeHtml(r.Date)}</td>
             <td>${escapeHtml(r.ClientName)}</td>
+            <td>${escapeHtml(r.Project)}</td>
+            <td>${escapeHtml(r.Housing)}</td>
             <td>${escapeHtml(r.Phone)}</td>
-            <td>${escapeHtml(r.Project || "-")}</td>
-            <td>${escapeHtml(r.Housing || "-")}</td>
             <td>${escapeHtml(r.Interest)}</td>
             <td>${Formatter.money(r.Deposit)}</td>
             <td>${escapeHtml(r.Sales)}</td>
@@ -74,7 +75,8 @@ export function renderForm({ salesOptions, lists }) {
     const sourceOpts = (lists.sourceOptions || []).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
     const interestOpts = (lists.interestOptions || []).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
     const paymentOpts = (lists.paymentMethods || []).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
-    const housingOpts = (lists.housingOptions || []).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+    const projectOpts = (lists.projectOptions || ["Layana","Mersea"]).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+    const housingOpts = (lists.housingOptions || ["Housing","Investment","Second Home","Other"]).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
 
     return `
         <div class="modal-backdrop" id="eoi-modal-backdrop">
@@ -85,8 +87,8 @@ export function renderForm({ salesOptions, lists }) {
                     <div class="form-grid">
                         <div><label>Client Name</label><input type="text" name="clientName1" required></div>
                         <div><label>Client Phone</label><input type="text" name="clientPhone" placeholder="01xxxxxxxxx" required></div>
-                        <div><label>Project</label><input type="text" name="project" placeholder="Project name"></div>
-                        <div><label>Housing</label><select name="housingTopic"><option value="">Select</option>${housingOpts}</select></div>
+                        <div><label>Project</label><select name="project" required><option value="">Select</option>${projectOpts}</select></div>
+                        <div><label>Housing</label><select name="housing"><option value="">Select</option>${housingOpts}</select></div>
                         <div><label>Interest</label><select name="interest" required><option value="">Select</option>${interestOpts}</select></div>
                         <div><label>Sales Name</label><select name="salesName1" required><option value="">Select</option>${salesOpts}</select></div>
                         <div><label>Source</label><select name="source" required><option value="">Select</option>${sourceOpts}</select></div>

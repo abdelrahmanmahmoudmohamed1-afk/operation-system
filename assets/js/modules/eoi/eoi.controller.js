@@ -11,7 +11,12 @@ class EOIController extends Module {
     }
 
     async render() {
-        this.container.innerHTML = renderLayout();
+        let projects = ["Layana", "Mersea"];
+        try { const b = await EoiService.loadBootstrap(); this.bootstrap = b; projects = b?.lists?.projectOptions || projects; } catch (_) {}
+        this.container.innerHTML = renderLayout(projects);
+        const globalProject = sessionStorage.getItem("operation_global_project") || "ALL";
+        const projectFilter = document.getElementById("eoi-project-filter");
+        if (projectFilter && Array.from(projectFilter.options).some((o) => o.value === globalProject)) projectFilter.value = globalProject;
         document.getElementById("eoi-table-body").innerHTML = renderLoading({ rows: 6 });
         document.getElementById("eoi-kpis").innerHTML = renderLoading({ variant: "kpis", rows: 2 });
         await this.loadData();
@@ -25,7 +30,8 @@ class EOIController extends Module {
         if (kpisBox) kpisBox.innerHTML = renderLoading({ variant: "kpis", rows: 2 });
 
         try {
-            this.data = await EoiService.loadData({});
+            const project = document.getElementById("eoi-project-filter")?.value || sessionStorage.getItem("operation_global_project") || "ALL";
+            this.data = await EoiService.loadData({ project });
 
             if (tbody) {
                 tbody.innerHTML = this.data.rows.length
@@ -43,6 +49,7 @@ class EOIController extends Module {
     bindEvents() {
         const addBtn = document.getElementById("eoi-add-btn");
         if (addBtn) addBtn.addEventListener("click", () => this.openForm());
+        document.getElementById("eoi-project-filter")?.addEventListener("change", () => this.loadData());
     }
 
     async openForm() {

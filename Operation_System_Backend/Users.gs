@@ -218,3 +218,18 @@ function createSystemUser(token, data) {
   sh.appendRow(row);
   return { success: true, message: 'User created successfully.', user: { name, username, role, active: data.active !== false } };
 }
+
+
+function recordUserActivity(token, data) {
+  const session = requireAuth_(token);
+  data = data || {};
+  const action = clean_(data.action) || 'Activity';
+  const moduleName = clean_(data.module) || 'System';
+  const details = safeAuditDetails_({ details: data.details || {}, route: data.route || '' }, '');
+  const sh = getOrCreateAuditSheet_();
+  sh.appendRow([
+    new Date(), session.name || '', session.user || '', session.role || '',
+    action, moduleName, details, 'TRUE', 0
+  ]);
+  return true;
+}

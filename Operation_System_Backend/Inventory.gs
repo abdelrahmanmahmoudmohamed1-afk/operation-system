@@ -1,58 +1,52 @@
 /**
- * ===========================================================
- * OPERATION SYSTEM BACKEND — Inventory.gs
- * ===========================================================
- * كل ما يخص الوحدات: قراءة المخزون، الوحدات المتاحة، تفاصيل
- * أي وحدة. كل القراءة بالاسم (header-based) مش بترقيم الأعمدة.
- * ===========================================================
+ * Operation System backend — unified inventory/data readers.
+ * Reads all configured projects from PROJECT_SOURCES and merges client data
+ * by Project + Unit Code. This keeps every module on one canonical dataset.
  */
 
-const INVENTORY_CACHE_KEY = 'operation_inventory_v4';
+const INVENTORY_CACHE_KEY = 'operation_inventory_enterprise_v1';
 const INVENTORY_CACHE_SECONDS = 300;
 
-/**
- * بيرجع inventory + clientDb + cancelled مدموجين في نداء واحد،
- * بيفتح الـ Spreadsheet مرة واحدة بس (مش 3 مرات منفصلة زي الأول)،
- * وبيحط النتيجة في الكاش لمدة 45 ثانية عشان التنقل بين الصفحات
- * يبقى أسرع بدل ما كل صفحة تعيد قراءة آلاف الصفوف من الشيت من
- * الصفر في كل مرة.
- */
 function getMergedDataBundle_() {
   const cache = CacheService.getScriptCache();
-
   try {
     const cached = cache.get(INVENTORY_CACHE_KEY);
     if (cached) return JSON.parse(cached, dateReviver_);
-  } catch (e) { /* لو الكاش باظ أو كبير قوي، كمل قراءة عادية */ }
+  } catch (e) {}
 
-  const ss = SpreadsheetApp.openById(SPREADSHEETS.DATA);
+  let inventory = [];
+  let clientDb = [];
+  let cancelled = [];
 
-  const inventory = readInventoryFromSheet_(ss);
-  const clientDb = readClientDbFromSheet_(ss);
-  const cancelled = readCancelledFromSheet_(ss);
+  (PROJECT_SOURCES || []).forEach(function(source) {
+    const ss = SpreadsheetApp.openById(source.spreadsheetId);
+    inventory = inventory.concat(readInventoryFromSource_(ss, source));
+    clientDb = clientDb.concat(readClientDbFromSource_(ss, source));
+    if (source.cancelledSheet) cancelled = cancelled.concat(readCancelledFromSource_(ss, source));
+  });
 
   const clientMap = {};
-  clientDb.forEach(x => {
+  clientDb.forEach(function(x) {
     const key = norm_(x.project) + '||' + norm_(x.unitCode);
     if (key !== '||') clientMap[key] = x;
   });
 
-  // دمج بيانات العميل (تاريخ العقد، اسم العميل، طريقة الدفع...) جوه
-  // صفوف المخزون لو الوحدة دي مبيوعة، لأن بيانات العقد الفعلية
-  // بتتسجل في شيت "Layana Transaction" مش "Inventory Management".
-  const mergedInventory = inventory.map(x => {
+  const mergedInventory = inventory.map(function(x) {
     const c = clientMap[norm_(x.project) + '||' + norm_(x.unitCode)] || {};
+    const status = lower_(x.status);
+    const transactionPrice = num_(c.soldPrice);
     return Object.assign({}, x, {
+      soldPrice: transactionPrice > 0 && (status === 'sold' || status === 'contracted' || status === 'reserved') ? transactionPrice : num_(x.soldPrice),
       contractDate: x.contractDate || c.contractDate || null,
       soldDate: x.soldDate || c.soldDate || null,
       reservationDate: x.reservationDate || c.reservationDate || null,
-      clientName: c.clientName || '',
-      clientPhone: c.clientPhone || '',
-      clientPhone2: c.clientPhone2 || '',
-      clientAddress: c.clientAddress || '',
-      paymentType: c.paymentType || '',
-      contractPlace: c.contractPlace || '',
-      clientType: c.clientType || '',
+      clientName: c.clientName || x.clientName || '',
+      clientPhone: c.clientPhone || x.clientPhone || '',
+      clientPhone2: c.clientPhone2 || x.clientPhone2 || '',
+      clientAddress: c.clientAddress || x.clientAddress || '',
+      paymentType: c.paymentType || x.paymentType || '',
+      contractPlace: c.contractPlace || x.contractPlace || '',
+      clientType: c.clientType || x.clientType || '',
       salesName: x.salesName || c.salesName || '',
       salesManager: x.salesManager || c.salesManager || '',
       salesDirector: x.salesDirector || c.salesDirector || '',
@@ -61,19 +55,10 @@ function getMergedDataBundle_() {
   });
 
   const bundle = { inventory: mergedInventory, clientDb: clientDb, cancelled: cancelled };
-
-  try {
-    cache.put(INVENTORY_CACHE_KEY, JSON.stringify(bundle), INVENTORY_CACHE_SECONDS);
-  } catch (e) { /* لو حجم البيانات أكبر من حد الكاش (100KB)، نكمل من غير كاش */ }
-
+  try { cache.put(INVENTORY_CACHE_KEY, JSON.stringify(bundle), INVENTORY_CACHE_SECONDS); } catch (e) {}
   return bundle;
 }
 
-/**
- * بيرجّع تواريخ الـ JSON.parse من نصوص ISO لـ Date objects تاني،
- * عشان باقي الكود يقدر يتعامل معاها زي ما لو كانت جاية من الشيت
- * على طول.
- */
 function dateReviver_(key, value) {
   if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) {
     const d = new Date(value);
@@ -86,42 +71,49 @@ function clearInventoryCache_() {
   CacheService.getScriptCache().remove(INVENTORY_CACHE_KEY);
 }
 
-// ================= قراءة خام (Raw readers) =================
+function readInventory_() { return getMergedDataBundle_().inventory; }
+function readClientDb_() { return getMergedDataBundle_().clientDb; }
+function readCancelled_() { return getMergedDataBundle_().cancelled; }
 
-function readInventory_() {
-  return getMergedDataBundle_().inventory;
+function findSheetByName_(ss, names) {
+  names = (Array.isArray(names) ? names : [names]).filter(Boolean);
+  for (let i = 0; i < names.length; i++) {
+    const sh = ss.getSheetByName(names[i]);
+    if (sh) return sh;
+  }
+  return null;
 }
 
-function readInventoryFromSheet_(ss) {
-  const inventoryNames = SHEET_NAMES.inventoryAliases || [SHEET_NAMES.inventory];
-  const sh = inventoryNames.map(function(name){ return ss.getSheetByName(name); }).filter(Boolean)[0];
-  if (!sh) {
-    throw new Error('Inventory sheet not found. Expected one of: ' + inventoryNames.join(' | '));
-  }
+function readInventoryFromSource_(ss, source) {
+  const aliases = [source.inventorySheet];
+  if (source.key === 'Layana') aliases.push('Inventory Management');
+  const sh = findSheetByName_(ss, aliases);
+  if (!sh) throw new Error('Inventory sheet not found for ' + source.key + ': ' + aliases.join(' | '));
 
-  const headerMap = getHeaderMap_(sh, HEADER_ROW.inventory);
+  const headerRow = Number(source.headerRowInventory || 2);
+  const headerMap = getHeaderMap_(sh, headerRow);
   const lastRow = sh.getLastRow();
   const lastCol = sh.getLastColumn();
-  if (lastRow <= HEADER_ROW.inventory || lastCol < 1) return [];
-  const v = sh.getRange(1, 1, lastRow, lastCol).getValues();
-  const dataRows = v.slice(HEADER_ROW.inventory);
+  if (lastRow <= headerRow || lastCol < 1) return [];
+  const rows = sh.getRange(headerRow + 1, 1, lastRow - headerRow, lastCol).getValues();
 
-  return dataRows
-    .filter(r => rowHasAnyAlias_(r, headerMap, [
-      FIELD_ALIASES.unitCode, FIELD_ALIASES.project, FIELD_ALIASES.soldPrice, FIELD_ALIASES.deliveryDate
-    ]))
-    .map(r => ({
-      sourceSheet: SHEET_NAMES.inventory,
+  return rows.filter(function(r) {
+    return rowHasAnyAlias_(r, headerMap, [FIELD_ALIASES.unitCode, FIELD_ALIASES.status, FIELD_ALIASES.soldPrice]);
+  }).map(function(r) {
+    return {
+      sourceSheet: sh.getName(),
       unitCode: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.unitCode)),
+      building: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.building)),
       unitType: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.unitType)),
       orientation: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.orientation)),
-      project: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.project)),
+      project: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.project)) || source.key,
       status: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.status)),
       floor: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.floor)),
       area: num_(getByAlias_(r, headerMap, FIELD_ALIASES.area)),
       soldPrice: num_(getByAlias_(r, headerMap, FIELD_ALIASES.soldPrice)),
       remainingDp: num_(getByAlias_(r, headerMap, FIELD_ALIASES.remainingDp)),
       paymentYears: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.paymentYears)),
+      paymentType: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.paymentType)),
       salesName: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.salesName)),
       salesManager: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.salesManager)),
       salesDirector: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.salesDirector)),
@@ -130,40 +122,34 @@ function readInventoryFromSheet_(ss) {
       nationality: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.nationality)),
       reservationDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.reservationDate)),
       contractDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.contractDate)),
+      soldDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.soldDate)),
       deliveryDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.deliveryDate)),
-      holdDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.holdDate))
-    }));
+      holdDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.holdDate)),
+      clientName: '', clientPhone: '', clientPhone2: '', clientAddress: ''
+    };
+  }).filter(function(x) { return x.unitCode || x.status; });
 }
 
-function readClientDb_() {
-  return getMergedDataBundle_().clientDb;
-}
-
-function readClientDbFromSheet_(ss) {
-  const sh = ss.getSheetByName(SHEET_NAMES.clientDb);
+function readClientDbFromSource_(ss, source) {
+  const sh = ss.getSheetByName(source.transactionSheet);
   if (!sh) return [];
-
-  const headerMap = getHeaderMap_(sh, HEADER_ROW.clientDb);
+  const headerRow = Number(source.headerRowTransaction || 2);
+  const headerMap = getHeaderMap_(sh, headerRow);
   const lastRow = sh.getLastRow();
   const lastCol = sh.getLastColumn();
-  if (lastRow <= HEADER_ROW.clientDb || lastCol < 1) return [];
-  const range = sh.getRange(1, 1, lastRow, lastCol);
-  const v = range.getValues();
-  const display = range.getDisplayValues();
-  const dataRows = v.slice(HEADER_ROW.clientDb);
-  const displayRows = display.slice(HEADER_ROW.clientDb);
+  if (lastRow <= headerRow || lastCol < 1) return [];
+  const rows = sh.getRange(headerRow + 1, 1, lastRow - headerRow, lastCol).getDisplayValues();
 
-  return dataRows
-    .map(function(r, rowIndex) { return { raw: r, display: displayRows[rowIndex] || r }; })
-    .filter(pair => rowHasAnyAlias_(pair.raw, headerMap, [
-      FIELD_ALIASES.unitCode, FIELD_ALIASES.project, FIELD_ALIASES.clientName, FIELD_ALIASES.salesName
-    ]))
-    .map(pair => { const r = pair.raw, d = pair.display; return ({
-      sourceSheet: SHEET_NAMES.clientDb,
+  return rows.filter(function(r) {
+    return rowHasAnyAlias_(r, headerMap, [FIELD_ALIASES.unitCode, FIELD_ALIASES.clientName, FIELD_ALIASES.salesName]);
+  }).map(function(r) {
+    return {
+      sourceSheet: sh.getName(),
       unitCode: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.unitCode)),
+      building: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.building)),
       unitType: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.unitType)),
       orientation: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.orientation)),
-      project: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.project)),
+      project: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.project)) || source.key,
       status: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.status)),
       floor: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.floor)),
       soldPrice: num_(getByAlias_(r, headerMap, FIELD_ALIASES.soldPrice)),
@@ -173,44 +159,35 @@ function readClientDbFromSheet_(ss) {
       salesManager: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.salesManager)),
       salesDirector: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.salesDirector)),
       clientName: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.clientName)),
-      clientPhone: normalizePhone_(getByAlias_(d, headerMap, FIELD_ALIASES.clientPhone)),
-      clientPhone2: normalizePhone_(getByAlias_(d, headerMap, FIELD_ALIASES.clientPhone2)),
-      clientAddress: clean_(getByAlias_(d, headerMap, FIELD_ALIASES.clientAddress)),
+      clientPhone: phone_(getByAlias_(r, headerMap, FIELD_ALIASES.clientPhone)),
+      clientPhone2: phone_(getByAlias_(r, headerMap, FIELD_ALIASES.clientPhone2)),
+      clientAddress: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.clientAddress)),
       brokerCompany: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.brokerCompany)),
       contractPlace: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.contractPlace)),
       clientType: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.clientType)),
       reservationDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.reservationDate)),
       contractDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.contractDate)),
       soldDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.soldDate))
-    }); });
+    };
+  }).filter(function(x) { return x.unitCode || x.clientName; });
 }
 
-function readCancelled_() {
-  return getMergedDataBundle_().cancelled;
-}
-
-function readCancelledFromSheet_(ss) {
-  const sh = ss.getSheetByName(SHEET_NAMES.cancelled);
+function readCancelledFromSource_(ss, source) {
+  const sh = ss.getSheetByName(source.cancelledSheet);
   if (!sh) return [];
-
-  const headerMap = getHeaderMap_(sh, HEADER_ROW.cancelled);
+  const headerRow = Number(source.headerRowCancelled || 1);
+  const headerMap = getHeaderMap_(sh, headerRow);
   const lastRow = sh.getLastRow();
   const lastCol = sh.getLastColumn();
-  if (lastRow <= HEADER_ROW.cancelled || lastCol < 1) return [];
-  const v = sh.getRange(1, 1, lastRow, lastCol).getValues();
-  const dataRows = v.slice(HEADER_ROW.cancelled);
-
-  return dataRows
-    .filter(r => rowHasAnyAlias_(r, headerMap, [
-      FIELD_ALIASES.unitCode, FIELD_ALIASES.project, FIELD_ALIASES.status,
-      FIELD_ALIASES.clientName, FIELD_ALIASES.salesName, FIELD_ALIASES.soldPrice, FIELD_ALIASES.cancellationDate
-    ]))
-    .map(r => ({
-      sourceSheet: SHEET_NAMES.cancelled,
+  if (lastRow <= headerRow || lastCol < 1) return [];
+  const rows = sh.getRange(headerRow + 1, 1, lastRow - headerRow, lastCol).getValues();
+  return rows.map(function(r) {
+    return {
+      sourceSheet: sh.getName(),
       unitCode: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.unitCode)),
       unitType: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.unitType)),
       orientation: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.orientation)),
-      project: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.project)),
+      project: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.project)) || source.key,
       status: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.status)) || 'Cancelled',
       floor: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.floor)),
       area: num_(getByAlias_(r, headerMap, FIELD_ALIASES.area)),
@@ -220,13 +197,15 @@ function readCancelledFromSheet_(ss) {
       salesDirector: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.salesDirector)),
       brokerCompany: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.brokerCompany)),
       clientName: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.clientName)),
-      clientPhone: normalizePhone_(getByAlias_(d, headerMap, FIELD_ALIASES.clientPhone)),
-      clientPhone2: normalizePhone_(getByAlias_(d, headerMap, FIELD_ALIASES.clientPhone2)),
-      clientAddress: clean_(getByAlias_(d, headerMap, FIELD_ALIASES.clientAddress)),
+      clientPhone: phone_(getByAlias_(r, headerMap, FIELD_ALIASES.clientPhone)),
+      clientPhone2: phone_(getByAlias_(r, headerMap, FIELD_ALIASES.clientPhone2)),
+      clientAddress: clean_(getByAlias_(r, headerMap, FIELD_ALIASES.clientAddress)),
       reservationDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.reservationDate)),
       contractDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.contractDate)),
+      soldDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.soldDate)),
       cancellationDate: date_(getByAlias_(r, headerMap, FIELD_ALIASES.cancellationDate))
-    }));
+    };
+  }).filter(function(x) { return x.unitCode || x.clientName; });
 }
 
 // ================= API يستخدمها الفرونت إند =================
@@ -241,9 +220,9 @@ function getInventoryData(token, filters) {
 
   if (filters) {
     return rows.filter(x => {
-      if (filters.project && filters.project !== 'ALL' && x.project !== filters.project) return false;
-      if (filters.status && filters.status !== 'ALL' && x.status !== filters.status) return false;
-      if (filters.unitType && filters.unitType !== 'ALL' && x.unitType !== filters.unitType) return false;
+      if (filters.project && norm_(filters.project) !== 'all' && norm_(x.project) !== norm_(filters.project)) return false;
+      if (filters.status && norm_(filters.status) !== 'all' && norm_(x.status) !== norm_(filters.status)) return false;
+      if (filters.unitType && norm_(filters.unitType) !== 'all' && norm_(x.unitType) !== norm_(filters.unitType)) return false;
       return true;
     });
   }
@@ -256,9 +235,7 @@ function getInventoryData(token, filters) {
  */
 function getInventoryProjects() {
   const rows = readInventory_();
-  return [...new Set(
-    rows.filter(x => lower_(x.status) === 'available').map(x => x.project).filter(Boolean)
-  )].sort();
+  return [...new Set((PROJECT_SOURCES || []).map(function(s){return s.key;}).concat(rows.map(x => x.project)).filter(Boolean))].sort();
 }
 
 function getAvailableUnitsByProject(project) {

@@ -101,7 +101,6 @@ class CRMController extends Module {
         });
         document.getElementById("crm-contract-upload-form")?.addEventListener("submit", async (event) => {
             event.preventDefault();
-            const form = event.currentTarget;
             const file = document.getElementById("crm-contract-file")?.files?.[0];
             const errorBox = document.getElementById("crm-contract-error");
             const submit = document.getElementById("crm-contract-submit");
@@ -112,7 +111,7 @@ class CRMController extends Module {
             if (errorBox) errorBox.classList.add("hidden");
             try {
                 const base64 = await this.fileToBase64(file);
-                const documentType = form?.elements?.documentType?.value || "Contract";
+                const documentType = document.querySelector("#crm-contract-upload-form [name=\"documentType\"]")?.value || "Contract";
                 const result = await CrmService.uploadContract({
                     ...client,
                     documentType,

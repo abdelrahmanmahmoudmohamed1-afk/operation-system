@@ -1,0 +1,22 @@
+# Operation System Enterprise 1.0 — التعديلات المنفذة
+
+- Unified data engine لمشروعي Layana وMersea.
+- Global Project Filter في الـ Header ويؤثر على Dashboard / Overview / Inventory / Payment / CRM / Leads / EOI / Achievement / Reports / Contracts.
+- إصلاح Report Builder: مصادر Dashboard + Inventory + CRM + EOI تعمل بالتوازي، وعدم تكرار reportRows مع topUnits، وقراءة lowercase backend fields مثل soldPrice/clientPhone/clientName.
+- Achievement module: Reserved / Contracted / Sold فقط، حالة واحدة حالية لكل وحدة، وStatus-specific dates، مع Daily/Weekly/Monthly/Custom Range، وتحديد صفوف بالـ checkbox وحساب قيمة المحدد والطباعة.
+- CRM: Client Phone Number + Client Phone Number 2 + Residence address + Contract/Reservation/Sold dates من Transaction sheets، واستخدام getDisplayValues للحفاظ على شكل أرقام الموبايل.
+- Contract PDF upload: Base64 -> Apps Script -> Google Drive + Client Documents audit sheet، بدون FormData للملف.
+- Global PDF: window.print() + print CSS بدل legacy canvas exporter/legacy HTML PDF exporter، وإزالة unsupported CSS color helper/modern color sources، وإظهار الجداول كاملة في الطباعة.
+- Users module Admin-only + Create User + server-side Audit Log. Role model: Admin / User.
+- Leads module + Excel/CSV import + bulk lead status update + filters.
+- EOI: Project + Housing fields.
+- Navigation: كل الموديولات مسجلة، Users يظهر للـ Admin، Achievement وLeads مضافان، وشريط الموديولات sticky وقابل للتمرير أفقياً على الشاشات الضيقة.
+- Sticky global topbar + sticky page headers.
+- Quick Actions تعتمد على delegated routing، والضغط على اللوجو يرجع Overview.
+- Centered notifications.
+- Animated route loader باللوجو + logout room animation (باب/شخص/إطفاء النور).
+- إزالة النصوص التي تحمل اسم الشركة من الواجهة والكود النصي؛ الاسم الظاهر Operation System فقط مع الاحتفاظ باللوجو وcredit بسيط: Developed by Abdelrahman Mahmoud.
+- Service Worker Network-First للكود ورقم Cache جديد لمنع بقاء نسخة قديمة.
+- Backend compatibility check عند بدء الجلسة للتنبيه لو تم رفع Frontend بدون نشر Backend المطابق.
+- إصلاح Dashboard KPI semantics: Sold لا يشمل Contracted/Reserved، وإضافة counts/values مستقلة لكل مرحلة.
+- Payment units تقرأ Layana + Mersea حسب Global Project مع deduplication.

@@ -8,9 +8,12 @@ const ENDPOINTS = Object.freeze({
     LOGIN: "login",
     LOGOUT: "logout",
     CHANGE_PASSWORD: "changeOwnPassword",
+    SYSTEM_INFO: "getSystemInfo",
+    RECORD_ACTIVITY: "recordUserActivity",
 
     DASHBOARD_FILTERS: "getDashboardFilters",
     DASHBOARD_DATA: "getDashboardData",
+    ACHIEVEMENT_DATA: "getAchievementData",
 
     CLIENT_FORM_BOOTSTRAP: "getClientFormBootstrap",
     SALES_LIST: "getSales",
@@ -31,13 +34,13 @@ const ENDPOINTS = Object.freeze({
     SAVE_EOI: "saveEOI",
     EOI_DATA: "getEOIData",
 
+    LEADS_DATA: "getLeadsData",
+    BULK_UPDATE_LEAD_STATUS: "bulkUpdateLeadStatus",
+    IMPORT_LEADS: "importLeads",
+
     USERS_DATA: "getUsersData",
     CREATE_SYSTEM_USER: "createSystemUser",
-    AUDIT_HISTORY: "getAuditHistory",
-
-    LEADS_DATA: "getLeadsData",
-    LEADS_BULK_STATUS: "bulkUpdateLeadStatus",
-    LEADS_IMPORT: "importLeads"
+    AUDIT_HISTORY: "getAuditHistory"
 });
 
 export default ENDPOINTS;

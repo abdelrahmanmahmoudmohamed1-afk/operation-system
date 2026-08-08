@@ -23,20 +23,22 @@ class Router {
     }
 
     async load(routeName, pushState = true) {
-        const moduleConfig = MODULES[routeName];
         const authManager = Container.get("authManager");
         const permissionManager = Container.get("permissionManager");
         const role = String(authManager.getUser()?.role || "user").trim().toLowerCase();
+
+        if (!MODULES[routeName]) {
+            this.logger().warn(`Route not found: ${routeName}`);
+            routeName = "overview";
+        }
+
         if (!permissionManager.can(role, routeName)) {
             this.logger().warn(`Blocked unauthorized route access: ${routeName}`);
             routeName = "overview";
-            if (routeName !== this.currentRoute) return this.load(routeName, pushState);
         }
 
-        if (!moduleConfig) {
-            this.logger().warn(`Route not found: ${routeName}`);
-            return;
-        }
+        const moduleConfig = MODULES[routeName];
+        if (!moduleConfig) return;
 
         this.eventBus().emit("route:before-change", {
             from: this.currentRoute,

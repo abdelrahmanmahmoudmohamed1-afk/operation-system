@@ -4,7 +4,7 @@ import Formatter from "../../utils/formatter.js";
 function unitLabel(u) {
     const status = u.status || u.Status || "Available";
     const area = u.area || u.Area || u.totalArea || u.TotalArea || "-";
-    return `${u.unitCode || u.UnitCode || u.id} — ${u.unitType || u.UnitType || "Unit"} — ${area} m² — ${Formatter.money(u.ticketPrice || u.TicketPrice || 0)} — ${status}`;
+    return `${u.project || u.Project || "Project"} — ${u.unitCode || u.UnitCode || u.id} — ${u.unitType || u.UnitType || "Unit"} — ${area} m² — ${Formatter.money(u.ticketPrice || u.TicketPrice || u.soldPrice || 0)} — ${status}`;
 }
 
 export function renderLayout(units, years) {
