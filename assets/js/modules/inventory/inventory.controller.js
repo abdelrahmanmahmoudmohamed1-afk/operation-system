@@ -21,6 +21,11 @@ class InventoryController extends Module {
         }
 
         this.container.innerHTML = renderLayout(projects);
+        const selectedGlobalProject = sessionStorage.getItem("operation_global_project") || "ALL";
+        const projectSelect = document.getElementById("inv-project-filter");
+        if (projectSelect && Array.from(projectSelect.options).some((o) => o.value === selectedGlobalProject)) {
+            projectSelect.value = selectedGlobalProject;
+        }
         const globalSearch = sessionStorage.getItem("operation_global_search");
         if (globalSearch) {
             try {
@@ -44,7 +49,7 @@ class InventoryController extends Module {
         if (kpisBox) kpisBox.innerHTML = renderLoading({ variant: "kpis", rows: 4 });
 
         const filters = {
-            project: document.getElementById("inv-project-filter")?.value || "ALL",
+            project: document.getElementById("inv-project-filter")?.value || sessionStorage.getItem("operation_global_project") || "ALL",
             status: statusSelect?.value || "ALL"
         };
 
@@ -90,6 +95,9 @@ class InventoryController extends Module {
         if (projectFilter) {
             projectFilter.addEventListener("change", () => {
                 this.allStatuses = [];
+                sessionStorage.setItem("operation_global_project", projectFilter.value || "ALL");
+                const global = document.getElementById("global-project-filter");
+                if (global && Array.from(global.options).some((o) => o.value === projectFilter.value)) global.value = projectFilter.value;
                 this.loadUnits(true);
             });
         }

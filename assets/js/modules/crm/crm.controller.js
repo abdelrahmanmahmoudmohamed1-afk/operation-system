@@ -1,6 +1,6 @@
 import Module from "../../core/module.js";
 import CrmService from "./crm.service.js";
-import { renderLayout, renderTableRows, renderRegisterForm, renderUploadContractModal } from "./crm.view.js";
+import { renderLayout, renderTableRows, renderRegisterForm, renderUploadContractModal, renderDocumentsModal } from "./crm.view.js";
 import { renderLoading, renderEmptyRow, renderErrorRow } from "../../utils/state.js";
 
 class CRMController extends Module {
@@ -46,11 +46,11 @@ class CRMController extends Module {
             if (tbody) {
                 tbody.innerHTML = this.clients.length
                     ? renderTableRows(this.clients)
-                    : renderEmptyRow(9, search ? "No clients match your search" : "No clients registered yet");
+                    : renderEmptyRow(10, search ? "No clients match your search" : "No clients registered yet");
             }
         } catch (error) {
             this.logger().error("CRM load failed", error);
-            if (tbody) tbody.innerHTML = renderErrorRow(9, error.message);
+            if (tbody) tbody.innerHTML = renderErrorRow(10, error.message);
             this.notify().error(error.message);
         }
     }
@@ -80,14 +80,42 @@ class CRMController extends Module {
         if (addBtn) addBtn.addEventListener("click", () => this.openRegisterModal());
 
         document.getElementById("crm-table-body")?.addEventListener("click", (event) => {
-            const button = event.target.closest(".crm-upload-contract");
+            const upload = event.target.closest(".crm-upload-contract");
+            const view = event.target.closest(".crm-view-documents");
+            const button = upload || view;
             if (!button) return;
             event.preventDefault();
             event.stopPropagation();
             let client = {};
             try { client = JSON.parse(button.dataset.client || "{}"); } catch (_) {}
-            this.openContractUploadModal(client);
+            if (upload) this.openContractUploadModal(client);
+            else this.openDocumentsModal(client);
         });
+    }
+
+    async openDocumentsModal(client) {
+        const root = document.getElementById("crm-modal-root");
+        if (!root) return;
+        try {
+            const docs = await CrmService.loadDocuments({ unitCode: client.unitCode, project: client.project });
+            root.innerHTML = renderDocumentsModal(client, Array.isArray(docs) ? docs : []);
+            const close = () => { root.innerHTML = ""; };
+            document.getElementById("crm-documents-close")?.addEventListener("click", close);
+            document.getElementById("crm-documents-modal-backdrop")?.addEventListener("click", (event) => { if (event.target.id === "crm-documents-modal-backdrop") close(); });
+            root.querySelectorAll(".crm-download-local-doc").forEach((button) => button.addEventListener("click", async () => {
+                const doc = (Array.isArray(docs) ? docs : []).find((x) => String(x.id) === String(button.dataset.docId));
+                if (!doc?.base64) return;
+                const binary = atob(doc.base64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                const blob = new Blob([bytes], { type: doc.mimeType || "application/pdf" });
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = doc.fileName || "document.pdf";
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+            }));
+        } catch (error) { this.notify().error(error.message || "Could not load client documents"); }
     }
 
     openContractUploadModal(client) {

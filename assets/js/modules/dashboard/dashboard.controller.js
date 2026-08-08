@@ -140,7 +140,7 @@ class DashboardController extends Module {
                 maintainAspectRatio: false,
                 cutout: "62%",
                 plugins: {
-                    legend: { position: "bottom", labels: { color: "#ECEEF1", boxWidth: 12, font: { family: "Raleway" } } }
+                    legend: { position: "bottom", labels: { color: "#ECEEF1", boxWidth: 12, font: { family: "Inter" } } }
                 }
             }
         });
@@ -186,11 +186,11 @@ function chartBaseOptions(hideLegend = false) {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            legend: { display: !hideLegend, labels: { color: "#ECEEF1", font: { family: "Raleway" } } }
+            legend: { display: !hideLegend, labels: { color: "#ECEEF1", font: { family: "Inter" } } }
         },
         scales: {
-            x: { ticks: { color: "#8B94A3", font: { family: "Raleway" } }, grid: { color: "rgba(255,255,255,.06)" } },
-            y: { ticks: { color: "#8B94A3", font: { family: "Raleway" } }, grid: { color: "rgba(255,255,255,.06)" } }
+            x: { ticks: { color: "#8B94A3", font: { family: "Inter" } }, grid: { color: "rgba(255,255,255,.06)" } },
+            y: { ticks: { color: "#8B94A3", font: { family: "Inter" } }, grid: { color: "rgba(255,255,255,.06)" } }
         }
     };
 }

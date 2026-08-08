@@ -1,54 +1,68 @@
-<div class="main-layout main-layout-horizontal">
-    <header class="topbar premium-topbar">
-        <div class="topbar-left">
-            <button type="button" class="topbar-logo-home" id="home-logo-btn" title="Back to Overview" aria-label="Back to Overview"><img src="https://i.ibb.co/FLnH6Fw2/1cf98fc6-5c25-4af8-8af0-1e556340272f.jpg" alt="Company logo"></button><span class="topbar-title" id="page-title">Operation System</span>
-            <div class="global-search premium-search">
-                <span class="search-icon">⌕</span>
-                <select id="global-search-type" aria-label="Search Type">
-                    <option value="all">All</option>
-                    <option value="inventory">Inventory</option>
-                    <option value="crm">CRM</option>
-                    <option value="leads">Leads</option>
-                    <option value="eoi">EOI</option>
-                    <option value="reports">Reports</option>
-                </select>
-                <input type="text" id="global-search-input" placeholder="Search units, clients, EOI, reports...">
-                <button type="button" id="global-search-clear" title="Clear">×</button>
-                <span class="search-shortcut">Ctrl K</span>
-            </div>
-        </div>
-
-        <div class="topbar-right">
-            <select id="global-project-filter" class="global-project-filter premium-select" title="Project"><option value="ALL">All Projects</option></select>
-            <button class="pdf-btn" id="global-pdf-btn" type="button" title="Print / Save current view as PDF">PDF</button>
-            <select id="language-switcher" class="language-switcher" title="Language">
-                <option value="en">EN</option>
-                <option value="ar">AR</option>
-            </select>
-            <span class="topbar-clock" id="topbar-clock"></span>
-            <span class="topbar-user" id="topbar-user-name">-</span>
-            <span class="topbar-role" id="topbar-user-role"></span>
-            <button class="logout-btn animated-logout-btn" data-logout type="button" aria-label="Logout">
-                <span class="logout-text">Log Out</span>
-                <span class="logout-animation" aria-hidden="true">
-                    <span class="logout-figure"></span>
-                    <span class="logout-doorway"></span>
-                    <span class="logout-door"></span>
-                </span>
+<div class="main-layout enterprise-shell">
+    <aside class="app-sidebar" id="app-sidebar" aria-label="Primary navigation">
+        <div class="sidebar-head">
+            <button type="button" class="sidebar-brand sidebar-brand-button" data-route="overview" title="Back to Overview" aria-label="Back to Overview">
+                <img class="sidebar-brand-logo" src="https://i.ibb.co/FLnH6Fw2/1cf98fc6-5c25-4af8-8af0-1e556340272f.jpg" alt="Company logo">
+                <span class="sidebar-brand-copy"><strong>Operation System</strong><small>Sales Operations</small></span>
             </button>
         </div>
-    </header>
+        <nav id="sidebar-container" class="sidebar-container"></nav>
+        <div class="sidebar-foot">
+            <span class="sidebar-foot-status"><i></i> Workspace online</span>
+            <small class="developer-credit">Developed by Abdelrahman Mahmoud</small>
+        </div>
+    </aside>
 
-    <nav id="sidebar-container" class="sidebar-horizontal-wrap"></nav>
+    <div class="app-workspace">
+        <header class="topbar premium-topbar">
+            <div class="topbar-left">
+                <button class="mobile-nav-toggle" id="mobile-nav-toggle" type="button" aria-label="Open navigation">☰</button>
+                <div class="page-context">
+                    <span class="page-context-label">Workspace</span>
+                    <strong class="topbar-title" id="page-title">Overview</strong>
+                </div>
+                <div class="global-search premium-search">
+                    <span class="search-icon">⌕</span>
+                    <select id="global-search-type" aria-label="Search Type">
+                        <option value="all">All</option>
+                        <option value="inventory">Inventory</option>
+                        <option value="crm">CRM</option>
+                        <option value="leads">Leads</option>
+                        <option value="eoi">EOI</option>
+                        <option value="reports">Reports</option>
+                    </select>
+                    <input type="text" id="global-search-input" placeholder="Search unit, client, mobile, lead…">
+                    <button type="button" id="global-search-clear" title="Clear">×</button>
+                    <span class="search-shortcut">Ctrl K</span>
+                </div>
+            </div>
 
-    <div class="main-content-wrap">
-        <main class="content">
+            <div class="topbar-right">
+                <select id="global-project-filter" class="global-project-filter premium-select" title="Project">
+                    <option value="ALL">All Projects</option>
+                    <option value="Layana">Layana</option>
+                    <option value="Mersea">Mersea</option>
+                </select>
+                <button class="topbar-icon-btn pdf-btn" id="global-pdf-btn" type="button" title="Print / Save current view as PDF" aria-label="Print or save PDF">PDF</button>
+                <span class="topbar-clock" id="topbar-clock"></span>
+                <div class="user-chip" title="Signed in user">
+                    <span class="user-avatar" id="topbar-user-avatar">U</span>
+                    <span class="user-chip-copy"><strong id="topbar-user-name">-</strong><small id="topbar-user-role"></small></span>
+                </div>
+                <button class="logout-btn animated-logout-btn" data-logout type="button" aria-label="Logout">
+                    <span class="logout-text">Log Out</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="content app-content">
             <div id="page-content"></div>
         </main>
 
         <footer class="app-footer">
             <span>Operation System</span>
-            <span id="footer-version"></span><span class="developer-credit">Developed by Abdelrahman Mahmoud</span>
+            <span id="footer-version"></span>
         </footer>
     </div>
+    <button class="sidebar-backdrop hidden" id="sidebar-backdrop" type="button" aria-label="Close navigation"></button>
 </div>

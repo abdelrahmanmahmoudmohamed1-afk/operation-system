@@ -10,7 +10,7 @@ class LayoutManager {
 
     async loadMainLayout() {
         try {
-            const response = await fetch("layouts/main.html", { cache: "force-cache" });
+            const response = await fetch("layouts/main.html", { cache: "no-store" });
 
             if (!response.ok) {
                 throw new Error("Failed to load main layout");
@@ -79,6 +79,11 @@ class LayoutManager {
 
         if (nameEl) nameEl.textContent = user && user.name ? user.name : "";
         if (roleEl) roleEl.textContent = user && user.role ? user.role : "";
+        const avatarEl = document.getElementById("topbar-user-avatar");
+        if (avatarEl) {
+            const label = String(user?.name || user?.user || "U").trim();
+            avatarEl.textContent = label ? label.charAt(0).toUpperCase() : "U";
+        }
     }
 
     renderFooter() {

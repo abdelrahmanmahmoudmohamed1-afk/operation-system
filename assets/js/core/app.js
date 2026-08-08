@@ -75,7 +75,7 @@ class App {
      */
     async showLogin() {
         try {
-            const response = await fetch("layouts/login.html", { cache: "force-cache" });
+            const response = await fetch("layouts/login.html", { cache: "no-store" });
             if (!response.ok) throw new Error(`Login layout failed (${response.status})`);
             const html = await response.text();
 
@@ -138,6 +138,7 @@ class App {
         await this.router.load(initialRoute);
 
         this.bindNavigation();
+        this.bindMobileNavigation();
         this.bindGlobalProjectFilter();
         this.bindPdfExport();
         this.bindLogout();
@@ -194,17 +195,46 @@ class App {
         });
     }
 
+    bindMobileNavigation() {
+        if (this.mobileNavigationBound) return;
+        this.mobileNavigationBound = true;
+        const sidebar = document.getElementById("app-sidebar");
+        const toggle = document.getElementById("mobile-nav-toggle");
+        const backdrop = document.getElementById("sidebar-backdrop");
+        if (!sidebar || !toggle || !backdrop) return;
+        const close = () => {
+            sidebar.classList.remove("open");
+            backdrop.classList.add("hidden");
+            document.body.classList.remove("nav-open");
+        };
+        const open = () => {
+            sidebar.classList.add("open");
+            backdrop.classList.remove("hidden");
+            document.body.classList.add("nav-open");
+        };
+        toggle.addEventListener("click", () => sidebar.classList.contains("open") ? close() : open());
+        backdrop.addEventListener("click", close);
+        document.addEventListener("click", (event) => {
+            if (event.target.closest("[data-route]") && window.innerWidth <= 980) close();
+        });
+    }
+
     async bindGlobalProjectFilter() {
         const select = document.getElementById("global-project-filter");
         if (!select) return;
         const saved = sessionStorage.getItem("operation_global_project") || "ALL";
+        const fallbackProjects = ["Layana", "Mersea"];
+        let projects = fallbackProjects;
         try {
             const api = Container.get("api");
             const token = Container.get("authManager").getToken();
             const res = await api.post("getDashboardFilters", { token }, { forceRefresh: true });
-            const projects = (res?.data?.data?.projects || []).filter((p) => p && String(p).toUpperCase() !== "ALL");
-            select.innerHTML = `<option value="ALL">All Projects</option>${projects.map((p) => `<option value="${this.escapeHTML(p)}">${this.escapeHTML(p)}</option>`).join("")}`;
-        } catch (_) {}
+            const remote = (res?.data?.data?.projects || []).filter((p) => p && String(p).toUpperCase() !== "ALL");
+            if (remote.length) projects = Array.from(new Set([...fallbackProjects, ...remote]));
+        } catch (_) {
+            // GitHub-only mode: keep the known project list usable.
+        }
+        select.innerHTML = `<option value="ALL">All Projects</option>${projects.map((p) => `<option value="${this.escapeHTML(p)}">${this.escapeHTML(p)}</option>`).join("")}`;
         select.value = Array.from(select.options).some((o) => o.value === saved) ? saved : "ALL";
         sessionStorage.setItem("operation_global_project", select.value);
         select.addEventListener("change", async () => {
@@ -235,17 +265,38 @@ class App {
 
     bindPdfExport() {
         document.getElementById("global-pdf-btn")?.addEventListener("click", () => {
+            const page = document.getElementById("page-content");
+            if (!page) return;
             document.body.classList.add("print-current-view");
-            document.querySelectorAll("details").forEach((el) => { el.dataset.opsWasOpen = el.open ? "1" : "0"; el.open = true; });
+            document.documentElement.classList.add("printing-current-view");
+
+            const restore = [];
+            document.querySelectorAll(".table-wrap, .report-table-wrap, .data-table-wrap, .chart-scroll").forEach((el) => {
+                restore.push([el, el.style.maxHeight, el.style.height, el.style.overflow]);
+                el.style.maxHeight = "none";
+                el.style.height = "auto";
+                el.style.overflow = "visible";
+            });
+            document.querySelectorAll("details").forEach((el) => {
+                el.dataset.opsWasOpen = el.open ? "1" : "0";
+                el.open = true;
+            });
+
             const cleanup = () => {
                 document.body.classList.remove("print-current-view");
+                document.documentElement.classList.remove("printing-current-view");
+                restore.forEach(([el, maxHeight, height, overflow]) => {
+                    el.style.maxHeight = maxHeight;
+                    el.style.height = height;
+                    el.style.overflow = overflow;
+                });
                 document.querySelectorAll("details[data-ops-was-open]").forEach((el) => {
                     el.open = el.dataset.opsWasOpen === "1";
                     delete el.dataset.opsWasOpen;
                 });
             };
             window.addEventListener("afterprint", cleanup, { once: true });
-            requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => window.print(), 80)));
+            requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => window.print(), 120)));
         });
     }
 
@@ -321,7 +372,7 @@ class App {
     registerServiceWorker() {
         if (!("serviceWorker" in navigator) || location.protocol === "file:") return;
         window.addEventListener("load", () => {
-            navigator.serviceWorker.register("./sw.js").catch((error) => console.warn("Service worker registration failed", error));
+            navigator.serviceWorker.register("./sw.js").then((registration) => registration.update()).catch((error) => console.warn("Service worker registration failed", error));
         }, { once: true });
     }
 

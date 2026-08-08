@@ -73,7 +73,7 @@ export function renderTableRows(rows) {
             <td>${statusBadge(row.status)}</td>
             <td>${Formatter.money(row.soldPrice)}</td>
             <td>${escapeHtml(row.contractDate || "-")}</td>
-            <td><button type="button" class="btn btn-outline btn-sm crm-upload-contract" data-client='${escapeHtml(JSON.stringify({unitCode:row.unitCode,project:row.project,clientName:row.clientName}))}'>Upload PDF</button></td>
+            <td><div class="row-actions"><button type="button" class="btn btn-outline btn-sm crm-view-documents" data-client='${escapeHtml(JSON.stringify({unitCode:row.unitCode,project:row.project,clientName:row.clientName}))}'>View</button><button type="button" class="btn btn-outline btn-sm crm-upload-contract" data-client='${escapeHtml(JSON.stringify({unitCode:row.unitCode,project:row.project,clientName:row.clientName}))}'>Upload</button></div></td>
         </tr>
     `).join("");
 }
@@ -178,6 +178,22 @@ export function renderUploadContractModal(client = {}) {
                         <button type="submit" class="btn btn-primary" id="crm-contract-submit">Upload PDF</button>
                     </div>
                 </form>
+            </div>
+        </div>`;
+}
+
+export function renderDocumentsModal(client = {}, documents = []) {
+    const rows = documents.length ? documents.map((doc) => `
+        <div class="document-row">
+            <div class="document-icon">PDF</div>
+            <div class="document-copy"><strong>${escapeHtml(doc.fileName || doc.name || "Contract.pdf")}</strong><small>${escapeHtml(doc.documentType || "Document")} · ${escapeHtml(doc.createdAt || doc.uploadedAt || "")}${doc.local ? " · Local vault" : ""}</small></div>
+            ${doc.base64 ? `<button type="button" class="btn btn-outline btn-sm crm-download-local-doc" data-doc-id="${escapeHtml(doc.id)}">Download</button>` : doc.url ? `<a class="btn btn-outline btn-sm" href="${escapeHtml(doc.url)}" target="_blank" rel="noopener">Open</a>` : ""}
+        </div>`).join("") : `<div class="empty-state compact"><strong>No documents yet</strong><span>Upload the first client contract or scan.</span></div>`;
+    return `
+        <div class="modal-backdrop" id="crm-documents-modal-backdrop">
+            <div class="modal-box crm-documents-modal">
+                <div class="modal-heading"><div><h2>Client Documents</h2><p class="modal-subtitle">${escapeHtml(client.project || "-")} — ${escapeHtml(client.unitCode || "-")} — ${escapeHtml(client.clientName || "-")}</p></div><button type="button" class="modal-close" id="crm-documents-close">×</button></div>
+                <div class="documents-list">${rows}</div>
             </div>
         </div>`;
 }

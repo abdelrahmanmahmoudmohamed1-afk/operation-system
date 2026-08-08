@@ -17,34 +17,53 @@ class ClientService {
     }
 
     normalizeClient(row = {}) {
+        const normalizeKey = (key) => String(key || "").toLowerCase().replace(/[^a-z0-9؀-ۿ]+/g, "");
+        const flat = new Map();
+        const visit = (value, prefix = "") => {
+            if (!value || typeof value !== "object" || Array.isArray(value)) return;
+            Object.entries(value).forEach(([key, child]) => {
+                const full = prefix ? `${prefix}.${key}` : key;
+                if (child && typeof child === "object" && !Array.isArray(child)) visit(child, full);
+                else {
+                    flat.set(normalizeKey(key), child);
+                    flat.set(normalizeKey(full), child);
+                }
+            });
+        };
+        visit(row);
         const pick = (...keys) => {
             for (const key of keys) {
-                const value = row?.[key];
-                if (value !== undefined && value !== null && String(value).trim() !== '') return value;
+                const direct = row?.[key];
+                if (direct !== undefined && direct !== null && String(direct).trim() !== "") return direct;
+                const mapped = flat.get(normalizeKey(key));
+                if (mapped !== undefined && mapped !== null && String(mapped).trim() !== "") return mapped;
             }
-            return '';
+            return "";
         };
         const phone = (value) => {
-            if (value === undefined || value === null) return '';
-            // Preserve leading zero when the API already sent text; repair common numeric sheet values.
-            let text = String(value).trim().replace(/\.0$/, '').replace(/[^0-9+]/g, '');
-            if (/^1\d{9}$/.test(text)) text = '0' + text;
+            if (value === undefined || value === null || value === "") return "";
+            let text = String(value).trim().replace(/\.0$/, "").replace(/[^0-9+]/g, "");
+            if (/^1\d{9}$/.test(text)) text = "0" + text;
+            if (/^20(1\d{9})$/.test(text)) text = "0" + text.slice(2);
             return text;
         };
         return {
             ...row,
-            unitCode: pick('unitCode', 'Unit Code', 'UnitCode'),
-            project: pick('project', 'Project', 'Project Name'),
-            clientName: pick('clientName', 'Client Name English', 'Client Name Arabic', 'Client Name'),
-            clientPhone: phone(pick('clientPhone', 'Client Phone Number', 'Client Phone', 'Phone', 'Mobile', 'Primary Mobile')),
-            clientPhone2: phone(pick('clientPhone2', 'Client Phone Number 2', 'Client Phone 2', 'Secondary Mobile', 'Mobile 2')),
-            clientAddress: pick('clientAddress', 'Residence address', 'Residence Address', 'Client Address', 'Address'),
-            salesName: pick('salesName', 'Sales Name', 'Sales'),
-            status: pick('status', 'Status', 'Unit Status'),
-            soldPrice: pick('soldPrice', 'Price After Discount', 'Contract Price', 'Sold Price', 'Value'),
-            contractDate: pick('contractDate', 'Contract Date', 'Actual Contract Date'),
-            reservationDate: pick('reservationDate', 'Reservition Date', 'Reservation Date'),
-            soldDate: pick('soldDate', 'Sold Date', 'Sale Date')
+            unitCode: pick("unitCode", "Unit Code", "UnitCode", "Unit No", "Unit Number"),
+            project: pick("project", "Project", "Project Name"),
+            clientName: pick("clientName", "Client Name English", "Client Name Arabic", "Client Name", "Full Name"),
+            clientPhone: phone(pick("clientPhone", "Client Phone Number", "Client Phone Number 1", "Client Phone", "Phone", "Mobile", "Mobile Number", "Primary Mobile", "Phone 1")),
+            clientPhone2: phone(pick("clientPhone2", "Client Phone Number 2", "Client Phone 2", "Secondary Mobile", "Mobile 2", "Phone 2")),
+            clientAddress: pick("clientAddress", "Residence address", "Residence Address", "Client Residence Address", "Client Address", "Full Address", "Address"),
+            salesName: pick("salesName", "Sales Name", "Sales", "Sales Agent"),
+            status: pick("status", "Status", "Unit Status", "Contract Status"),
+            soldPrice: pick("soldPrice", "Price After Discount", "Contract Price", "Sold Price", "Value", "System Price"),
+            contractDate: pick("contractDate", "Contract Date", "Actual Contract Date"),
+            reservationDate: pick("reservationDate", "Reservition Date", "Reservation Date"),
+            soldDate: pick("soldDate", "Sold Date", "Sale Date"),
+            clientEmail: pick("clientEmail", "E-mail", "Email", "Client Email"),
+            nationality: pick("nationality", "Client Nationality", "Nationality"),
+            residence: pick("residence", "Client Residence", "Residence")
         };
     }
 
@@ -64,17 +83,74 @@ class ClientService {
     }
 
     async uploadContract(data) {
-        const res = await this.api().post(ENDPOINTS.UPLOAD_CLIENT_CONTRACT, { token: this.token(), data }, { cacheTTL: 0 });
-        const msg = res?.data?.message || res?.message || "";
-        if (!res.ok && /Unknown action:\s*uploadClientContract/i.test(msg)) {
-            throw new Error("Contract upload service is not available in this build. Your selected file was not uploaded.");
+        try {
+            const res = await this.api().post(ENDPOINTS.UPLOAD_CLIENT_CONTRACT, { token: this.token(), data }, { cacheTTL: 0, forceRefresh: true });
+            const msg = res?.data?.message || res?.message || "";
+            if (res.ok && res.data?.ok) return this.unwrap(res);
+            if (!/Unknown action:\s*uploadClientContract/i.test(msg)) throw new Error(msg || "Upload service unavailable");
+        } catch (error) {
+            console.warn("Remote contract upload unavailable; using local document vault.", error);
         }
-        return this.unwrap(res);
+        const saved = await this.saveLocalDocument(data);
+        return { ...saved, message: "PDF saved in this browser's secure local document vault." };
     }
 
     async getDocuments(filters = {}) {
-        const res = await this.api().post(ENDPOINTS.CLIENT_DOCUMENTS, { token: this.token(), filters });
-        return this.unwrap(res);
+        let remote = [];
+        try {
+            const res = await this.api().post(ENDPOINTS.CLIENT_DOCUMENTS, { token: this.token(), filters });
+            if (res.ok && res.data?.ok) remote = this.unwrap(res) || [];
+        } catch (_) { /* local vault remains available */ }
+        const local = await this.getLocalDocuments(filters);
+        return [...(Array.isArray(remote) ? remote : []), ...local];
+    }
+
+    openDocumentDb() {
+        return new Promise((resolve, reject) => {
+            if (!("indexedDB" in window)) return reject(new Error("Local document storage is not supported by this browser."));
+            const request = indexedDB.open("operation-system-local-vault", 1);
+            request.onupgradeneeded = () => {
+                const db = request.result;
+                if (!db.objectStoreNames.contains("documents")) {
+                    const store = db.createObjectStore("documents", { keyPath: "id", autoIncrement: true });
+                    store.createIndex("unitCode", "unitCode", { unique: false });
+                    store.createIndex("project", "project", { unique: false });
+                    store.createIndex("createdAt", "createdAt", { unique: false });
+                }
+            };
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error || new Error("Could not open local document vault."));
+        });
+    }
+
+    async saveLocalDocument(data = {}) {
+        const db = await this.openDocumentDb();
+        const record = { ...data, createdAt: new Date().toISOString(), storage: "local-browser" };
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction("documents", "readwrite");
+            const req = tx.objectStore("documents").add(record);
+            req.onsuccess = () => resolve({ ...record, id: req.result, local: true });
+            req.onerror = () => reject(req.error || new Error("Could not save PDF locally."));
+            tx.oncomplete = () => db.close();
+        });
+    }
+
+    async getLocalDocuments(filters = {}) {
+        try {
+            const db = await this.openDocumentDb();
+            const rows = await new Promise((resolve, reject) => {
+                const tx = db.transaction("documents", "readonly");
+                const req = tx.objectStore("documents").getAll();
+                req.onsuccess = () => resolve(req.result || []);
+                req.onerror = () => reject(req.error);
+                tx.oncomplete = () => db.close();
+            });
+            return rows.filter((row) => {
+                if (filters.project && filters.project !== "ALL" && String(row.project || "").toLowerCase() !== String(filters.project).toLowerCase()) return false;
+                if (filters.unitCode && String(row.unitCode || "").toLowerCase() !== String(filters.unitCode).toLowerCase()) return false;
+                return true;
+            });
+        } catch (_) { return []; }
     }
 
     unwrap(res) {

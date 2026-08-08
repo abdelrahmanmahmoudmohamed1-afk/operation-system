@@ -5,15 +5,12 @@ class Sidebar {
 
     render() {
         return `
-            <div class="sidebar sidebar-horizontal premium-nav">
-                <button type="button" class="sidebar-brand sidebar-brand-button" data-route="overview" title="Back to Overview">
-                    <img class="sidebar-brand-logo" src="https://i.ibb.co/FLnH6Fw2/1cf98fc6-5c25-4af8-8af0-1e556340272f.jpg" alt="Company logo">
-                </button>
-
-                <div class="sidebar-nav sidebar-nav-horizontal">
+            <div class="sidebar premium-nav">
+                <div class="sidebar-section-label">Workspace</div>
+                <div class="sidebar-nav">
                     ${this.menuItems.map((item) => `
-                        <button class="sidebar-link" data-route="${item.route}" type="button">
-                            <span class="sidebar-icon">${item.icon || ""}</span>
+                        <button class="sidebar-link" data-route="${item.route}" type="button" title="${item.label}">
+                            <span class="sidebar-icon" aria-hidden="true">${item.icon || ""}</span>
                             <span class="sidebar-label">${item.label}</span>
                         </button>
                     `).join("")}

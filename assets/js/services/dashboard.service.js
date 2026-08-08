@@ -27,8 +27,13 @@ class DashboardService {
         return this.unwrap(res);
     }
 
-    async getData(filters) {
-        const res = await this.api().post(ENDPOINTS.DASHBOARD_DATA, { token: this.token(), filters });
+    async getData(filters = {}) {
+        const selectedProject = sessionStorage.getItem("operation_global_project") || "ALL";
+        const mergedFilters = { ...filters };
+        if (!mergedFilters.project || String(mergedFilters.project).toUpperCase() === "ALL") {
+            mergedFilters.project = selectedProject;
+        }
+        const res = await this.api().post(ENDPOINTS.DASHBOARD_DATA, { token: this.token(), filters: mergedFilters });
         return this.unwrap(res);
     }
 

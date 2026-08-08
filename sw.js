@@ -1,4 +1,4 @@
-const CACHE_NAME = "operation-enterprise-1-0-r3-ui-repair";
+const CACHE_NAME = "operation-system-enterprise-v2-20260808";
 const CORE = [
   "./", "./index.html", "./assets/css/style.css", "./layouts/login.html", "./layouts/main.html",
   "./assets/js/core/app.js", "./assets/js/core/router.js", "./assets/js/core/module-loader.js",
@@ -17,11 +17,12 @@ self.addEventListener("fetch", event => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
-  const isCode = /\.(js|css|html)$/.test(url.pathname) || url.pathname.includes("/layouts/") || url.pathname.includes("/assets/config/");
-  if (!isCode && !url.pathname.includes("/assets/images/")) return;
-  // Network first for code so new modules and fixes appear immediately after deployment.
-  event.respondWith(fetch(req).then(response => {
-    if (response && response.ok) caches.open(CACHE_NAME).then(cache => cache.put(req, response.clone()));
-    return response;
-  }).catch(() => caches.match(req)));
+  const shouldHandle = /\.(js|css|html|ico|png|jpg|jpeg|svg)$/i.test(url.pathname) || url.pathname.endsWith("/");
+  if (!shouldHandle) return;
+  event.respondWith(
+    fetch(req, { cache: "no-store" }).then(response => {
+      if (response && response.ok) caches.open(CACHE_NAME).then(cache => cache.put(req, response.clone()));
+      return response;
+    }).catch(() => caches.match(req).then(cached => cached || caches.match("./index.html")))
+  );
 });
