@@ -148,7 +148,7 @@ class App {
         this.bindActionFeedback();
         this.bindConnectivityStatus();
         this.bindSessionExpiry();
-        this.checkBackendCompatibility();
+        // Backend capability checks are performed only when a backend-dependent action is used.
         this.applyLanguageLabels();
 
         EventBus.emit("app:started", {
@@ -236,9 +236,16 @@ class App {
     bindPdfExport() {
         document.getElementById("global-pdf-btn")?.addEventListener("click", () => {
             document.body.classList.add("print-current-view");
-            const cleanup = () => document.body.classList.remove("print-current-view");
+            document.querySelectorAll("details").forEach((el) => { el.dataset.opsWasOpen = el.open ? "1" : "0"; el.open = true; });
+            const cleanup = () => {
+                document.body.classList.remove("print-current-view");
+                document.querySelectorAll("details[data-ops-was-open]").forEach((el) => {
+                    el.open = el.dataset.opsWasOpen === "1";
+                    delete el.dataset.opsWasOpen;
+                });
+            };
             window.addEventListener("afterprint", cleanup, { once: true });
-            requestAnimationFrame(() => setTimeout(() => window.print(), 40));
+            requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => window.print(), 80)));
         });
     }
 

@@ -3691,3 +3691,117 @@ html,body{scroll-padding-top:var(--fixed-shell-total)!important}
   .main-content-wrap{padding-top:0!important}
   .page-header,.enterprise-page-head,.overview-hero{position:static!important;top:auto!important}
 }
+
+/* ===========================================================
+   Operation System — UI repair 1.0.2
+   Stable sticky chrome, compact centered notices, full nav visibility.
+   =========================================================== */
+:root{
+  --ops-topbar-h:76px;
+  --ops-nav-h:82px;
+  --ops-gap:12px;
+  --ops-edge:14px;
+}
+
+/* Undo the previous viewport-fixed shell that clipped logout/navigation. */
+.main-layout-horizontal{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:var(--ops-gap)!important;
+  min-height:100vh!important;
+  padding:var(--ops-edge)!important;
+  overflow:visible!important;
+}
+.premium-topbar,.topbar{
+  position:sticky!important;
+  top:var(--ops-edge)!important;
+  left:auto!important;right:auto!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:var(--ops-topbar-h)!important;
+  z-index:5000!important;
+  overflow:visible!important;
+  flex-wrap:nowrap!important;
+}
+.topbar-left{flex:1 1 auto!important;min-width:0!important;overflow:visible!important}
+.topbar-right{flex:0 0 auto!important;min-width:max-content!important;display:flex!important;visibility:visible!important;opacity:1!important}
+.animated-logout-btn,.logout-btn{display:inline-flex!important;visibility:visible!important;opacity:1!important;flex:0 0 auto!important}
+.premium-search{width:min(600px,45vw)!important;min-width:220px!important}
+.sidebar-horizontal-wrap{
+  position:sticky!important;
+  top:calc(var(--ops-edge) + var(--ops-topbar-h) + var(--ops-gap))!important;
+  left:auto!important;right:auto!important;
+  width:100%!important;height:auto!important;min-height:var(--ops-nav-h)!important;
+  z-index:4900!important;overflow:visible!important;background:transparent!important;
+}
+.sidebar-horizontal,.premium-nav{
+  min-height:var(--ops-nav-h)!important;height:auto!important;
+  overflow:visible!important;width:100%!important;
+}
+.sidebar-nav-horizontal{
+  display:flex!important;flex:1 1 auto!important;min-width:0!important;
+  overflow-x:auto!important;overflow-y:hidden!important;flex-wrap:nowrap!important;
+  scrollbar-width:thin!important;padding-bottom:5px!important;
+}
+.sidebar-nav-horizontal .sidebar-link{display:flex!important;visibility:visible!important;opacity:1!important;flex:0 0 86px!important;min-width:86px!important}
+.main-content-wrap{padding-top:0!important;min-height:0!important;overflow:visible!important}
+.content,#page-content{overflow:visible!important;max-height:none!important}
+.page-header,.enterprise-page-head,.overview-hero{
+  position:sticky!important;
+  top:calc(var(--ops-edge) + var(--ops-topbar-h) + var(--ops-gap) + var(--ops-nav-h) + var(--ops-gap))!important;
+  z-index:4500!important;
+  background:rgba(24,17,15,.94)!important;
+  backdrop-filter:blur(18px) saturate(130%)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(130%)!important;
+  padding:12px 14px!important;
+  border:1px solid rgba(255,241,201,.10)!important;
+  border-radius:16px!important;
+}
+
+/* Company logo only. No wordmark/glow treatment in navigation. */
+.sidebar-brand,.sidebar-brand-button{width:52px!important;min-width:52px!important;flex:0 0 52px!important;padding:3px!important;margin:0 8px 0 0!important;border-right:0!important;background:transparent!important;box-shadow:none!important}
+.sidebar-brand-logo{width:46px!important;height:46px!important;border-radius:14px!important;object-fit:cover!important;box-shadow:none!important;filter:none!important}
+.topbar-logo-home{box-shadow:none!important;filter:none!important}
+
+/* Compact centered alert. Deliberately isolated from old .toast/.notification CSS. */
+.ops-alert-layer{position:fixed;inset:0;z-index:1000005;display:flex;align-items:flex-start;justify-content:center;padding-top:min(22vh,180px);pointer-events:none}
+.ops-alert-card{pointer-events:auto;width:min(440px,calc(100vw - 28px));display:grid;grid-template-columns:42px minmax(0,1fr) 30px;gap:12px;align-items:center;padding:16px 16px;border-radius:20px;background:rgba(27,21,19,.96);border:1px solid rgba(255,241,201,.16);box-shadow:0 24px 70px rgba(0,0,0,.40);backdrop-filter:blur(20px);color:#fff1c9;opacity:0;transform:translateY(-10px) scale(.98);transition:opacity .2s ease,transform .2s ease}
+.ops-alert-card.show{opacity:1;transform:none}
+.ops-alert-icon{width:42px;height:42px;display:grid;place-items:center;border-radius:14px;background:rgba(255,255,255,.07);font-weight:900;font-size:18px}
+.ops-alert-copy{min-width:0;display:grid;gap:3px}.ops-alert-copy strong{font-size:13px}.ops-alert-copy span{font-size:12px;line-height:1.5;color:rgba(255,255,255,.70);word-break:break-word}
+.ops-alert-close{width:30px;height:30px;border:0;border-radius:10px;background:rgba(255,255,255,.06);color:#fff;cursor:pointer;font-size:18px}.ops-alert-close:hover{background:rgba(255,255,255,.12)}
+.ops-alert-success .ops-alert-icon{color:#71d99b;background:rgba(113,217,155,.10)}.ops-alert-error .ops-alert-icon{color:#ff8177;background:rgba(255,129,119,.10)}.ops-alert-warning .ops-alert-icon{color:#f0c76a;background:rgba(240,199,106,.10)}.ops-alert-info .ops-alert-icon{color:#9cc7ff;background:rgba(156,199,255,.10)}
+
+/* CRM details stay readable; phone values never get visually clipped. */
+#crm-table-body td:nth-child(4){min-width:145px!important;white-space:nowrap!important}
+#crm-table-body td:nth-child(5){min-width:220px!important;white-space:normal!important}
+
+/* Print / Save as PDF: use the browser print engine and expand every scroll container. */
+@media print{
+  html,body{height:auto!important;overflow:visible!important;background:#17110f!important}
+  .main-layout-horizontal,.main-content-wrap,.content,#page-content{display:block!important;height:auto!important;max-height:none!important;overflow:visible!important;padding:0!important;margin:0!important}
+  .premium-topbar,.topbar,.sidebar-horizontal-wrap,.app-footer,.ops-alert-layer,#route-loader,#route-progress,.action-loader,.no-print{display:none!important}
+  .page-header,.enterprise-page-head,.overview-hero{position:static!important;top:auto!important;margin:0 0 10px!important}
+  .table-wrap,.audit-table-scroll,.users-list,.dashboard-page,.page-content,[class*="scroll"]{height:auto!important;max-height:none!important;overflow:visible!important}
+  table,.data-table{width:100%!important;table-layout:auto!important} thead{display:table-header-group!important} tbody{display:table-row-group!important} tr{break-inside:avoid!important;page-break-inside:avoid!important}
+  canvas{max-width:100%!important}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  @page{size:A4 landscape;margin:8mm}
+}
+
+@media(max-width:1100px){
+  :root{--ops-topbar-h:72px;--ops-nav-h:78px;--ops-edge:10px}
+  .premium-search{width:min(430px,38vw)!important;min-width:180px!important}
+  .topbar-clock{display:none!important}
+  .topbar-title{font-size:13px!important}
+  .sidebar-nav-horizontal .sidebar-link{flex-basis:80px!important;min-width:80px!important}
+}
+@media(max-width:820px){
+  :root{--ops-topbar-h:64px;--ops-nav-h:74px;--ops-edge:8px;--ops-gap:8px}
+  .premium-search,.topbar-user,.topbar-title{display:none!important}
+  .topbar-right{gap:6px!important;min-width:0!important}
+  .global-project-filter{min-width:105px!important;max-width:120px!important}
+  .language-switcher{display:none!important}
+  .sidebar-nav-horizontal .sidebar-link{flex:0 0 74px!important;min-width:74px!important}
+  .page-header,.enterprise-page-head,.overview-hero{padding:10px 12px!important}
+}

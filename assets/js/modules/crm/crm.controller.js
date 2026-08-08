@@ -40,7 +40,8 @@ class CRMController extends Module {
         if (tbody) tbody.innerHTML = renderLoading({ rows: 6 });
 
         try {
-            this.clients = await CrmService.loadClients({ search });
+            const project = sessionStorage.getItem("operation_global_project") || "ALL";
+            this.clients = await CrmService.loadClients({ search, project });
 
             if (tbody) {
                 tbody.innerHTML = this.clients.length
@@ -122,7 +123,9 @@ class CRMController extends Module {
                 this.notify().success(result?.message || "PDF uploaded successfully");
                 close();
             } catch (error) {
-                this.showContractError(errorBox, error.message || "Upload failed");
+                const message = String(error?.message || "Upload failed");
+                this.showContractError(errorBox, message);
+                this.notify().warning(message, 4800);
                 if (submit) { submit.disabled = false; submit.textContent = "Upload PDF"; }
             }
         });

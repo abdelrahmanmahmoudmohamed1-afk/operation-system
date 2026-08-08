@@ -1,45 +1,50 @@
 class NotificationService {
     constructor() {
         this.container = null;
-        this.defaultDuration = 3800;
+        this.defaultDuration = 3600;
     }
 
     init() {
-        if (this.container) return;
-        this.container = document.querySelector('.toast-container, .notification-container');
-        if (!this.container) {
-            this.container = document.createElement('div');
-            this.container.className = 'toast-container notification-container';
-            document.body.appendChild(this.container);
-        }
+        if (this.container && document.body.contains(this.container)) return;
+        this.container = document.createElement('div');
+        this.container.className = 'ops-alert-layer';
+        this.container.setAttribute('aria-live', 'polite');
+        document.body.appendChild(this.container);
     }
 
     show(message, type = 'info', duration = this.defaultDuration) {
         this.init();
-        const toast = document.createElement('div');
-        toast.className = `toast toast-${type} notification notification-${type}`;
-        toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
-        toast.innerHTML = `
-            <span class="toast-dot"></span>
-            <span class="toast-message">${this.escape(message || '')}</span>
-            <button class="toast-close" type="button" aria-label="Close">×</button>
+        // One focused message at a time; no giant stacked panel.
+        this.container.replaceChildren();
+        const titles = { success: 'Done', error: 'Something needs attention', warning: 'Please check', info: 'Information' };
+        const icons = { success: '✓', error: '!', warning: '!', info: 'i' };
+        const card = document.createElement('div');
+        card.className = `ops-alert-card ops-alert-${type}`;
+        card.setAttribute('role', type === 'error' ? 'alert' : 'status');
+        card.innerHTML = `
+            <span class="ops-alert-icon" aria-hidden="true">${icons[type] || 'i'}</span>
+            <div class="ops-alert-copy">
+                <strong>${this.escape(titles[type] || 'Information')}</strong>
+                <span>${this.escape(message || '')}</span>
+            </div>
+            <button class="ops-alert-close" type="button" aria-label="Close">×</button>
         `;
-        toast.querySelector('.toast-close')?.addEventListener('click', () => this.close(toast));
-        this.container.appendChild(toast);
-        requestAnimationFrame(() => toast.classList.add('show'));
-        if (duration !== 0) setTimeout(() => this.close(toast), duration);
-        return toast;
+        card.querySelector('.ops-alert-close')?.addEventListener('click', () => this.close(card));
+        this.container.appendChild(card);
+        requestAnimationFrame(() => card.classList.add('show'));
+        if (duration !== 0) setTimeout(() => this.close(card), duration);
+        return card;
     }
 
-    close(toast) {
-        if (!toast) return;
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 180);
+    close(card) {
+        if (!card) return;
+        card.classList.remove('show');
+        setTimeout(() => card.remove(), 200);
     }
 
     success(message, duration) { return this.show(message, 'success', duration); }
-    error(message, duration = 6000) { return this.show(message, 'error', duration); }
-    warning(message, duration = 5200) { return this.show(message, 'warning', duration); }
+    error(message, duration = 5200) { return this.show(message, 'error', duration); }
+    warning(message, duration = 4600) { return this.show(message, 'warning', duration); }
     info(message, duration) { return this.show(message, 'info', duration); }
 
     escape(value) {
