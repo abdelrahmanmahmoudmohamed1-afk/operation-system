@@ -117,7 +117,7 @@ class SettingsController extends Module {
         set("settings-report-source", prefs.reportSource || "auto");
         set("settings-export-format", prefs.exportFormat || "csv");
         set("settings-row-limit", prefs.rowLimit || 500);
-        ["compactMode", "animations", "showDetails", "autoSaveReports", "showReportKpis", "exportWithFilters", "confirmDelete", "successToasts", "errorToasts", "saveHistory"].forEach((key) => {
+        ["compactMode", "animations", "showDetails", "soundEffects", "autoSaveReports", "showReportKpis", "exportWithFilters", "confirmDelete", "successToasts", "errorToasts", "saveHistory"].forEach((key) => {
             const id = "settings-" + key.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
             if (prefs[key] !== undefined) set(id, prefs[key]);
         });
@@ -134,6 +134,7 @@ class SettingsController extends Module {
             compactMode: this.val("settings-compact-mode", false),
             animations: this.val("settings-animations", true),
             showDetails: this.val("settings-show-details", true),
+            soundEffects: this.val("settings-sound-effects", true),
             autoSaveReports: this.val("settings-autosave-reports", true),
             showReportKpis: this.val("settings-show-report-kpis", true),
             exportWithFilters: this.val("settings-export-with-filters", false),
@@ -143,6 +144,7 @@ class SettingsController extends Module {
             saveHistory: this.val("settings-save-history", true)
         };
         localStorage.setItem(this.prefKey, JSON.stringify(prefs));
+        localStorage.setItem("operation_sound_enabled", prefs.soundEffects ? "1" : "0");
         localStorage.setItem("operation_language", prefs.language);
         document.documentElement.lang = prefs.language;
         document.documentElement.dir = prefs.language === "ar" ? "rtl" : "ltr";

@@ -177,6 +177,7 @@ class App {
         await this.checkBackendCompatibility();
         this.bindOperationBusyEvents();
         this.applyLanguageLabels();
+        this.bindCreativeEnhancements();
 
         EventBus.emit("app:started", {
             name: this.name,
@@ -283,10 +284,10 @@ class App {
                 sessionStorage.setItem("operation_backend_info", JSON.stringify(info));
                 const required = ["createSystemUser","uploadUnitFloorPlan","uploadClientContract","getInventoryData","getClients","getEOIData"];
                 const missing = Array.isArray(info.actions) ? required.filter(x => !info.actions.includes(x)) : [];
-                if (missing.length) Container.get("notification")?.warning(`Backend ${info.backendBuild || info.version || ""} is missing: ${missing.join(", ")}. Deploy the included v5.8 backend before using those actions.`);
+                if (missing.length) Container.get("notification")?.warning(`Backend ${info.backendBuild || info.version || ""} is missing: ${missing.join(", ")}. Deploy the included v5.7 backend before using those actions.`);
                 return;
             }
-            Container.get("notification")?.warning("Backend health check failed. Live write actions are disabled until the matching v5.8 backend is deployed.");
+            Container.get("notification")?.warning("Backend health check failed. Live write actions are disabled until the matching v5.7 backend is deployed.");
         } catch (_) {
             // Never block the shell. Individual requests keep readable errors.
         }
@@ -346,6 +347,11 @@ class App {
                 scene.id = "logout-scene";
                 scene.className = "logout-scene v51";
                 scene.innerHTML = `<div class="logout-room">
+                    <div class="logout-dusk-window">
+                        <span></span><span></span><span></span><span></span>
+                        <i class="logout-moon"></i>
+                        <i class="logout-star s1"></i><i class="logout-star s2"></i><i class="logout-star s3"></i>
+                    </div>
                     <div class="logout-light"></div>
                     <div class="logout-office-desk"></div>
                     <div class="logout-laptop"><span class="logout-laptop-screen"></span><span class="logout-laptop-base"></span></div>
@@ -735,6 +741,95 @@ class App {
         const logger = Container.get("logger");
 
         logger.info(`${this.name} v${this.version} started successfully`);
+    }
+
+    /**
+     * Small, additive UX touches: a "data freshness" pill in the topbar,
+     * a Command Center power-shortcut, and a once-a-day nudge to switch
+     * between light/dark themes based on the time of day.
+     */
+    bindCreativeEnhancements() {
+        this.bindSyncIndicator();
+        this.bindCommandCenterShortcut();
+        this.suggestThemeForTimeOfDay();
+    }
+
+    bindSyncIndicator() {
+        const textEl = document.getElementById("topbar-sync-text");
+        if (!textEl || this.syncIndicatorBound) return;
+        this.syncIndicatorBound = true;
+        this.lastModuleSync = Date.now();
+
+        const render = () => {
+            const el = document.getElementById("topbar-sync-text");
+            if (!el) return;
+            const seconds = Math.max(0, Math.round((Date.now() - this.lastModuleSync) / 1000));
+            if (seconds < 8) el.textContent = "Updated just now";
+            else if (seconds < 60) el.textContent = `Updated ${seconds}s ago`;
+            else el.textContent = `Updated ${Math.round(seconds / 60)}m ago`;
+        };
+
+        EventBus.on("module:loaded", () => {
+            this.lastModuleSync = Date.now();
+            render();
+        });
+
+        render();
+        setInterval(render, 5000);
+    }
+
+    bindCommandCenterShortcut() {
+        if (this.commandCenterShortcutBound) return;
+        this.commandCenterShortcutBound = true;
+        document.addEventListener("keydown", async (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "o") {
+                e.preventDefault();
+                try {
+                    Container.get("audit")?.record("Open module", "commandcenter", { route: "commandcenter", via: "shortcut" });
+                    await this.router.load("commandcenter");
+                } catch (_) { /* route load already surfaces its own errors */ }
+            }
+        });
+    }
+
+    suggestThemeForTimeOfDay() {
+        try {
+            const today = new Date().toISOString().slice(0, 10);
+            if (localStorage.getItem("operation_theme_suggest_dismissed") === today) return;
+
+            const themeManager = Container.get("themeManager");
+            const current = themeManager.getCurrentTheme();
+            const lightThemes = new Set(["light", "sap", "oracle", "odoo"]);
+            const hour = new Date().getHours();
+            const isNight = hour >= 20 || hour < 6;
+
+            if (!isNight || !lightThemes.has(current)) return;
+
+            const toast = document.createElement("div");
+            toast.className = "theme-suggest-toast";
+            toast.innerHTML = `
+                <strong>Working late?</strong>
+                <p>Night Shift is easier on the eyes after hours. Switch now?</p>
+                <div class="tst-actions">
+                    <button type="button" class="tst-primary" id="tst-switch">Switch theme</button>
+                    <button type="button" id="tst-dismiss">Not now</button>
+                </div>`;
+            document.body.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.add("show"));
+
+            const dismiss = () => {
+                localStorage.setItem("operation_theme_suggest_dismissed", today);
+                toast.classList.remove("show");
+                setTimeout(() => toast.remove(), 250);
+            };
+
+            document.getElementById("tst-switch")?.addEventListener("click", () => {
+                themeManager.apply("night-shift");
+                dismiss();
+            });
+            document.getElementById("tst-dismiss")?.addEventListener("click", dismiss);
+            setTimeout(dismiss, 12000);
+        } catch (_) { /* purely cosmetic — never block startup */ }
     }
 }
 

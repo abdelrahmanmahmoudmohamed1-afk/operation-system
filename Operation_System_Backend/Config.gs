@@ -170,9 +170,9 @@ function getSystemInfo_() {
   try { if (typeof getApiActions_ === 'function') actions = getApiActions_(); } catch (e) {}
   return {
     name: 'Operation System',
-    version: 'Enterprise 5.8 Stable',
+    version: 'Enterprise 5.7 Stable',
     apiVersion: '2026.08.09.1',
-    backendBuild: '5.8.0',
+    backendBuild: '5.7.0',
     projects: (PROJECT_SOURCES || []).map(function(x){ return x.key; }),
     features: ['unified-projects','users','audit','leads','contract-pdf','achievement','housing-eoi','architectural-drawings','document-coverage','ai-agent','api-manifest','stable-inventory-path'],
     actions: actions

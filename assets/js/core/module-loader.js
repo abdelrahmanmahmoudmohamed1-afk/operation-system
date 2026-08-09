@@ -1,19 +1,13 @@
 /**
- * Operation System — Module Loader v5.8
- * Door-to-door route choreography synchronized with real module loading.
- *
- * Sequence:
- * 1) source door opens
- * 2) worker exits
- * 3) source door closes
- * 4) worker keeps walking in the hallway while controller/data load
- * 5) only when the target is ready, target door opens
- * 6) worker enters
- * 7) target door closes, then the new module is revealed
+ * Operation System — Module Loader
+ * Stable route loading with cinematic door transitions.
+ * Data/module loading happens while the worker is in the hallway; the target
+ * door is only approached after the target module is ready.
  */
 
 import MODULES from "../../config/modules.config.js";
 import Container from "./container.js";
+import SoundKit from "../utils/sound.js";
 
 class ModuleLoader {
     constructor(containerId = "page-content") {
@@ -34,9 +28,6 @@ class ModuleLoader {
         const transition = this.beginTransition(from, moduleName);
 
         try {
-            // Start the exit animation first, but do not block data loading.
-            const exitSequence = transition.exit();
-
             await this.destroyCurrentModule();
 
             const controllerPath = this.buildControllerPath(moduleConfig);
@@ -50,7 +41,8 @@ class ModuleLoader {
             this.currentModule = moduleName;
             this.currentController = controller;
 
-            // Real module HTML + API/data loading runs while the worker is moving.
+            // The expensive part (HTML rendering + API/data requests) runs while
+            // the character is still crossing the hallway.
             await controller.init({
                 container: this.container,
                 config: moduleConfig
@@ -63,10 +55,8 @@ class ModuleLoader {
 
             this.logger().info(`Module loaded: ${moduleName}`);
 
-            // Do not approach the destination door before both conditions are true:
-            // the source-door exit choreography finished AND target data is ready.
-            await exitSequence;
-            await transition.enter();
+            // Only now approach/open/enter/close the destination door.
+            await transition.complete();
         } catch (error) {
             this.logger().error(`Failed to load module: ${moduleName}`, error);
             transition.fail(error);
@@ -96,31 +86,27 @@ class ModuleLoader {
                 <div class="module-door-scene">
                     <div class="module-room room-from">
                         <span class="room-label"></span>
-                        <span class="door door-left"><i class="door-sign"></i></span>
+                        <span class="door door-left"></span>
                     </div>
                     <div class="module-hallway">
                         <span class="hall-light"></span>
-                        <span class="hall-depth hall-depth-a"></span>
-                        <span class="hall-depth hall-depth-b"></span>
                         <span class="hall-progress"><i></i></span>
                     </div>
                     <div class="route-worker">
                         <span class="worker-head"></span>
                         <span class="worker-body"></span>
-                        <span class="worker-arm arm-a"></span>
-                        <span class="worker-arm arm-b"></span>
                         <span class="worker-leg leg-a"></span>
                         <span class="worker-leg leg-b"></span>
                         <span class="worker-bag"></span>
                     </div>
                     <div class="module-room room-to">
                         <span class="room-label"></span>
-                        <span class="door door-right"><i class="door-sign"></i></span>
+                        <span class="door door-right"></span>
                     </div>
                     <div class="route-copy">
                         <strong>Moving workspace</strong>
                         <span class="route-copy-line"></span>
-                        <small class="route-copy-status">Leaving the current module…</small>
+                        <small class="route-copy-status">Loading the next module while you walk…</small>
                     </div>
                 </div>`;
             document.body.appendChild(overlay);
@@ -130,107 +116,56 @@ class ModuleLoader {
         const toLabel = this.prettyName(to);
         overlay.querySelector(".room-from .room-label").textContent = fromLabel;
         overlay.querySelector(".room-to .room-label").textContent = toLabel;
-        overlay.querySelector(".room-from .door-sign").textContent = fromLabel;
-        overlay.querySelector(".room-to .door-sign").textContent = toLabel;
-        overlay.querySelector(".route-copy-line").textContent = `${fromLabel}  →  ${toLabel}`;
+        overlay.querySelector(".route-copy-line").textContent = `Leaving ${fromLabel} · heading to ${toLabel}`;
+        overlay.querySelector(".route-copy-status").textContent = `Preparing ${toLabel} in the background…`;
 
         overlay.dataset.from = from;
         overlay.dataset.to = to;
-        this.resetTransitionClasses(overlay);
+        overlay.classList.remove("leaving", "ready", "failed");
         bar.classList.remove("done");
         void overlay.offsetWidth;
-        overlay.classList.add("show", "stage-source-open");
+        overlay.classList.add("show", "loading");
         bar.classList.add("active");
+        SoundKit.doorTick();
 
-        const status = overlay.querySelector(".route-copy-status");
-        let exitPromise = null;
-        let finished = false;
-
-        const valid = () => token === this.transitionToken;
-        const setStage = (stage, text) => {
-            if (!valid()) return;
-            this.resetStageClasses(overlay);
-            overlay.classList.add(stage);
-            if (status && text) status.textContent = text;
-        };
+        const startedAt = performance.now();
+        const minimumHallwayMs = 920;
+        let completed = false;
 
         return {
-            exit: () => {
-                if (exitPromise) return exitPromise;
-                exitPromise = (async () => {
-                    // Door visibly opens before the worker moves.
-                    setStage("stage-source-open", `Opening ${fromLabel}…`);
-                    await this.sleep(300);
-                    if (!valid()) return;
-
-                    setStage("stage-source-exit", `Leaving ${fromLabel}…`);
-                    await this.sleep(470);
-                    if (!valid()) return;
-
-                    // Worker has cleared the door; close it fully behind them.
-                    setStage("stage-source-close", `Closing ${fromLabel} behind you…`);
-                    await this.sleep(300);
-                    if (!valid()) return;
-
-                    // Continuous walking loop. The user never appears frozen at a door.
-                    setStage("stage-hallway", `Loading ${toLabel} while you walk…`);
-                })();
-                return exitPromise;
+            complete: async () => {
+                if (completed || token !== this.transitionToken) return;
+                completed = true;
+                const elapsed = performance.now() - startedAt;
+                if (elapsed < minimumHallwayMs) {
+                    await this.sleep(minimumHallwayMs - elapsed);
+                }
+                if (token !== this.transitionToken) return;
+                overlay.classList.remove("loading");
+                overlay.classList.add("ready");
+                const status = overlay.querySelector(".route-copy-status");
+                if (status) status.textContent = `${toLabel} is ready · entering now`;
+                if (bar) bar.classList.add("done");
+                // final approach + destination door open/enter/close
+                SoundKit.doorTick();
+                await this.sleep(900);
             },
-
-            enter: async () => {
-                if (finished || !valid()) return;
-                finished = true;
-                if (exitPromise) await exitPromise;
-                if (!valid()) return;
-
-                bar?.classList.add("done");
-                setStage("stage-target-open", `${toLabel} is ready · opening the door…`);
-                await this.sleep(300);
-                if (!valid()) return;
-
-                setStage("stage-target-enter", `Entering ${toLabel}…`);
-                await this.sleep(470);
-                if (!valid()) return;
-
-                setStage("stage-target-close", `Closing ${toLabel}…`);
-                await this.sleep(300);
-                if (!valid()) return;
-
-                setStage("stage-done", `${toLabel} ready`);
-                await this.sleep(100);
-            },
-
             fail: (error) => {
-                if (!valid()) return;
-                this.resetStageClasses(overlay);
+                if (token !== this.transitionToken) return;
+                overlay.classList.remove("loading", "ready");
                 overlay.classList.add("failed");
+                const status = overlay.querySelector(".route-copy-status");
                 if (status) status.textContent = error?.message || `Could not open ${toLabel}`;
             },
-
             hide: async () => {
-                if (!valid()) return;
+                if (token !== this.transitionToken) return;
                 overlay.classList.add("leaving");
-                await this.sleep(180);
-                if (!valid()) return;
-                this.resetTransitionClasses(overlay);
-                overlay.classList.remove("show", "leaving", "failed");
+                await this.sleep(260);
+                if (token !== this.transitionToken) return;
+                overlay.classList.remove("show", "loading", "ready", "failed", "leaving");
                 bar?.classList.remove("active", "done");
             }
         };
-    }
-
-    resetStageClasses(overlay) {
-        [
-            "stage-source-open", "stage-source-exit", "stage-source-close",
-            "stage-hallway", "stage-target-open", "stage-target-enter",
-            "stage-target-close", "stage-done"
-        ].forEach(c => overlay.classList.remove(c));
-    }
-
-    resetTransitionClasses(overlay) {
-        this.resetStageClasses(overlay);
-        overlay.classList.remove("loading", "ready", "failed", "leaving");
     }
 
     prettyName(value) {

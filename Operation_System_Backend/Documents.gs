@@ -1,34 +1,3 @@
-/** PDF upload helpers — v5.8 */
-function normalizePdfBase64_(value) {
-  let b64 = String(value || '').trim();
-  b64 = b64.replace(/^data:application\/pdf;base64,/i, '').replace(/\s+/g, '');
-  if (!b64) throw new Error('PDF data is empty.');
-  if (b64.indexOf('JVBER') !== 0) throw new Error('The selected file is not a valid PDF.');
-  return b64;
-}
-function decodePdfBase64_(value) {
-  const b64 = normalizePdfBase64_(value);
-  try { return Utilities.base64Decode(b64); }
-  catch (e1) {
-    try { return Utilities.base64DecodeWebSafe(b64); }
-    catch (e2) { throw new Error('Invalid PDF data. Please select the PDF again.'); }
-  }
-}
-function getOrCreateDriveFolder_(propertyName, folderName) {
-  const props = PropertiesService.getScriptProperties();
-  const folderId = props.getProperty(propertyName);
-  let folder = null;
-  if (folderId) { try { folder = DriveApp.getFolderById(folderId); } catch (_) { folder = null; } }
-  if (!folder) {
-    folder = DriveApp.createFolder(folderName);
-    props.setProperty(propertyName, folder.getId());
-  }
-  return folder;
-}
-function safePdfName_(parts) {
-  return (parts || []).filter(Boolean).join(' - ').replace(/[\\/:*?"<>|]+/g, '-').trim() || 'document';
-}
-
 /** Client contract/document storage in Google Drive. */
 function uploadClientContract(token, data) {
   const session = requireAuth_(token);
@@ -38,18 +7,28 @@ function uploadClientContract(token, data) {
   const clientName = clean_(data.clientName);
   const fileName = clean_(data.fileName) || 'contract.pdf';
   const mimeType = clean_(data.mimeType) || 'application/pdf';
-  const base64 = normalizePdfBase64_(data.base64);
+  const base64 = clean_(data.base64);
   const documentType = clean_(data.documentType) || 'Contract';
 
   if (!unitCode || !clientName || !base64) throw new Error('Missing client or PDF data.');
   if (mimeType !== 'application/pdf' && !/\.pdf$/i.test(fileName)) throw new Error('Only PDF files are allowed.');
 
-  const bytes = decodePdfBase64_(base64);
+  let bytes;
+  try { bytes = Utilities.base64Decode(base64); }
+  catch (err) { throw new Error('Invalid PDF data.'); }
   if (bytes.length > 8 * 1024 * 1024) throw new Error('The PDF must be 8 MB or smaller.');
 
-  const folder = getOrCreateDriveFolder_('CONTRACTS_FOLDER_ID', 'Operation System Contracts');
+  const props = PropertiesService.getScriptProperties();
+  let folderId = props.getProperty('CONTRACTS_FOLDER_ID');
+  let folder;
+  try { folder = folderId ? DriveApp.getFolderById(folderId) : null; } catch (_) { folder = null; }
+  if (!folder) {
+    folder = DriveApp.createFolder('Operation System Contracts');
+    props.setProperty('CONTRACTS_FOLDER_ID', folder.getId());
+  }
 
-  const safeName = safePdfName_([project, unitCode, clientName, documentType]);
+  const safeName = [project, unitCode, clientName, documentType]
+    .filter(Boolean).join(' - ').replace(/[\\/:*?"<>|]+/g, '-');
   const blob = Utilities.newBlob(bytes, 'application/pdf', safeName + '.pdf');
   const file = folder.createFile(blob);
 
@@ -101,28 +80,14 @@ function getOrCreateFloorPlanSheet_(){
   const ss=SpreadsheetApp.openById(SPREADSHEETS.DATA); let sh=ss.getSheetByName(FLOOR_PLAN_SHEET_);
   if(!sh){sh=ss.insertSheet(FLOOR_PLAN_SHEET_);sh.appendRow(['Uploaded At','Uploaded By','Username','Project','Unit Code','File Name','Drive File ID','Drive URL']);sh.setFrozenRows(1);} return sh;
 }
-function uploadUnitFloorPlan(token, data) {
-  const session = requireAuth_(token);
-  data = data || {};
-  const project = clean_(data.project);
-  const unitCode = clean_(data.unitCode);
-  const fileName = clean_(data.fileName) || 'floor-plan.pdf';
-  const mimeType = clean_(data.mimeType) || 'application/pdf';
-  if (!project || !unitCode || !data.base64) throw new Error('Project, unit code and PDF are required.');
-  if (mimeType !== 'application/pdf' && !/\.pdf$/i.test(fileName)) throw new Error('Only PDF files are allowed.');
-  const bytes = decodePdfBase64_(data.base64);
-  if (bytes.length > 10 * 1024 * 1024) throw new Error('Drawing PDF must be 10 MB or smaller.');
-
-  const folder = getOrCreateDriveFolder_('FLOOR_PLANS_FOLDER_ID', 'Operation System - Architectural Drawings');
-  const safe = safePdfName_([project, unitCode, 'Architectural Drawing']);
-  const file = folder.createFile(Utilities.newBlob(bytes, 'application/pdf', safe + '.pdf'));
-  const sh = getOrCreateFloorPlanSheet_();
-  sh.appendRow([new Date(), session.name || '', session.username || session.user || '', project, unitCode, fileName, file.getId(), file.getUrl()]);
-  return {
-    success: true, message: 'Architectural drawing uploaded.', project: project, unitCode: unitCode,
-    fileName: fileName, url: 'https://drive.google.com/file/d/' + file.getId() + '/preview',
-    openUrl: file.getUrl(), fileId: file.getId(), uploadedAt: formatDateTime_(new Date())
-  };
+function uploadUnitFloorPlan(token,data){
+  const session=requireAuth_(token); data=data||{}; const project=clean_(data.project), unitCode=clean_(data.unitCode), fileName=clean_(data.fileName)||'floor-plan.pdf', base64=clean_(data.base64);
+  if(!project||!unitCode||!base64)throw new Error('Project, unit code and PDF are required.');
+  let bytes;try{bytes=Utilities.base64Decode(base64);}catch(e){throw new Error('Invalid PDF data.');} if(bytes.length>10*1024*1024)throw new Error('Drawing PDF must be 10 MB or smaller.');
+  const props=PropertiesService.getScriptProperties(); let folder; const id=props.getProperty('FLOOR_PLANS_FOLDER_ID'); try{folder=id?DriveApp.getFolderById(id):null;}catch(e){} if(!folder){folder=DriveApp.createFolder('Operation System - Architectural Drawings');props.setProperty('FLOOR_PLANS_FOLDER_ID',folder.getId());}
+  const safe=[project,unitCode,'Architectural Drawing'].join(' - ').replace(/[\\/:*?"<>|]+/g,'-'); const file=folder.createFile(Utilities.newBlob(bytes,'application/pdf',safe+'.pdf'));
+  const sh=getOrCreateFloorPlanSheet_(); sh.appendRow([new Date(),session.name||'',session.user||'',project,unitCode,fileName,file.getId(),file.getUrl()]);
+  return {success:true,message:'Architectural drawing uploaded.',project:project,unitCode:unitCode,fileName:fileName,url:'https://drive.google.com/file/d/'+file.getId()+'/preview',openUrl:file.getUrl(),fileId:file.getId(),uploadedAt:formatDateTime_(new Date())};
 }
 function readFloorPlans_(){const sh=getOrCreateFloorPlanSheet_();if(sh.getLastRow()<2)return[];const v=sh.getDataRange().getValues(),h=v[0].map(normalizeHeader_),idx=n=>h.indexOf(normalizeHeader_(n));return v.slice(1).map(r=>({uploadedAt:formatDateTime_(r[idx('Uploaded At')]),uploadedBy:clean_(r[idx('Uploaded By')]),project:clean_(r[idx('Project')]),unitCode:clean_(r[idx('Unit Code')]),fileName:clean_(r[idx('File Name')]),fileId:clean_(r[idx('Drive File ID')]),url:(clean_(r[idx('Drive File ID')])?'https://drive.google.com/file/d/'+clean_(r[idx('Drive File ID')])+'/preview':clean_(r[idx('Drive URL')])),openUrl:clean_(r[idx('Drive URL')])}));}
 function getUnitFloorPlan(token,filters){requireAuth_(token);filters=filters||{};const matches=readFloorPlans_().filter(x=>norm_(x.project)===norm_(filters.project)&&norm_(x.unitCode)===norm_(filters.unitCode));return matches.length?matches[matches.length-1]:null;}

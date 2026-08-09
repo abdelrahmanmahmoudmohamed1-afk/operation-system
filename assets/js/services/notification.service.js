@@ -1,3 +1,5 @@
+import SoundKit from "../utils/sound.js";
+
 class NotificationService {
     constructor() {
         this.container = null;
@@ -21,8 +23,9 @@ class NotificationService {
         const card = document.createElement('div');
         card.className = `ops-alert-card ops-alert-${type}`;
         card.setAttribute('role', type === 'error' ? 'alert' : 'status');
+        const iconClass = type === 'success' ? 'ops-alert-icon ops-stamp-icon' : 'ops-alert-icon';
         card.innerHTML = `
-            <span class="ops-alert-icon" aria-hidden="true">${icons[type] || 'i'}</span>
+            <span class="${iconClass}" aria-hidden="true">${icons[type] || 'i'}</span>
             <div class="ops-alert-copy">
                 <strong>${this.escape(titles[type] || 'Information')}</strong>
                 <span>${this.escape(message || '')}</span>
@@ -32,6 +35,8 @@ class NotificationService {
         card.querySelector('.ops-alert-close')?.addEventListener('click', () => this.close(card));
         this.container.appendChild(card);
         requestAnimationFrame(() => card.classList.add('show'));
+        if (type === 'success') { SoundKit.stampThud(); }
+        else if (type === 'error') { SoundKit.tone(220, 0.18, 'sawtooth', 0.035); }
         if (duration !== 0) setTimeout(() => this.close(card), duration);
         return card;
     }

@@ -10,7 +10,8 @@ const themeMeta = [
     ["obsidian", "Obsidian", "Deep black executive UI"],
     ["executive", "Executive", "Warm brass boardroom theme"],
     ["dark", "Dark", "Classic dark mode"],
-    ["light", "Light", "Clean light workspace"]
+    ["light", "Light", "Clean light workspace"],
+    ["night-shift", "Night Shift", "For the desk after the sun is gone"]
 ];
 
 function checked(value) { return value ? "checked" : ""; }
@@ -106,6 +107,7 @@ export function renderLayout(user, currentTheme, prefs = {}, history = []) {
                     ${settingSwitch("settings-compact-mode", "Compact density", "Reduce vertical spacing for data-heavy pages", prefs.compactMode)}
                     ${settingSwitch("settings-animations", "Smooth animations", "Keep responsive visual feedback across the system", prefs.animations !== false)}
                     ${settingSwitch("settings-show-details", "Click-to-details", "Open details panel when clicking rows and cards", prefs.showDetails !== false)}
+                    ${settingSwitch("settings-sound-effects", "Sound effects", "Soft tones for module transitions and confirmations", prefs.soundEffects !== false)}
                 </div>
             </div>
 

@@ -1,0 +1,22 @@
+/* Operation System Enterprise — Night Shift theme
+   For the people still at their desk after the sun is gone.
+   Core layout lives in assets/css/style.css. Theme only tunes accents. */
+:root{
+  --bg:#080b12;--surface:#0e1420;--surface-2:#141c2c;--text:#e6ecf7;--text-muted:#8793ab;--accent:#5b7fe0;--brass:#5b7fe0;--line:#22304a;
+  --theme-accent:#5b7fe0;
+  --theme-accent-soft:rgba(91,127,224,.16);
+}
+body{background:radial-gradient(circle at 82% 6%,rgba(91,127,224,.14),transparent 30%),radial-gradient(circle at 8% 92%,rgba(140,105,220,.08),transparent 34%),linear-gradient(165deg,var(--bg),var(--surface)) !important;color:var(--text)!important;}
+.premium-topbar,.topbar,.sidebar-horizontal,.sidebar{background:var(--surface)!important;border-color:var(--line)!important;color:var(--text)!important;}
+.card,.kpi-card,.table-wrap,.filter-panel,.modal-box,.settings-mini-card,.theme-option{background:var(--surface)!important;border-color:var(--line)!important;color:var(--text)!important;}
+.data-table,table{background:transparent!important;color:var(--text)!important;}
+th,.data-table th{background:var(--surface-2)!important;color:var(--text)!important;border-color:var(--line)!important;}
+td,.data-table td{color:var(--text)!important;border-color:var(--line)!important;}
+input,select,textarea,.premium-input,.premium-select{background:var(--surface-2)!important;color:var(--text)!important;border-color:var(--line)!important;}
+select option,.premium-select option{background:var(--surface)!important;color:var(--text)!important;}
+.btn-primary,.sidebar-link.active,.report-tab.active{background:linear-gradient(135deg,var(--accent),#8a6ee0)!important;color:#fff!important;}
+.btn-outline{border-color:var(--line)!important;color:var(--text)!important;background:transparent!important;}
+.page-header h1,.card h2,.card h3,.kpi-value,.k-value{color:var(--text)!important;}
+.page-header p,.note,.muted,.k-title,label{color:var(--text-muted)!important;}
+.sidebar-link,.nav-link{color:var(--text-muted)!important;}
+.sidebar-link:hover,.nav-link:hover{color:var(--text)!important;background:rgba(91,127,224,.10)!important;}
