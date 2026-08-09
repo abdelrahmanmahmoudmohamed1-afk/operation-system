@@ -138,7 +138,7 @@ export function renderLayout(user, currentTheme, prefs = {}, history = []) {
                 <button class="btn btn-outline" id="settings-run-diagnostics">Run Diagnostics</button>
             </div>
             <div id="settings-diagnostics-result" class="integrity-grid">
-                <div class="integrity-item"><span>Frontend</span><strong>v5.6</strong><em class="audit-success">Ready</em></div>
+                <div class="integrity-item"><span>Frontend</span><strong>v5.7</strong><em class="audit-success">Ready</em></div>
                 <div class="integrity-item"><span>Backend</span><strong>Not checked</strong><em>Run diagnostics</em></div>
                 <div class="integrity-item"><span>API actions</span><strong>—</strong><em>Waiting</em></div>
                 <div class="integrity-item"><span>Latency</span><strong>—</strong><em>Waiting</em></div>

@@ -4154,3 +4154,73 @@ body{overflow-x:hidden!important;background:
 @media(prefers-reduced-motion:reduce){.route-worker,.door,.action-person,.action-person i,.action-prop,.action-story-track i{animation:none!important}}
 
 .integrity-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.integrity-item{padding:14px;border-radius:14px;border:1px solid var(--line,rgba(255,255,255,.1));background:var(--surface-2,rgba(255,255,255,.035));display:grid;gap:5px}.integrity-item span{font-size:11px;color:var(--text-muted,#9ca8b4);text-transform:uppercase;letter-spacing:.5px}.integrity-item strong{font-size:18px}.integrity-item em{font-size:11px;font-style:normal;color:var(--text-muted,#9ca8b4)}@media(max-width:850px){.integrity-grid{grid-template-columns:1fr 1fr}}@media(max-width:500px){.integrity-grid{grid-template-columns:1fr}}
+
+/* ===== Enterprise 5.7 stable cinematic module travel =====
+   Source door opens -> worker exits -> source door closes -> worker waits/walks
+   in hallway while the target module/API is loading -> target door only opens
+   after controller.init() has completed -> worker enters -> target door closes. */
+#route-loader .room-from .door,
+#route-loader .room-to .door,
+#route-loader .route-worker{animation:none!important}
+#route-loader .room-from .door{transform:translateX(-50%) perspective(650px) rotateY(0)}
+#route-loader .room-to .door{transform:translateX(-50%) perspective(650px) rotateY(0)}
+#route-loader.show .room-from .door{animation:v57SourceDoor .82s cubic-bezier(.35,.02,.18,1) both!important}
+#route-loader.show .route-worker{
+  left:24%;bottom:20%;
+  animation:v57ExitToHall .98s cubic-bezier(.28,.05,.22,1) both!important;
+}
+#route-loader.show.loading .route-worker{
+  left:49%;
+  animation:v57HallWait .72s .98s ease-in-out infinite alternate!important;
+}
+#route-loader.show.ready .route-worker{
+  left:49%;
+  animation:v57EnterTarget .82s cubic-bezier(.2,.7,.25,1) both!important;
+}
+#route-loader.show.ready .room-to .door{animation:v57TargetDoor .88s cubic-bezier(.32,.02,.2,1) both!important}
+#route-loader .route-worker .worker-leg{position:absolute;top:86px;width:9px;height:34px;border-radius:8px;background:var(--text,#d8e0e9);transform-origin:top center}
+#route-loader .route-worker .leg-a{left:18px}.route-worker .leg-b{left:36px}
+#route-loader.show.loading .worker-leg.leg-a{animation:v57LegA .34s ease-in-out infinite alternate}
+#route-loader.show.loading .worker-leg.leg-b{animation:v57LegB .34s ease-in-out infinite alternate}
+#route-loader .hall-progress{position:absolute;left:18%;right:18%;bottom:12%;height:3px;border-radius:99px;background:var(--line,rgba(255,255,255,.08));overflow:hidden}
+#route-loader .hall-progress i{display:block;height:100%;width:30%;border-radius:inherit;background:var(--accent,#d6ad55);transform:translateX(-120%)}
+#route-loader.show.loading .hall-progress i{animation:v57HallProgress 1.05s ease-in-out infinite}
+#route-loader.show.ready .hall-progress i{width:100%;transform:none;transition:width .25s ease}
+#route-loader.failed .route-copy{border-color:rgba(239,83,80,.45)}
+#route-loader.failed .route-copy-status{color:#ff9b98!important}
+.route-copy small{display:block;margin-top:5px;color:var(--text-muted,#95a3b3);font-size:10px}
+
+@keyframes v57SourceDoor{
+  0%{transform:translateX(-50%) perspective(650px) rotateY(0)}
+  30%{transform:translateX(-50%) perspective(650px) rotateY(-68deg)}
+  63%{transform:translateX(-50%) perspective(650px) rotateY(-68deg)}
+  100%{transform:translateX(-50%) perspective(650px) rotateY(0)}
+}
+@keyframes v57ExitToHall{
+  0%{left:24%;transform:translateY(0) rotate(-3deg)}
+  38%{left:31%;transform:translateY(-2px) rotate(1deg)}
+  100%{left:49%;transform:translateY(0) rotate(0)}
+}
+@keyframes v57HallWait{
+  from{left:46%;transform:translateY(0) rotate(-1deg)}
+  to{left:52%;transform:translateY(-3px) rotate(1deg)}
+}
+@keyframes v57EnterTarget{
+  0%{left:49%;transform:translateY(0)}
+  58%{left:68%;transform:translateY(-2px)}
+  100%{left:79%;transform:translateY(1px) scale(.96)}
+}
+@keyframes v57TargetDoor{
+  0%{transform:translateX(-50%) perspective(650px) rotateY(0)}
+  18%{transform:translateX(-50%) perspective(650px) rotateY(68deg)}
+  68%{transform:translateX(-50%) perspective(650px) rotateY(68deg)}
+  100%{transform:translateX(-50%) perspective(650px) rotateY(0)}
+}
+@keyframes v57HallProgress{0%{transform:translateX(-120%)}100%{transform:translateX(430%)}}
+@keyframes v57LegA{from{transform:rotate(13deg)}to{transform:rotate(-13deg)}}
+@keyframes v57LegB{from{transform:rotate(-13deg)}to{transform:rotate(13deg)}}
+
+@media(prefers-reduced-motion:reduce){
+  #route-loader.show .room-from .door,#route-loader.show .room-to .door,#route-loader.show .route-worker,
+  #route-loader .worker-leg,#route-loader .hall-progress i{animation:none!important;transition:none!important}
+}

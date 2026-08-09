@@ -1,6 +1,6 @@
 import Module from "../../core/module.js";
 import OverviewService from "./overview.service.js";
-import { renderLayout, renderKpis, renderPipeline, renderProjects } from "./overview.view.js";
+import { renderLayout, renderKpis, renderUnavailableKpis, renderPipeline, renderProjects } from "./overview.view.js";
 import { renderLoading } from "../../utils/state.js";
 
 class OverviewController extends Module {
@@ -39,7 +39,7 @@ class OverviewController extends Module {
             const pipeline = document.getElementById("overview-pipeline");
             const projects = document.getElementById("overview-projects");
             if (meta) meta.textContent = "Overview data is temporarily unavailable. Other modules remain usable.";
-            if (kpis) kpis.innerHTML = renderKpis({ kpis: {}, statusMix: [] });
+            if (kpis) kpis.innerHTML = renderUnavailableKpis("Data source check required");
             if (pipeline) pipeline.innerHTML = `<div class="state-inline-warning">No pipeline data returned. Use Refresh or change the project filter.</div>`;
             if (projects) projects.innerHTML = `<tr><td colspan="4">No project data returned</td></tr>`;
             this.notify().error(error.message || "Overview could not load data");

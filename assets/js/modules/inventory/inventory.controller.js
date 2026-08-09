@@ -22,6 +22,10 @@ class InventoryController extends Module {
     const filters={project:document.getElementById("inv-project-filter")?.value||sessionStorage.getItem("operation_global_project")||"ALL",status:status?.value||"ALL"};
     try{
       this.units=await InventoryService.loadUnits(filters);
+      if(!Array.isArray(this.units)) throw new Error("Inventory API returned an invalid response.");
+      if(!this.units.length && (filters.project === "ALL" || !filters.project) && (filters.status === "ALL" || !filters.status)) {
+        throw new Error("Inventory returned 0 rows. This is treated as a data-source error, not a real zero. Run Settings → System Integrity and verify the deployed backend/data sheets.");
+      }
       if(isFirst||!this.allStatuses.length){ this.allStatuses=[...new Set((this.units||[]).map(x=>x.status).filter(Boolean))]; if(status)status.innerHTML=renderStatusOptions(this.units,filters.status); }
       const visible=this.applySearch(this.units); if(tbody)tbody.innerHTML=visible.length?renderRows(visible):renderEmptyRow(8,"No units match the selected filters"); if(kpis)kpis.innerHTML=renderKpis(visible);
     }catch(error){ this.logger().error("Inventory load failed",error); if(tbody)tbody.innerHTML=renderErrorRow(8,error.message); if(kpis)kpis.innerHTML=renderKpis([]); this.notify().error(`Inventory: ${error.message}`); }finally{this.loading=false;}

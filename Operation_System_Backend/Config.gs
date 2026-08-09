@@ -134,8 +134,8 @@ const FIELD_ALIASES = {
   project: ['Project', 'Project Name'],
   status: ['Status', 'Unit Status'],
   floor: ['Floor'],
-  area: ['Total Area', 'Area', 'Unit Area', 'Area (m2)', 'Area M2', 'Area Sqm'],
-  soldPrice: ['Sold Price', 'Price', 'Total Price', 'Unit Price', 'Sale Price', 'Price After Discount'],
+  area: ['In Door Area', 'Indoor Area', 'Total Area', 'Area', 'Unit Area', 'Area (m2)', 'Area M2', 'Area Sqm'],
+  soldPrice: ['Price After Discount', 'System Price', 'Sold Price', 'Price', 'Total Price', 'Unit Price', 'Sale Price'],
   remainingDp: ['Remaining DP', 'Remaining Down Payment', 'Remaining Deposit'],
   paymentYears: ['Instalment', 'Installment', 'Payment Years', 'Years'],
   installment: ['Instalment', 'Installment', 'Payment Years', 'Years'],
@@ -170,11 +170,11 @@ function getSystemInfo_() {
   try { if (typeof getApiActions_ === 'function') actions = getApiActions_(); } catch (e) {}
   return {
     name: 'Operation System',
-    version: 'Enterprise 5.6 Reliability',
+    version: 'Enterprise 5.7 Stable',
     apiVersion: '2026.08.09.1',
-    backendBuild: '5.6.0',
+    backendBuild: '5.7.0',
     projects: (PROJECT_SOURCES || []).map(function(x){ return x.key; }),
-    features: ['unified-projects','users','audit','leads','contract-pdf','achievement','housing-eoi','architectural-drawings','document-coverage','ai-agent','api-manifest','inventory-fast-path'],
+    features: ['unified-projects','users','audit','leads','contract-pdf','achievement','housing-eoi','architectural-drawings','document-coverage','ai-agent','api-manifest','stable-inventory-path'],
     actions: actions
   };
 }

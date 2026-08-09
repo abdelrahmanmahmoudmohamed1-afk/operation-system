@@ -7,26 +7,6 @@
 const INVENTORY_CACHE_KEY = 'operation_inventory_enterprise_v1';
 const INVENTORY_CACHE_SECONDS = 300;
 
-const INVENTORY_CORE_CACHE_KEY = 'operation_inventory_core_v2';
-const INVENTORY_CORE_CACHE_SECONDS = 600;
-
-/** Fast inventory-only reader. It intentionally skips transaction/client sheets. */
-function getInventoryCore_() {
-  const cache = CacheService.getScriptCache();
-  try {
-    const cached = cache.get(INVENTORY_CORE_CACHE_KEY);
-    if (cached) return JSON.parse(cached, dateReviver_);
-  } catch (e) {}
-  let inventory = [];
-  (PROJECT_SOURCES || []).forEach(function(source) {
-    const ss = SpreadsheetApp.openById(source.spreadsheetId);
-    inventory = inventory.concat(readInventoryFromSource_(ss, source));
-  });
-  try { cache.put(INVENTORY_CORE_CACHE_KEY, JSON.stringify(inventory), INVENTORY_CORE_CACHE_SECONDS); } catch (e) {}
-  return inventory;
-}
-
-
 function getMergedDataBundle_() {
   const cache = CacheService.getScriptCache();
   try {
@@ -88,9 +68,7 @@ function dateReviver_(key, value) {
 }
 
 function clearInventoryCache_() {
-  const cache = CacheService.getScriptCache();
-  cache.remove(INVENTORY_CACHE_KEY);
-  cache.remove(INVENTORY_CORE_CACHE_KEY);
+  CacheService.getScriptCache().remove(INVENTORY_CACHE_KEY);
 }
 
 function readInventory_() { return getMergedDataBundle_().inventory; }
@@ -238,7 +216,7 @@ function readCancelledFromSource_(ss, source) {
  */
 function getInventoryData(token, filters) {
   const session = requireAuth_(token);
-  const rows = getInventoryCore_().filter(x => roleAllowed_(x, session));
+  const rows = readInventory_().filter(x => roleAllowed_(x, session));
 
   if (filters) {
     return rows.filter(x => {
@@ -256,7 +234,8 @@ function getInventoryData(token, filters) {
  * قائمة المشاريع اللي فيها وحدات متاحة (يستخدمها فورم تسجيل العميل).
  */
 function getInventoryProjects() {
-  return [...new Set((PROJECT_SOURCES || []).map(function(s){return s.key;}).filter(Boolean))].sort();
+  const rows = readInventory_();
+  return [...new Set((PROJECT_SOURCES || []).map(function(s){return s.key;}).concat(rows.map(x => x.project)).filter(Boolean))].sort();
 }
 
 function getAvailableUnitsByProject(project) {

@@ -80,6 +80,17 @@ export function renderKpis(data) {
     `).join("");
 }
 
+
+export function renderUnavailableKpis(message = "Live data unavailable") {
+    const items = ["Total Sales Value","Contracted","Sold","Reserved","Available Units","Cancelled","Average Unit Price","Remaining DP"];
+    return items.map((title) => `
+        <div class="kpi-card kpi-unavailable">
+            <div class="kpi-title">${escapeHtml(title)}</div>
+            <div class="kpi-value">—</div>
+            <div class="kpi-sub">${escapeHtml(message)}</div>
+        </div>`).join("");
+}
+
 export function renderPipeline(statusMix) {
     if (!statusMix || !statusMix.length) return `<p class="muted">No pipeline data</p>`;
     return statusMix.slice(0, 8).map((r) => `

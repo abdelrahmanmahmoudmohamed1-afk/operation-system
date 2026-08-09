@@ -92,6 +92,15 @@ class ReportsModuleService {
         const reportRows = Array.isArray(dashboard.reportRows) && dashboard.reportRows.length ? dashboard.reportRows : fallbackRows;
         const contracts = (clients || []).filter((c) => String(c.status || "").trim().toLowerCase() === "contracted");
 
+        const dashboardRows = Array.isArray(dashboard.reportRows) ? dashboard.reportRows.length : 0;
+        const operationalRows = dashboardRows + (inventory?.length || 0) + (clients?.length || 0);
+        if (operationalRows === 0) {
+            const failed = settled.map((x, i) => x.status === "rejected" ? ["Dashboard","Inventory","CRM","EOI"][i] : null).filter(Boolean);
+            throw new Error(failed.length
+                ? `Live data unavailable: ${failed.join(", ")} failed. The system will not display fake zero KPIs.`
+                : "Live operational sources returned 0 rows. The system will not display fake zero KPIs. Check the deployed backend and sheet mapping.");
+        }
+
         const fallbackStatusMix = groupPerformance(reportRows.map((r) => ({ ...r, __status: r.ContractStatus || r.Status })), "__status", "Status");
         const fallbackProjects = groupPerformance(reportRows, "Project", "Project");
         const totalSalesValue = reportRows.filter((r) => ["reserved","contracted","sold"].includes(String(r.ContractStatus || r.Status || "").toLowerCase())).reduce((s,r) => s + num(r.Value), 0);

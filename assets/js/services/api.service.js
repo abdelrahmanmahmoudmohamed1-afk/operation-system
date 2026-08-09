@@ -10,7 +10,7 @@ class ApiService {
         this.retry = API_CONFIG.retry || { enabled: false, maxAttempts: 1, delay: 0 };
         this.inFlight = new Map();
         this.memory = new Map();
-        this.cachePrefix = "operation_api_enterprise_v56:";
+        this.cachePrefix = "operation_api_enterprise_v57:";
         this.backendInfo = null;
         this.backendActions = null;
         this.readPolicies = new Map([
@@ -18,7 +18,7 @@ class ApiService {
             ["getDashboardFilters", 5 * 60 * 1000],
             ["getDashboardData", 90 * 1000],
             ["getAchievementData", 90 * 1000],
-            ["getInventoryData", 5 * 60 * 1000],
+            ["getInventoryData", 90 * 1000],
             ["getInventoryProjects", 10 * 60 * 1000],
             ["getAvailableUnitsByProject", 2 * 60 * 1000],
             ["getAvailableLayanaUnits", 2 * 60 * 1000],
@@ -49,7 +49,7 @@ class ApiService {
 
     capabilityError(action) {
         const current = this.backendInfo?.backendBuild || this.backendInfo?.version || "unknown";
-        return this.failure(409, `Backend ${current} does not support ${action}. Deploy the matching Operation_System_Backend v5.6 files as one new Apps Script version.`, { code: "BACKEND_VERSION_MISMATCH", action, backend: this.backendInfo });
+        return this.failure(409, `Backend ${current} does not support ${action}. Deploy the matching Operation_System_Backend v5.7 files as one new Apps Script version.`, { code: "BACKEND_VERSION_MISMATCH", action, backend: this.backendInfo });
     }
 
     post(action, payload = {}, options = {}) {
@@ -119,7 +119,7 @@ class ApiService {
             if (!semanticOk) {
                 if (/Unknown action:/i.test(String(data?.message || ""))) {
                     const missing = String(data.message).split(":").slice(1).join(":").trim() || action;
-                    return this.failure(409, `Backend mismatch: ${missing} is not available in the deployed API. Deploy the matching v5.6 backend package.`, { ...data, code: "BACKEND_VERSION_MISMATCH", action: missing });
+                    return this.failure(409, `Backend mismatch: ${missing} is not available in the deployed API. Deploy the matching v5.7 backend package.`, { ...data, code: "BACKEND_VERSION_MISMATCH", action: missing });
                 }
                 if (semanticStatus === 401 || data?.message === "AUTH_REQUIRED" || data?.message === "SESSION_EXPIRED") {
                     window.dispatchEvent(new CustomEvent("operation:session-expired", { detail: data }));
