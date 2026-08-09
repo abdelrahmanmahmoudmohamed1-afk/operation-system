@@ -101,13 +101,14 @@ class UsersController extends Module {
         };
         if (!data.name || !data.username || !data.password) return this.notify().warning("Name, username and password are required.");
         try {
+            window.dispatchEvent(new CustomEvent("operation:busy", { detail: { active: true, kind: "user", message: "Creating secure user account…" } }));
             if (button) { button.disabled = true; button.textContent = "Creating..."; }
             await UsersService.createUser(data);
             this.notify().success("User created successfully");
             this.toggleCreateModal(false);
             await this.loadAll(true);
         } catch (error) { this.notify().error(error.message); }
-        finally { if (button) { button.disabled = false; button.textContent = "Create User"; } }
+        finally { window.dispatchEvent(new CustomEvent("operation:busy", { detail: { active: false } })); if (button) { button.disabled = false; button.textContent = "Create User"; } }
     }
 
     exportCsv() {

@@ -174,7 +174,8 @@ class App {
         this.bindActionFeedback();
         this.bindConnectivityStatus();
         this.bindSessionExpiry();
-        // Backend capability checks are performed only when a backend-dependent action is used.
+        await this.checkBackendCompatibility();
+        this.bindOperationBusyEvents();
         this.applyLanguageLabels();
 
         EventBus.emit("app:started", {
@@ -203,7 +204,7 @@ class App {
             const routeName = button.getAttribute("data-route");
             if (!routeName) return;
             event.preventDefault();
-            this.setBusy(true, `Opening ${routeName}...`);
+            // RouteLoader owns the full-page door transition.
             try {
                 Container.get("audit")?.record("Open module", routeName, { route: routeName });
                 await this.router.load(routeName);
@@ -211,7 +212,7 @@ class App {
             } catch (error) {
                 Container.get("notification")?.error(error.message || "Failed to open module");
             } finally {
-                this.setBusy(false);
+                // route transition closes inside ModuleLoader
             }
         });
 
@@ -275,17 +276,29 @@ class App {
         try {
             const api = Container.get("api");
             const token = Container.get("authManager").getToken();
-            const res = await api.post("getSystemInfo", { token });
+            const res = await api.post("getSystemInfo", { token }, { forceRefresh: true, cacheTTL: 0 });
             const info = res?.data?.data;
-            if (!res.ok || !info || !Array.isArray(info.features) || !info.features.includes("contract-pdf")) {
-                const message = /Unknown action/i.test(res?.message || res?.data?.message || "")
-                    ? "Backend update required: deploy every file in Operation_System_Backend as a new Apps Script version."
-                    : "Backend and frontend versions do not match. Deploy the included backend before using reports or PDF uploads.";
-                Container.get("notification")?.warning(message);
+            if (res.ok && info) {
+                api.setBackendInfo?.(info);
+                sessionStorage.setItem("operation_backend_info", JSON.stringify(info));
+                const required = ["createSystemUser","uploadUnitFloorPlan","uploadClientContract","getInventoryData","getClients","getEOIData"];
+                const missing = Array.isArray(info.actions) ? required.filter(x => !info.actions.includes(x)) : [];
+                if (missing.length) Container.get("notification")?.warning(`Backend ${info.backendBuild || info.version || ""} is missing: ${missing.join(", ")}. Deploy the included v5.6 backend before using those actions.`);
+                return;
             }
+            Container.get("notification")?.warning("Backend health check failed. Live write actions are disabled until the matching v5.6 backend is deployed.");
         } catch (_) {
-            // Normal module requests will surface any network problem. Do not block startup.
+            // Never block the shell. Individual requests keep readable errors.
         }
+    }
+
+    bindOperationBusyEvents() {
+        if (this.operationBusyBound) return;
+        this.operationBusyBound = true;
+        window.addEventListener("operation:busy", (event) => {
+            const d = event.detail || {};
+            this.setBusy(Boolean(d.active), d.message || "Working...", d.kind || "default");
+        });
     }
 
     bindPdfExport() {
@@ -513,17 +526,30 @@ class App {
         });
     }
 
-    setBusy(active, message = "Loading...") {
+    setBusy(active, message = "Loading...", kind = "default") {
         let overlay = document.getElementById("operation-action-loader");
         if (!overlay) {
             overlay = document.createElement("div");
             overlay.id = "operation-action-loader";
             overlay.className = "action-loader hidden";
-            overlay.innerHTML = `<div class="action-loader-box"><span class="action-spinner"></span><strong></strong></div>`;
+            overlay.innerHTML = `<div class="action-story" data-action-kind="default"><div class="action-story-scene"><span class="action-person"><i></i></span><span class="action-prop"></span><span class="action-desk"></span></div><div class="action-story-copy"><span class="eyebrow">Operation System</span><strong></strong><small>Finishing the operation safely…</small></div><div class="action-story-track"><i></i></div></div>`;
             document.body.appendChild(overlay);
         }
-        overlay.querySelector("strong").textContent = message;
+        const inferred = kind !== "default" ? kind : this.inferBusyKind(message);
+        overlay.querySelector(".action-story")?.setAttribute("data-action-kind", inferred);
+        const strong = overlay.querySelector(".action-story-copy strong");
+        if (strong) strong.textContent = message;
         overlay.classList.toggle("hidden", !active);
+    }
+
+    inferBusyKind(message = "") {
+        const m = String(message).toLowerCase();
+        if (/payment|plan|installment|بايمنت|سداد/.test(m)) return "payment";
+        if (/upload|pdf|drawing|contract|scan|رفع|عقد|رسمة/.test(m)) return "upload";
+        if (/user|account|create user|يوزر|مستخدم/.test(m)) return "user";
+        if (/report|export|print|تقرير|طباعة/.test(m)) return "report";
+        if (/save|saving|حفظ/.test(m)) return "save";
+        return "default";
     }
 
     applyLanguageLabels() {

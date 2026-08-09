@@ -132,6 +132,20 @@ export function renderLayout(user, currentTheme, prefs = {}, history = []) {
             </div>
         </div>
 
+        <div class="card settings-panel-pro system-integrity-card">
+            <div class="report-builder-topline">
+                <div><span class="report-eyebrow">Reliability</span><h2>System Integrity</h2></div>
+                <button class="btn btn-outline" id="settings-run-diagnostics">Run Diagnostics</button>
+            </div>
+            <div id="settings-diagnostics-result" class="integrity-grid">
+                <div class="integrity-item"><span>Frontend</span><strong>v5.6</strong><em class="audit-success">Ready</em></div>
+                <div class="integrity-item"><span>Backend</span><strong>Not checked</strong><em>Run diagnostics</em></div>
+                <div class="integrity-item"><span>API actions</span><strong>—</strong><em>Waiting</em></div>
+                <div class="integrity-item"><span>Latency</span><strong>—</strong><em>Waiting</em></div>
+            </div>
+            <p class="muted" style="margin-top:12px">This check verifies the deployed backend build and action manifest before upload, user, CRM and inventory writes are used.</p>
+        </div>
+
         <div class="settings-grid-pro settings-grid-wide">
             <div class="card settings-panel-pro">
                 <div class="report-builder-topline"><div><span class="report-eyebrow">Workflow</span><h2>Operational Controls</h2></div></div>

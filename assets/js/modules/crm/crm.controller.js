@@ -154,6 +154,7 @@ class CRMController extends Module {
             try {
                 const base64 = await this.fileToBase64(file);
                 const documentType = document.querySelector("#crm-contract-upload-form [name=\"documentType\"]")?.value || "Contract";
+                window.dispatchEvent(new CustomEvent("operation:busy", { detail: { active: true, kind: "upload", message: "Uploading contract PDF…" } }));
                 const result = await CrmService.uploadContract({
                     ...client,
                     documentType,
@@ -164,6 +165,7 @@ class CRMController extends Module {
                 this.notify().success(result?.message || "PDF uploaded successfully");
                 close();
             } catch (error) {
+                window.dispatchEvent(new CustomEvent("operation:busy", { detail: { active: false } }));
                 const message = String(error?.message || "Upload failed");
                 this.showContractError(errorBox, message);
                 this.notify().warning(message, 4800);

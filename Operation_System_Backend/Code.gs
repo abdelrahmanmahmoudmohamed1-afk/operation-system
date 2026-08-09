@@ -88,6 +88,11 @@ const ACTION_MAP = {
   operationAiChat: (p) => operationAiChat(p.token, p.data)
 };
 
+
+function getApiActions_() {
+  return Object.keys(ACTION_MAP || {}).sort();
+}
+
 const AUDITED_API_ACTIONS_ = {
   login:1, logout:1, changeOwnPassword:1, saveClientRegistration:1,
   uploadClientContract:1, saveEOI:1, bulkUpdateLeadStatus:1, importLeads:1,

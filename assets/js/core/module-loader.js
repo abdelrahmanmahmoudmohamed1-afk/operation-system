@@ -30,7 +30,7 @@ class ModuleLoader {
             return;
         }
 
-        this.showProgress();
+        this.showProgress(moduleName);
 
         try {
             await this.destroyCurrentModule();
@@ -65,39 +65,29 @@ class ModuleLoader {
         }
     }
 
-    showProgress() {
+    showProgress(targetModule = null) {
         clearTimeout(this.progressTimer);
+        const from = this.currentModule || "Workspace";
+        const to = targetModule || "Workspace";
         this.progressTimer = setTimeout(() => {
             let bar = document.getElementById("route-progress");
             let overlay = document.getElementById("route-loader");
-            if (!bar) {
-                bar = document.createElement("div");
-                bar.id = "route-progress";
-                document.body.appendChild(bar);
-            }
+            if (!bar) { bar = document.createElement("div"); bar.id = "route-progress"; document.body.appendChild(bar); }
             if (!overlay) {
                 overlay = document.createElement("div");
                 overlay.id = "route-loader";
                 overlay.setAttribute("role", "status");
                 overlay.setAttribute("aria-live", "polite");
-                overlay.innerHTML = `
-                    <div class="route-loader-card">
-                        <div class="route-logo-build">
-                            <span class="route-logo-orbit"></span>
-                            <span class="route-logo-orbit route-logo-orbit-2"></span>
-                            <div class="route-logo-mask"><img src="https://i.ibb.co/FLnH6Fw2/1cf98fc6-5c25-4af8-8af0-1e556340272f.jpg" alt="Company logo"></div>
-                        </div>
-                        <div class="route-loader-copy"><strong>OPERATION SYSTEM</strong><span>Preparing your page…</span></div>
-                        <div class="route-loader-line"><i></i></div>
-                    </div>`;
+                overlay.innerHTML = `<div class="module-door-scene"><div class="module-room room-from"><span class="room-label"></span><span class="door door-left"></span></div><div class="route-worker"><span class="worker-head"></span><span class="worker-body"></span><span class="worker-bag"></span></div><div class="module-hallway"><span class="hall-light"></span></div><div class="module-room room-to"><span class="room-label"></span><span class="door door-right"></span></div><div class="route-copy"><strong>Moving workspace</strong><span></span></div></div>`;
                 document.body.appendChild(overlay);
             }
-            bar.classList.remove("done");
-            overlay.classList.remove("leaving");
-            void bar.offsetWidth;
-            bar.classList.add("active");
-            overlay.classList.add("show");
-        }, 140);
+            overlay.querySelector(".room-from .room-label").textContent = from;
+            overlay.querySelector(".room-to .room-label").textContent = to;
+            overlay.querySelector(".route-copy span").textContent = `Leaving ${from} · entering ${to}`;
+            overlay.dataset.from = from; overlay.dataset.to = to;
+            bar.classList.remove("done"); overlay.classList.remove("leaving");
+            void bar.offsetWidth; bar.classList.add("active"); overlay.classList.add("show");
+        }, 90);
     }
 
     hideProgress() {
@@ -107,10 +97,7 @@ class ModuleLoader {
         if (!bar && !overlay) return;
         if (bar) bar.classList.add("done");
         if (overlay) overlay.classList.add("leaving");
-        setTimeout(() => {
-            if (bar) bar.classList.remove("active", "done");
-            if (overlay) overlay.classList.remove("show", "leaving");
-        }, 320);
+        setTimeout(() => { if (bar) bar.classList.remove("active", "done"); if (overlay) overlay.classList.remove("show", "leaving"); }, 420);
     }
 
     buildControllerPath(moduleConfig) {

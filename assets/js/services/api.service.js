@@ -10,7 +10,9 @@ class ApiService {
         this.retry = API_CONFIG.retry || { enabled: false, maxAttempts: 1, delay: 0 };
         this.inFlight = new Map();
         this.memory = new Map();
-        this.cachePrefix = "operation_api_enterprise_v55:";
+        this.cachePrefix = "operation_api_enterprise_v56:";
+        this.backendInfo = null;
+        this.backendActions = null;
         this.readPolicies = new Map([
             ["getSystemInfo", 10 * 60 * 1000],
             ["getDashboardFilters", 5 * 60 * 1000],
@@ -36,6 +38,20 @@ class ApiService {
         this.mutations = new Set(["login", "logout", "changeOwnPassword", "saveClientRegistration", "uploadClientContract", "saveEOI", "refreshAvailableLayanaUnits", "bulkUpdateLeadStatus", "importLeads", "createSystemUser", "uploadUnitFloorPlan"]);
     }
 
+    setBackendInfo(info = null) {
+        this.backendInfo = info || null;
+        this.backendActions = Array.isArray(info?.actions) ? new Set(info.actions) : null;
+    }
+
+    supports(action) {
+        return !this.backendActions || this.backendActions.has(action);
+    }
+
+    capabilityError(action) {
+        const current = this.backendInfo?.backendBuild || this.backendInfo?.version || "unknown";
+        return this.failure(409, `Backend ${current} does not support ${action}. Deploy the matching Operation_System_Backend v5.6 files as one new Apps Script version.`, { code: "BACKEND_VERSION_MISMATCH", action, backend: this.backendInfo });
+    }
+
     post(action, payload = {}, options = {}) {
         return this.request({ method: "POST", body: { action, ...payload }, action, ...options });
     }
@@ -52,6 +68,7 @@ class ApiService {
         }
 
         const action = options.action || options.body?.action || options.params?.action || "request";
+        if (action !== "getSystemInfo" && !this.supports(action)) return this.capabilityError(action);
         this.applyGlobalProject(options, action);
         const cacheTTL = options.cacheTTL ?? this.readPolicies.get(action) ?? 0;
         const key = this.makeKey(options);
@@ -100,6 +117,10 @@ class ApiService {
             const semanticStatus = Number(data?.status) || response.status;
             const semanticOk = response.ok && data?.ok !== false;
             if (!semanticOk) {
+                if (/Unknown action:/i.test(String(data?.message || ""))) {
+                    const missing = String(data.message).split(":").slice(1).join(":").trim() || action;
+                    return this.failure(409, `Backend mismatch: ${missing} is not available in the deployed API. Deploy the matching v5.6 backend package.`, { ...data, code: "BACKEND_VERSION_MISMATCH", action: missing });
+                }
                 if (semanticStatus === 401 || data?.message === "AUTH_REQUIRED" || data?.message === "SESSION_EXPIRED") {
                     window.dispatchEvent(new CustomEvent("operation:session-expired", { detail: data }));
                 }

@@ -166,10 +166,15 @@ const FIELD_ALIASES = {
 
 
 function getSystemInfo_() {
+  let actions = [];
+  try { if (typeof getApiActions_ === 'function') actions = getApiActions_(); } catch (e) {}
   return {
     name: 'Operation System',
-    version: 'Enterprise 5.5 Final',
+    version: 'Enterprise 5.6 Reliability',
+    apiVersion: '2026.08.09.1',
+    backendBuild: '5.6.0',
     projects: (PROJECT_SOURCES || []).map(function(x){ return x.key; }),
-    features: ['unified-projects','users','audit','leads','contract-pdf','achievement','housing-eoi','architectural-drawings','document-coverage','ai-agent']
+    features: ['unified-projects','users','audit','leads','contract-pdf','achievement','housing-eoi','architectural-drawings','document-coverage','ai-agent','api-manifest','inventory-fast-path'],
+    actions: actions
   };
 }

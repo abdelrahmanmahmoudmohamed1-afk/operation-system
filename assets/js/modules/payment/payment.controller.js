@@ -107,12 +107,15 @@ class PaymentController extends Module {
         if (!unit) return this.notify().warning("Please select an available unit first");
 
         try {
+            window.dispatchEvent(new CustomEvent("operation:busy", { detail: { active: true, kind: "payment", message: "Building payment plan…" } }));
             const input = { ticketPrice: this.unitPrice(unit), years, bookingDate, options: this.getOptions() };
             const comparison = PaymentService.compareToStandard(input);
             if (output) output.innerHTML = renderPlan({ ...comparison.custom, years }, comparison);
             this.notify()[comparison.status === "lower" ? "warning" : "success"](comparison.message);
         } catch (error) {
             this.notify().error(error.message);
+        } finally {
+            setTimeout(() => window.dispatchEvent(new CustomEvent("operation:busy", { detail: { active: false } })), 420);
         }
     }
 
