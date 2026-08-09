@@ -283,10 +283,10 @@ class App {
                 sessionStorage.setItem("operation_backend_info", JSON.stringify(info));
                 const required = ["createSystemUser","uploadUnitFloorPlan","uploadClientContract","getInventoryData","getClients","getEOIData"];
                 const missing = Array.isArray(info.actions) ? required.filter(x => !info.actions.includes(x)) : [];
-                if (missing.length) Container.get("notification")?.warning(`Backend ${info.backendBuild || info.version || ""} is missing: ${missing.join(", ")}. Deploy the included v5.7 backend before using those actions.`);
+                if (missing.length) Container.get("notification")?.warning(`Backend ${info.backendBuild || info.version || ""} is missing: ${missing.join(", ")}. Deploy the included v5.8 backend before using those actions.`);
                 return;
             }
-            Container.get("notification")?.warning("Backend health check failed. Live write actions are disabled until the matching v5.7 backend is deployed.");
+            Container.get("notification")?.warning("Backend health check failed. Live write actions are disabled until the matching v5.8 backend is deployed.");
         } catch (_) {
             // Never block the shell. Individual requests keep readable errors.
         }

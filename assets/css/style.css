@@ -4224,3 +4224,58 @@ body{overflow-x:hidden!important;background:
   #route-loader.show .room-from .door,#route-loader.show .room-to .door,#route-loader.show .route-worker,
   #route-loader .worker-leg,#route-loader .hall-progress i{animation:none!important;transition:none!important}
 }
+
+/* ===== Enterprise 5.8 synchronized door-to-door route transition ===== */
+#route-loader .door,
+#route-loader .route-worker,
+#route-loader .worker-leg,
+#route-loader .worker-arm{animation:none!important;transition:none!important}
+#route-loader .room-from .door,
+#route-loader .room-to .door{transform:translateX(-50%) perspective(700px) rotateY(0)}
+#route-loader .door-sign{position:absolute;left:50%;top:15%;transform:translateX(-50%);max-width:78%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:5px 8px;border-radius:8px;border:1px solid var(--line,rgba(255,255,255,.1));font-size:9px;font-style:normal;font-weight:800;color:var(--text-muted,#9ca8b4);background:var(--surface,#162235)}
+#route-loader .route-worker{left:24%;bottom:20%;opacity:1;transform:translateX(0)}
+#route-loader .route-worker .worker-arm{position:absolute;top:43px;width:9px;height:34px;border-radius:8px;background:#d3aa84;transform-origin:top center;z-index:2}
+#route-loader .route-worker .arm-a{left:12px}.route-worker .arm-b{left:43px}
+#route-loader .hall-depth{position:absolute;top:20%;bottom:18%;width:1px;background:var(--line,rgba(255,255,255,.1));opacity:.65;transform:skewY(-15deg)}
+#route-loader .hall-depth-a{left:35%}.hall-depth-b{right:35%;transform:skewY(15deg)}
+
+/* 1. Source door opens and stays open. */
+#route-loader.stage-source-open .room-from .door,
+#route-loader.stage-source-exit .room-from .door{transform:translateX(-50%) perspective(700px) rotateY(-69deg);transition:transform .28s cubic-bezier(.3,.02,.2,1)!important}
+/* 2. Worker exits through the open source door. */
+#route-loader.stage-source-exit .route-worker{left:41%;transition:left .46s cubic-bezier(.28,.05,.22,1),transform .46s ease!important;animation:v58Step .32s linear infinite!important}
+/* 3. Source door closes only after worker clears it. */
+#route-loader.stage-source-close .room-from .door,
+#route-loader.stage-hallway .room-from .door,
+#route-loader.stage-target-open .room-from .door,
+#route-loader.stage-target-enter .room-from .door,
+#route-loader.stage-target-close .room-from .door,
+#route-loader.stage-done .room-from .door{transform:translateX(-50%) perspective(700px) rotateY(0);transition:transform .28s cubic-bezier(.3,.02,.2,1)!important}
+#route-loader.stage-source-close .route-worker{left:43%;transition:left .25s ease!important}
+/* 4. Continuous hallway walk while real data is loading. */
+#route-loader.stage-hallway .route-worker{left:43%;animation:v58HallWalk 1.18s linear infinite!important}
+#route-loader.stage-hallway .worker-leg.leg-a,#route-loader.stage-target-enter .worker-leg.leg-a{animation:v58LegA .3s ease-in-out infinite alternate!important}
+#route-loader.stage-hallway .worker-leg.leg-b,#route-loader.stage-target-enter .worker-leg.leg-b{animation:v58LegB .3s ease-in-out infinite alternate!important}
+#route-loader.stage-hallway .worker-arm.arm-a,#route-loader.stage-target-enter .worker-arm.arm-a{animation:v58ArmA .3s ease-in-out infinite alternate!important}
+#route-loader.stage-hallway .worker-arm.arm-b,#route-loader.stage-target-enter .worker-arm.arm-b{animation:v58ArmB .3s ease-in-out infinite alternate!important}
+#route-loader.stage-hallway .worker-bag{animation:routeBag .3s ease-in-out infinite alternate!important}
+/* 5. Target door opens only when controller.init() is done. */
+#route-loader.stage-target-open .room-to .door,
+#route-loader.stage-target-enter .room-to .door{transform:translateX(-50%) perspective(700px) rotateY(69deg);transition:transform .28s cubic-bezier(.3,.02,.2,1)!important}
+#route-loader.stage-target-open .route-worker{left:62%;transition:left .28s ease!important;animation:v58Step .32s linear infinite!important}
+/* 6. Enter the room. */
+#route-loader.stage-target-enter .route-worker{left:79%;transform:scale(.94);transition:left .46s cubic-bezier(.2,.7,.25,1),transform .46s ease!important;animation:v58Step .32s linear infinite!important}
+/* 7. Door closes behind worker, then fade. */
+#route-loader.stage-target-close .room-to .door,
+#route-loader.stage-done .room-to .door{transform:translateX(-50%) perspective(700px) rotateY(0);transition:transform .28s cubic-bezier(.3,.02,.2,1)!important}
+#route-loader.stage-target-close .route-worker,#route-loader.stage-done .route-worker{left:82%;opacity:.12;transform:scale(.88);transition:left .22s ease,opacity .22s ease,transform .22s ease!important}
+#route-loader.stage-hallway .hall-progress i{animation:v58HallProgress 1.05s ease-in-out infinite!important}
+#route-loader.stage-target-open .hall-progress i,#route-loader.stage-target-enter .hall-progress i,#route-loader.stage-target-close .hall-progress i,#route-loader.stage-done .hall-progress i{width:100%;transform:none;transition:width .2s ease!important}
+@keyframes v58HallWalk{0%{left:43%;transform:translateY(0)}25%{left:49%;transform:translateY(-2px)}50%{left:55%;transform:translateY(0)}75%{left:49%;transform:translateY(-2px)}100%{left:43%;transform:translateY(0)}}
+@keyframes v58Step{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes v58LegA{from{transform:rotate(16deg)}to{transform:rotate(-16deg)}}
+@keyframes v58LegB{from{transform:rotate(-16deg)}to{transform:rotate(16deg)}}
+@keyframes v58ArmA{from{transform:rotate(-13deg)}to{transform:rotate(13deg)}}
+@keyframes v58ArmB{from{transform:rotate(13deg)}to{transform:rotate(-13deg)}}
+@keyframes v58HallProgress{0%{transform:translateX(-120%)}100%{transform:translateX(430%)}}
+@media(prefers-reduced-motion:reduce){#route-loader .door,#route-loader .route-worker,#route-loader .worker-leg,#route-loader .worker-arm,#route-loader .hall-progress i{animation:none!important;transition:none!important}}

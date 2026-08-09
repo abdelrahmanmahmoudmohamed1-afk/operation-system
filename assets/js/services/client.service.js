@@ -83,8 +83,12 @@ class ClientService {
     }
 
     async uploadContract(data) {
-        const res = await this.api().post(ENDPOINTS.UPLOAD_CLIENT_CONTRACT, { token: this.token(), data }, { cacheTTL: 0, forceRefresh: true });
-        return this.unwrap(res);
+        return this.uploadPdfAction(
+            ENDPOINTS.UPLOAD_CLIENT_CONTRACT,
+            ["uploadContractPdf"],
+            data,
+            "Contract PDF"
+        );
     }
 
     async getDocuments(filters = {}) {
@@ -103,8 +107,45 @@ class ClientService {
     }
 
     async uploadFloorPlan(data) {
-        const res = await this.api().post(ENDPOINTS.UPLOAD_UNIT_FLOOR_PLAN, { token: this.token(), data }, { cacheTTL: 0, forceRefresh: true });
-        return this.unwrap(res);
+        return this.uploadPdfAction(
+            ENDPOINTS.UPLOAD_UNIT_FLOOR_PLAN,
+            ["uploadFloorPlanPdf"],
+            data,
+            "Architectural drawing"
+        );
+    }
+
+    async uploadPdfAction(primaryAction, aliases = [], data = {}, label = "PDF") {
+        this.validatePdfPayload(data, label);
+        const actions = [primaryAction, ...aliases];
+        let lastError = null;
+        for (const action of actions) {
+            try {
+                const res = await this.api().post(action, { token: this.token(), data }, { cacheTTL: 0, forceRefresh: true });
+                if (res?.ok && res?.data?.ok !== false) return this.unwrap(res);
+                const message = String(res?.data?.message || res?.message || "Upload failed");
+                lastError = new Error(message);
+                // Only try aliases when the current backend explicitly does not know this action.
+                if (!/unknown action|backend mismatch|does not support/i.test(message)) break;
+            } catch (error) {
+                lastError = error;
+                if (!/unknown action|backend mismatch|does not support/i.test(String(error?.message || ""))) break;
+            }
+        }
+        throw lastError || new Error(`${label} upload failed.`);
+    }
+
+    validatePdfPayload(data = {}, label = "PDF") {
+        const fileName = String(data.fileName || "").trim();
+        const mimeType = String(data.mimeType || "application/pdf").toLowerCase();
+        const base64 = String(data.base64 || "").replace(/^data:application\/pdf;base64,/i, "").replace(/\s+/g, "");
+        if (!base64) throw new Error(`${label}: the selected file could not be read.`);
+        if (mimeType !== "application/pdf" && !/\.pdf$/i.test(fileName)) throw new Error(`${label}: only PDF files are allowed.`);
+        // PDF magic bytes are %PDF- => JVBER in standard Base64.
+        if (!/^JVBER/i.test(base64)) throw new Error(`${label}: this file does not look like a valid PDF.`);
+        data.base64 = base64;
+        data.mimeType = "application/pdf";
+        return data;
     }
 
     async getFloorPlanCoverage(filters = {}) {
