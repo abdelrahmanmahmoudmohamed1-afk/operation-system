@@ -10,9 +10,7 @@ Thumbs.db
 .env.*
 !.env.example
 
-# The Google Apps Script backend contains internal spreadsheet identifiers.
-# Keep it in a private repository or deploy it directly to Apps Script.
-Operation_System_Backend/
+# Keep server-side secrets in Vercel Environment Variables only.
 
 # Archives / backups
 *.zip

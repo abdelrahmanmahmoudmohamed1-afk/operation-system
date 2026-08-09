@@ -148,11 +148,10 @@ class CRMController extends Module {
             const submit = document.getElementById("crm-contract-submit");
             if (!file) return this.showContractError(errorBox, "Please select a PDF file.");
             if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) return this.showContractError(errorBox, "Only PDF files are allowed.");
-            if (file.size > 8 * 1024 * 1024) return this.showContractError(errorBox, "The PDF must be 8 MB or smaller.");
+            if (file.size > 25 * 1024 * 1024) return this.showContractError(errorBox, "The PDF must be 25 MB or smaller.");
             if (submit) { submit.disabled = true; submit.textContent = "Uploading..."; }
             if (errorBox) errorBox.classList.add("hidden");
             try {
-                const base64 = await this.fileToBase64(file);
                 const documentType = document.querySelector("#crm-contract-upload-form [name=\"documentType\"]")?.value || "Contract";
                 window.dispatchEvent(new CustomEvent("operation:busy", { detail: { active: true, kind: "upload", message: "Uploading contract PDF…" } }));
                 const result = await CrmService.uploadContract({
@@ -160,7 +159,7 @@ class CRMController extends Module {
                     documentType,
                     fileName: file.name,
                     mimeType: file.type || "application/pdf",
-                    base64
+                    file
                 });
                 this.notify().success(result?.message || "PDF uploaded successfully");
                 close();

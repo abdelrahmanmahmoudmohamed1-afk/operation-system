@@ -12,8 +12,8 @@ class AuthService {
         }
         const data = res.data.data || {};
         if (!data.success) return { success: false, message: data.message || "Invalid username or password" };
-        this.authManager().login(data.token, data.user);
-        return { success: true, token: data.token, user: data.user };
+        this.authManager().login(data.token, data.user, data.refreshToken || "");
+        return { success: true, token: data.token, refreshToken: data.refreshToken || "", user: data.user };
     }
 
     async changePassword(oldPassword, newPassword) {

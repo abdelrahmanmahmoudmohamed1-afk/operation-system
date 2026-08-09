@@ -75,11 +75,11 @@ class SettingsController extends Module {
                 const actions = Array.isArray(info.actions) ? info.actions : [];
                 const missing = actions.length ? required.filter(x => !actions.includes(x)) : required;
                 if (out) out.innerHTML = `
-                    <div class="integrity-item"><span>Frontend</span><strong>v5.7</strong><em class="audit-success">Ready</em></div>
+                    <div class="integrity-item"><span>Frontend</span><strong>v6.0</strong><em class="audit-success">Ready</em></div>
                     <div class="integrity-item"><span>Backend</span><strong>${this.escapeHtml(info.backendBuild || info.version || "Unavailable")}</strong><em class="${d.ok ? "audit-success" : "audit-fail"}">${d.ok ? "Connected" : "Failed"}</em></div>
                     <div class="integrity-item"><span>API actions</span><strong>${actions.length || 0}</strong><em class="${missing.length ? "audit-fail" : "audit-success"}">${missing.length ? `Missing ${missing.length}` : "Matched"}</em></div>
                     <div class="integrity-item"><span>Latency</span><strong>${d.latency} ms</strong><em>${d.latency < 1500 ? "Good" : "Slow"}</em></div>
-                    ${missing.length ? `<div class="state-box state-error" style="grid-column:1/-1"><strong>Backend mismatch</strong><span>Missing: ${missing.map(x=>this.escapeHtml(x)).join(", ")}. Deploy the included Operation_System_Backend v5.7 as one new version.</span></div>` : ""}`;
+                    ${missing.length ? `<div class="state-box state-error" style="grid-column:1/-1"><strong>Backend mismatch</strong><span>Missing: ${missing.map(x=>this.escapeHtml(x)).join(", ")}. Deploy the matching Vercel API and Supabase migration for v6.0.</span></div>` : ""}`;
             } catch (error) {
                 if (out) out.innerHTML = `<div class="state-box state-error"><strong>Diagnostics failed</strong><span>${this.escapeHtml(error.message)}</span></div>`;
             }
