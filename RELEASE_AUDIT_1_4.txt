@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "generatedAt": "2026-08-09T20:37:29.519Z",
+  "passes": [
+    "JavaScript syntax",
+    "Relative imports",
+    "API parity (44 frontend / 45 backend actions)",
+    "Apps Script runtime remnants",
+    "Unsupported PDF colors",
+    "Legacy unknown-action UI",
+    "Module registry files",
+    "No obvious secret keys in repository"
+  ],
+  "failures": [],
+  "warnings": [],
+  "fileCount": 180
+}

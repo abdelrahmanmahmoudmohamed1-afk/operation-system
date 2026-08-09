@@ -10,7 +10,7 @@ class ApiService {
         this.retry = API_CONFIG.retry || { enabled: false, maxAttempts: 1, delay: 0 };
         this.inFlight = new Map();
         this.memory = new Map();
-        this.cachePrefix = "operation_api_enterprise_x1:";
+        this.cachePrefix = "operation_api_enterprise_x14:";
         this.backendInfo = null;
         this.backendActions = null;
         this.readPolicies = new Map([

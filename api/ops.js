@@ -6,27 +6,38 @@ import { sheetInventory, sheetClients, sheetEOI, sheetLeads, sheetsEnabled } fro
 import { ensureSchema, postgresConfigured, tableCounts } from '../lib/schema.js';
 import { createGmailConnectUrl, gmailStatus, sendGmail, gmailConfigured } from '../lib/gmail.js';
 
-const BUILD='enterprise-x-1.3.0';
-const ACTIONS=['bootstrapStatus','bootstrapAdmin','login','refreshSession','logout','changeOwnPassword','getSystemInfo','runDiagnostics','recordUserActivity','getDashboardFilters','getDashboardData','getAchievementData','getClientFormBootstrap','getSales','getCompanies','getManagerDirector','saveClientRegistration','getClients','uploadClientContract','getClientDocuments','getDocumentCoverage','getUnitFloorPlan','uploadUnitFloorPlan','getUnitFloorPlanCoverage','getInventoryData','getInventoryProjects','getAvailableUnitsByProject','getAvailableLayanaUnits','refreshAvailableLayanaUnits','getEOIFormBootstrap','saveEOI','getEOIData','getLeadsData','bulkUpdateLeadStatus','importLeads','getUsersData','createSystemUser','getAuditHistory','operationAiChat','getGmailStatus','getGmailConnectUrl','sendGmail','getReminders','completeReminder'];
+const BUILD='enterprise-x-1.4.0';
+const ACTIONS=['initializeDatabase','bootstrapStatus','bootstrapAdmin','login','refreshSession','logout','changeOwnPassword','getSystemInfo','runDiagnostics','recordUserActivity','getDashboardFilters','getDashboardData','getAchievementData','getClientFormBootstrap','getSales','getCompanies','getManagerDirector','saveClientRegistration','getClients','uploadClientContract','getClientDocuments','getDocumentCoverage','getUnitFloorPlan','uploadUnitFloorPlan','getUnitFloorPlanCoverage','getInventoryData','getInventoryProjects','getAvailableUnitsByProject','getAvailableLayanaUnits','refreshAvailableLayanaUnits','getEOIFormBootstrap','saveEOI','getEOIData','getLeadsData','bulkUpdateLeadStatus','importLeads','getUsersData','createSystemUser','getAuditHistory','operationAiChat','getGmailStatus','getGmailConnectUrl','sendGmail','getReminders','completeReminder'];
 function parseBody(text){try{return text?JSON.parse(text):{}}catch{return{}}}
 async function schema(){try{return await ensureSchema();}catch(e){console.error('schema setup failed',e);return {ok:false,configured:postgresConfigured(),message:e.message};}}
 async function safeSheet(kind){try{return kind==='inventory'?await sheetInventory():kind==='clients'?await sheetClients():kind==='eoi'?await sheetEOI():kind==='leads'?await sheetLeads():null;}catch(e){console.warn('Google Sheets failed',kind,e.message);return null;}}
-async function dbRows(table,filters={}){let q=admin.from(table).select('*');if(filters.project&&String(filters.project).toUpperCase()!=='ALL'&&['inventory_units','clients','eoi_records','leads','documents'].includes(table))q=q.eq('project',filters.project);if(table==='documents')q=q.order('created_at',{ascending:false});else if(table!=='audit_logs')q=q.order('updated_at',{ascending:false,nullsFirst:false});const {data,error}=await q.limit(5000);if(error)throw error;return data||[];}
+async function withTimeout(promise,ms,label='operation'){let timer;try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>{const e=new Error(`${label} timed out after ${ms}ms`);e.code='UPSTREAM_TIMEOUT';reject(e);},ms);})]);}finally{clearTimeout(timer);}}
+async function dbRows(table,filters={}){let q=admin.from(table).select('*');if(filters.project&&String(filters.project).toUpperCase()!=='ALL'&&['inventory_units','clients','eoi_records','leads','documents'].includes(table))q=q.eq('project',filters.project);if(table==='documents')q=q.order('created_at',{ascending:false});else if(table!=='audit_logs')q=q.order('updated_at',{ascending:false,nullsFirst:false});const result=await withTimeout(q.limit(5000),5000,`Supabase ${table}`);const {data,error}=result||{};if(error)throw error;return data||[];}
 async function rows(table,filters={}){
   const kind={inventory_units:'inventory',clients:'clients',eoi_records:'eoi',leads:'leads'}[table];
-  const live=kind?await safeSheet(kind):null;const db=await dbRows(table,filters);
-  if(kind && !Array.isArray(live) && !db.length){
+  // Live Sheets are the primary operational source. Never block a live read on Postgres.
+  if(kind){
+    const live=await safeSheet(kind);
+    if(Array.isArray(live)){
+      const sheetRows=filters.project&&String(filters.project).toUpperCase()!=='ALL'?live.filter(x=>norm(x.project)===norm(filters.project)):live;
+      // Inventory is read-only/live: return immediately. This removes the extra Supabase round-trip that caused long cold-start waits.
+      if(table==='inventory_units')return sheetRows;
+      // CRM/EOI/Leads may contain local overrides. Merge them only if Supabase responds quickly; otherwise keep the live Sheet responsive.
+      let db=[];try{db=await dbRows(table,filters);}catch(e){console.warn(`Supabase merge skipped for ${table}:`,e.message);return sheetRows;}
+      const key=table==='clients'?(x=>`${norm(x.project)}|${norm(x.unit_code)}`):table==='leads'?(x=>String(x.row_number||x.id||'')):(x=>String(x.id||`${norm(x.project)}|${norm(x.unit_code)}|${norm(x.client_name)}|${x.eoi_date||''}`));
+      const map=new Map(sheetRows.map(x=>[key(x),x]));db.forEach(x=>map.set(key(x),x));return [...map.values()];
+    }
+  }
+  // Sheets unavailable: use Supabase as a bounded fallback instead of waiting indefinitely.
+  let db=[];try{db=await dbRows(table,filters);}catch(e){console.warn(`Supabase fallback failed for ${table}:`,e.message);}
+  if(kind && !db.length){
     const configured=sheetsEnabled();
     const err=new Error(configured
-      ? `Live ${kind} source could not be read. Check Google Sheet sharing, sheet name and Service Account permissions.`
+      ? `Live ${kind} source could not be read. Check Google Sheet sharing, tab name, Spreadsheet ID and Service Account permissions.`
       : `Live ${kind} source is not connected. Add GOOGLE_SERVICE_ACCOUNT_EMAIL and GOOGLE_PRIVATE_KEY in Vercel and share the required Google Sheets with that service account.`);
     err.status=503;err.code=configured?'DATA_SOURCE_FAILED':'DATA_SOURCE_NOT_CONFIGURED';throw err;
   }
-  if(!Array.isArray(live))return db;
-  let sheetRows=filters.project&&String(filters.project).toUpperCase()!=='ALL'?live.filter(x=>norm(x.project)===norm(filters.project)):live;
-  if(table==='inventory_units')return sheetRows.length?sheetRows:db;
-  const key=table==='inventory_units'?(x=>`${norm(x.project)}|${norm(x.unit_code)}`):table==='clients'?(x=>`${norm(x.project)}|${norm(x.unit_code)}`):table==='leads'?(x=>String(x.row_number||x.id||'')):(x=>String(x.id||`${norm(x.project)}|${norm(x.unit_code)}|${norm(x.client_name)}|${x.eoi_date||''}`));
-  const map=new Map(sheetRows.map(x=>[key(x),x]));db.forEach(x=>map.set(key(x),x));return [...map.values()];
+  return db;
 }
 function shapeUnit(r){return {...(r.raw_data||{}),id:r.id,project:r.project,Project:r.project,unitCode:r.unit_code,UnitCode:r.unit_code,'Unit Code':r.unit_code,status:r.status,Status:r.status,building:r.building,Building:r.building,floor:r.floor,Floor:r.floor,unitType:r.unit_type,'Unit Type':r.unit_type,area:n(r.area),Area:n(r.area),'In Door Area':n(r.area),price:n(r.price),Value:n(r.price),'Price After Discount':n(r.price)};}
 function shapeClient(r){return {...(r.raw_data||{}),id:r.id,project:r.project,Project:r.project,unitCode:r.unit_code,'Unit Code':r.unit_code,clientName:r.client_name,'Client Name English':r.client_name,clientPhone:r.mobile1,'Client Phone Number':r.mobile1,clientPhone2:r.mobile2,'Client Phone Number 2':r.mobile2,address:r.address,'Residence address':r.address,email:r.email,'E-mail':r.email,status:r.status,Status:r.status,salesName:r.sales_name,'Sales Name':r.sales_name,contractDate:r.contract_date,'Contract Date':r.contract_date,reservationDate:r.reservation_date,'Reservition Date':r.reservation_date,soldDate:r.sold_date,'Sold Date':r.sold_date,value:n(r.value),Value:n(r.value),'Price After Discount':n(r.value)};}
@@ -118,10 +129,11 @@ async function diagnostics(user=null){
 }
 
 async function handle(action,payload){
-  await schema();
+  // Schema creation is an explicit setup/diagnostics concern. Running DDL on every API request made Vercel cold starts extremely slow.
+  if(action==='initializeDatabase')return schema();
   if(action==='bootstrapStatus')return bootstrapStatus();
   if(action==='bootstrapAdmin')return bootstrapAdmin(payload.data||payload);
-  if(action==='getSystemInfo'){const bs=await bootstrapStatus();return{backendBuild:BUILD,version:'x1',platform:'Vercel + Supabase + Google Sheets',actions:ACTIONS,needsBootstrap:bs.needsBootstrap,setup:{googleSheets:sheetsEnabled(),openai:Boolean(process.env.OPENAI_API_KEY),gmail:gmailConfigured(),supabase:supabaseEnv,postgres:postgresConfigured()}};}
+  if(action==='getSystemInfo'){let needsBootstrap=false;try{needsBootstrap=(await profileCount())===0;}catch{}return{backendBuild:BUILD,version:'x1',platform:'Vercel + Supabase + Google Sheets',actions:ACTIONS,needsBootstrap,setup:{googleSheets:sheetsEnabled(),openai:Boolean(process.env.OPENAI_API_KEY),gmail:gmailConfigured(),supabase:supabaseEnv,postgres:postgresConfigured()}};}
   if(action==='refreshSession'){const refreshToken=String(payload.refreshToken||'');if(!refreshToken)throw Object.assign(new Error('REFRESH_TOKEN_REQUIRED'),{status:401});const {data,error}=await publicClient.auth.refreshSession({refresh_token:refreshToken});if(error||!data?.session)throw Object.assign(new Error('SESSION_EXPIRED'),{status:401});const profile=await profileFor(data.user.id);return{success:true,token:data.session.access_token,refreshToken:data.session.refresh_token,user:{id:data.user.id,email:data.user.email,name:profile?.full_name||profile?.username||data.user.email,username:profile?.username||'',role:profile?.role||'user'}};}
   if(action==='login'){const username=String(payload.username||'').trim();let email=username;if(!username.includes('@')){const {data}=await admin.from('profiles').select('email').ilike('username',username).maybeSingle();email=data?.email||'';}if(!email)return{success:false,message:'Invalid username or password'};const {data,error}=await publicClient.auth.signInWithPassword({email,password:String(payload.password||'')});if(error||!data?.session)return{success:false,message:'Invalid username or password'};const profile=await profileFor(data.user.id);if(profile?.is_active===false)return{success:false,message:'User is disabled'};return{success:true,token:data.session.access_token,refreshToken:data.session.refresh_token,user:{id:data.user.id,email:data.user.email,name:profile?.full_name||profile?.username||data.user.email,username:profile?.username||'',role:profile?.role||'user'}};}
   const user=await requireUser(payload.token);const filters=payload.filters||{};
