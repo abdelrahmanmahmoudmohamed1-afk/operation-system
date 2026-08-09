@@ -1,5 +1,5 @@
 /**
- * Operation System — Module Loader v5.9
+ * Operation System — Module Loader Enterprise X
  * Door-to-door route choreography synchronized with real module loading.
  *
  * Sequence:
@@ -14,6 +14,7 @@
 
 import MODULES from "../../config/modules.config.js";
 import Container from "./container.js";
+import SoundService from "../services/sound.service.js";
 
 class ModuleLoader {
     constructor(containerId = "page-content") {
@@ -160,6 +161,7 @@ class ModuleLoader {
                 exitPromise = (async () => {
                     // Door visibly opens before the worker moves.
                     setStage("stage-source-open", `Opening ${fromLabel}…`);
+                    SoundService.doorOpen();
                     await this.sleep(300);
                     if (!valid()) return;
 
@@ -169,6 +171,7 @@ class ModuleLoader {
 
                     // Worker has cleared the door; close it fully behind them.
                     setStage("stage-source-close", `Closing ${fromLabel} behind you…`);
+                    SoundService.doorClose();
                     await this.sleep(300);
                     if (!valid()) return;
 
@@ -186,6 +189,7 @@ class ModuleLoader {
 
                 bar?.classList.add("done");
                 setStage("stage-target-open", `${toLabel} is ready · opening the door…`);
+                SoundService.doorOpen();
                 await this.sleep(300);
                 if (!valid()) return;
 
@@ -194,6 +198,7 @@ class ModuleLoader {
                 if (!valid()) return;
 
                 setStage("stage-target-close", `Closing ${toLabel}…`);
+                SoundService.doorClose();
                 await this.sleep(300);
                 if (!valid()) return;
 

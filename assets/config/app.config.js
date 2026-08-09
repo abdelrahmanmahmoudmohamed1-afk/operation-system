@@ -1,6 +1,6 @@
 const APP_CONFIG = Object.freeze({
     name: "Operation System",
-    version: "5.9.0-ai-agent",
+    version: "Enterprise X 1.0.0",
     environment: "production",
 
     company: "Operation System",

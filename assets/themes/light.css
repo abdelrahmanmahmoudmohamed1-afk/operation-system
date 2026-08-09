@@ -14,3 +14,12 @@ select option,.premium-select option{background:var(--surface)!important;color:v
 .page-header p,.note,.muted,.k-title,label{color:var(--text-muted)!important;}
 .sidebar-link,.nav-link{color:var(--text-muted)!important;}
 .sidebar-link:hover,.nav-link:hover{color:var(--text)!important;background:rgba(255,255,255,.06)!important;}
+
+/* Enterprise X contrast guard */
+body,main,section,article,div,p,span,strong,h1,h2,h3,h4,h5,h6{border-color:var(--line)!important}
+input,textarea,select,.premium-input,.premium-select,.filter-field input,.filter-field select,.copilot-composer textarea,.command-palette input{background:var(--surface-2)!important;color:var(--text)!important;border-color:var(--line)!important;caret-color:var(--accent)!important}
+input::placeholder,textarea::placeholder,.premium-input::placeholder,.copilot-composer textarea::placeholder,.command-palette input::placeholder{color:var(--text-muted)!important;opacity:.86!important}
+.modal-box,.ops-copilot,.command-palette,.enterprise-quick-create,.copilot-message.assistant>div,.copilot-message.user>div{background:var(--surface)!important;color:var(--text)!important;border-color:var(--line)!important}
+.ops-copilot p,.ops-copilot span,.copilot-footnote,.copilot-message p,.theme-option small,.settings-input-row span,.settings-panel-pro p{color:var(--text-muted)!important}
+.ops-copilot strong,.theme-option strong,.settings-panel-pro strong,.document-card h3,.data-table td,.integrity-item strong{color:var(--text)!important}
+.theme-option{background:var(--surface)!important;color:var(--text)!important;border-color:var(--line)!important}

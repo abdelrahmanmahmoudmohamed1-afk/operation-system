@@ -215,10 +215,10 @@ class OpsCopilotService {
       const context={project:scope.project||'ALL',units:{total:scope.units.length,available:scope.units.filter(x=>statusNorm(x.status)==='available').length,reserved:scope.units.filter(x=>statusNorm(x.status)==='reserved').length,contracted:scope.units.filter(x=>statusNorm(x.status)==='contracted').length,sold:scope.units.filter(x=>statusNorm(x.status)==='sold').length,value:sum(scope.units,'price')},clients:{total:scope.clients.length,missingMobile:scope.clients.filter(x=>!x.mobile1).length},eoi:this.eoiSummary(scope.eoi)};
       const res=await ApiService.post(ENDPOINTS.AI_CHAT,{token:AuthManager.getToken(),data:{question,context,history:this.context()}},{cacheTTL:0});
       const data=res?.data?.data||res?.data;
-      if(res.ok&&data?.enabled&&data.answer)return{
-        title:'Operation AI',answer:data.answer,expert:data.expert||'Operation AI',
+      if(res.ok&&data?.answer)return{
+        title:data.enabled===false?'Operation AI · Setup':'Operation AI',answer:data.answer,expert:data.expert||'Operation AI',
         actions:Array.isArray(data.actions)?data.actions:[],
-        suggestions:data.suggestedActions||[],type:'conversation',toolTrace:data.toolTrace||[]
+        suggestions:data.suggestedActions||[],type:data.enabled===false?'setup':'conversation',toolTrace:data.toolTrace||[],enabled:data.enabled!==false
       };
     }catch(e){console.warn('AI brain fallback',e);}
     return null;

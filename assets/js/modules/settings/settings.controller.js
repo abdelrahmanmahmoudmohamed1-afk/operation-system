@@ -67,22 +67,65 @@ class SettingsController extends Module {
 
         document.getElementById("settings-run-diagnostics")?.addEventListener("click", async () => {
             const out = document.getElementById("settings-diagnostics-result");
-            if (out) out.innerHTML = `<div class="state-box state-loading"><span class="mini-spinner"></span><span>Checking frontend/backend compatibility…</span></div>`;
+            const setPill = (id, text, ok = null) => {
+                const el = document.getElementById(id); if (!el) return;
+                el.textContent = text;
+                el.classList.toggle("audit-success", ok === true);
+                el.classList.toggle("audit-fail", ok === false);
+            };
+            if (out) out.innerHTML = `<div class="state-box state-loading" style="grid-column:1/-1"><span class="mini-spinner"></span><span>Running live checks across Vercel, Supabase, Google Sheets, Storage, OpenAI and Gmail…</span></div>`;
             try {
                 const d = await SettingsService.getSystemDiagnostics();
                 const info = d.info || {};
-                const required = ["createSystemUser","uploadUnitFloorPlan","uploadClientContract","getInventoryData","getClients","getEOIData"];
-                const actions = Array.isArray(info.actions) ? info.actions : [];
-                const missing = actions.length ? required.filter(x => !actions.includes(x)) : required;
+                const supabaseOk = !!info.supabase?.configured;
+                const pgOk = !!info.postgres?.configured && info.postgres?.schema !== false;
+                const sheetsOk = !!info.googleSheets?.configured;
+                const sheetsLive = Number(info.googleSheets?.inventoryRows || 0) + Number(info.googleSheets?.clientRows || 0) + Number(info.googleSheets?.eoiRows || 0) + Number(info.googleSheets?.leadRows || 0);
+                const storageOk = !!info.storage?.ok;
+                const openAiOk = !!info.openai?.configured;
+                const gmailConfigured = !!info.gmail?.configured;
+                const gmailConnected = !!info.gmail?.connected;
+                const counts = info.databaseCounts || {};
+                setPill("openai-status-pill", openAiOk ? (info.openai?.model || "Configured") : "Key missing", openAiOk);
+                setPill("gmail-status-pill", gmailConnected ? "Connected" : (gmailConfigured ? "Needs connect" : "OAuth missing"), gmailConnected ? true : false);
+                const gmailCopy = document.getElementById("gmail-status-copy");
+                if (gmailCopy) gmailCopy.textContent = gmailConnected ? `Connected as ${info.gmail?.accountEmail || "your Google account"}.` : (gmailConfigured ? "OAuth is configured. Connect the Gmail account that should send messages." : "Add Google Gmail OAuth credentials in Vercel first.");
+                const status = (ok, yes="Connected", no="Missing") => `<em class="${ok ? "audit-success" : "audit-fail"}">${ok ? yes : no}</em>`;
                 if (out) out.innerHTML = `
-                    <div class="integrity-item"><span>Frontend</span><strong>v5.7</strong><em class="audit-success">Ready</em></div>
-                    <div class="integrity-item"><span>Backend</span><strong>${this.escapeHtml(info.backendBuild || info.version || "Unavailable")}</strong><em class="${d.ok ? "audit-success" : "audit-fail"}">${d.ok ? "Connected" : "Failed"}</em></div>
-                    <div class="integrity-item"><span>API actions</span><strong>${actions.length || 0}</strong><em class="${missing.length ? "audit-fail" : "audit-success"}">${missing.length ? `Missing ${missing.length}` : "Matched"}</em></div>
-                    <div class="integrity-item"><span>Latency</span><strong>${d.latency} ms</strong><em>${d.latency < 1500 ? "Good" : "Slow"}</em></div>
-                    ${missing.length ? `<div class="state-box state-error" style="grid-column:1/-1"><strong>Backend mismatch</strong><span>Missing: ${missing.map(x=>this.escapeHtml(x)).join(", ")}. Deploy the included Operation_System_Backend v5.7 as one new version.</span></div>` : ""}`;
+                    <div class="integrity-item"><span>Frontend</span><strong>${this.escapeHtml(info.runtime?.frontendBuild || "Enterprise X")}</strong>${status(true,"Ready")}</div>
+                    <div class="integrity-item"><span>Vercel API</span><strong>${this.escapeHtml(info.runtime?.build || "Enterprise X")}</strong>${status(!!d.ok,"Connected","Failed")}</div>
+                    <div class="integrity-item"><span>Supabase</span><strong>${pgOk ? "Postgres + Auth" : (supabaseOk ? "API only" : "Not configured")}</strong>${status(supabaseOk && pgOk,"Ready")}</div>
+                    <div class="integrity-item"><span>Google Sheets</span><strong>${sheetsOk ? `${sheetsLive} live row(s)` : "Service account missing"}</strong>${status(sheetsOk, sheetsLive ? "Reading live data" : "Configured · no rows")}</div>
+                    <div class="integrity-item"><span>Storage</span><strong>${this.escapeHtml(info.storage?.bucket || "operation-documents")}</strong>${status(storageOk,"Ready",info.storage?.message || "Unavailable")}</div>
+                    <div class="integrity-item"><span>OpenAI</span><strong>${this.escapeHtml(info.openai?.model || "Not configured")}</strong>${status(openAiOk,"Ready","Create a new API key")}</div>
+                    <div class="integrity-item"><span>Gmail</span><strong>${gmailConnected ? this.escapeHtml(info.gmail?.accountEmail || "Connected") : (gmailConfigured ? "OAuth ready" : "OAuth missing")}</strong>${status(gmailConnected,"Connected",gmailConfigured ? "Connect account" : "Not configured")}</div>
+                    <div class="integrity-item"><span>Latency</span><strong>${Number(info.runtime?.latencyMs || d.latency || 0)} ms</strong><em>${Number(info.runtime?.latencyMs || d.latency || 0) < 1800 ? "Good" : "Slow"}</em></div>
+                    <div class="integrity-database-summary" style="grid-column:1/-1"><strong>Central records</strong><span>Users ${Number(counts.profiles || 0)} · Documents ${Number(counts.documents || 0)} · Audit ${Number(counts.audit_logs || 0)} · Reminders ${Number(counts.reminders || 0)}</span></div>
+                    ${!sheetsOk ? `<div class="state-box state-warning" style="grid-column:1/-1"><strong>Operational data is not connected yet</strong><span>Add GOOGLE_SERVICE_ACCOUNT_EMAIL and GOOGLE_PRIVATE_KEY in Vercel, then share the Layana / Mersea / EOI / Leads Google Sheets with that service-account email. Until then the system will show Data Source Unavailable instead of pretending zero is real data.</span></div>` : ""}
+                    ${!openAiOk ? `<div class="state-box state-warning" style="grid-column:1/-1"><strong>Operation AI brain is waiting</strong><span>Create a fresh OpenAI API key (the previously exposed key must stay revoked) and save it in Vercel as OPENAI_API_KEY, then redeploy.</span></div>` : ""}`;
             } catch (error) {
-                if (out) out.innerHTML = `<div class="state-box state-error"><strong>Diagnostics failed</strong><span>${this.escapeHtml(error.message)}</span></div>`;
+                if (out) out.innerHTML = `<div class="state-box state-error" style="grid-column:1/-1"><strong>Diagnostics failed</strong><span>${this.escapeHtml(error.message)}</span></div>`;
             }
+        });
+
+        document.getElementById("settings-check-gmail")?.addEventListener("click", async () => {
+            try {
+                const data = await SettingsService.getGmailStatus();
+                const pill = document.getElementById("gmail-status-pill");
+                const copy = document.getElementById("gmail-status-copy");
+                if (pill) { pill.textContent = data.connected ? "Connected" : (data.configured ? "Needs connect" : "OAuth missing"); pill.classList.toggle("audit-success", !!data.connected); pill.classList.toggle("audit-fail", !data.connected); }
+                if (copy) copy.textContent = data.connected ? `Connected as ${data.accountEmail || "your Google account"}.` : (data.configured ? "OAuth is ready. Connect your Gmail account once." : "Gmail OAuth credentials are not configured in Vercel yet.");
+                this.notify()[data.connected ? "success" : "warning"](data.connected ? "Gmail is connected" : "Gmail is not connected yet");
+            } catch (error) { this.notify().error(error.message || "Could not check Gmail"); }
+        });
+
+        document.getElementById("settings-connect-gmail")?.addEventListener("click", async () => {
+            try {
+                const url = await SettingsService.getGmailConnectUrl();
+                if (!url) throw new Error("Gmail OAuth URL is unavailable. Add GOOGLE_GMAIL_CLIENT_ID and GOOGLE_GMAIL_CLIENT_SECRET in Vercel first.");
+                window.open(url, "gmail-connect", "noopener,noreferrer,width=680,height=760");
+                this.notify().info("Finish Google authorization in the new window, then use Check Gmail.");
+            } catch (error) { this.notify().error(error.message || "Could not start Gmail connection"); }
         });
         document.getElementById("settings-save-preferences")?.addEventListener("click", () => this.savePrefs());
         document.getElementById("settings-export-audit")?.addEventListener("click", () => this.exportAudit());
@@ -117,7 +160,7 @@ class SettingsController extends Module {
         set("settings-report-source", prefs.reportSource || "auto");
         set("settings-export-format", prefs.exportFormat || "csv");
         set("settings-row-limit", prefs.rowLimit || 500);
-        ["compactMode", "animations", "showDetails", "autoSaveReports", "showReportKpis", "exportWithFilters", "confirmDelete", "successToasts", "errorToasts", "saveHistory"].forEach((key) => {
+        ["compactMode", "animations", "soundEffects", "showDetails", "autoSaveReports", "showReportKpis", "exportWithFilters", "confirmDelete", "successToasts", "errorToasts", "saveHistory"].forEach((key) => {
             const id = "settings-" + key.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
             if (prefs[key] !== undefined) set(id, prefs[key]);
         });
@@ -133,6 +176,7 @@ class SettingsController extends Module {
             rowLimit: Number(this.val("settings-row-limit", 500)) || 500,
             compactMode: this.val("settings-compact-mode", false),
             animations: this.val("settings-animations", true),
+            soundEffects: this.val("settings-sound-effects", true),
             showDetails: this.val("settings-show-details", true),
             autoSaveReports: this.val("settings-autosave-reports", true),
             showReportKpis: this.val("settings-show-report-kpis", true),
@@ -148,6 +192,7 @@ class SettingsController extends Module {
         document.documentElement.dir = prefs.language === "ar" ? "rtl" : "ltr";
         document.body.classList.toggle("compact-density", !!prefs.compactMode);
         document.body.classList.toggle("reduced-motion-ui", prefs.animations === false);
+        localStorage.setItem("operation_sound_enabled", prefs.soundEffects === false ? "0" : "1");
         AuditService.record("Preferences saved", "Settings", prefs);
         this.notify().success("Preferences saved");
         setTimeout(() => location.reload(), 450);

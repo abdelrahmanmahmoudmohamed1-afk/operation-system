@@ -10,7 +10,7 @@ class ApiService {
         this.retry = API_CONFIG.retry || { enabled: false, maxAttempts: 1, delay: 0 };
         this.inFlight = new Map();
         this.memory = new Map();
-        this.cachePrefix = "operation_api_enterprise_v57:";
+        this.cachePrefix = "operation_api_enterprise_x1:";
         this.backendInfo = null;
         this.backendActions = null;
         this.readPolicies = new Map([
@@ -35,7 +35,7 @@ class ApiService {
             ["getUnitFloorPlan", 5 * 60 * 1000],
             ["getUnitFloorPlanCoverage", 2 * 60 * 1000]
         ]);
-        this.mutations = new Set(["login", "logout", "changeOwnPassword", "saveClientRegistration", "uploadClientContract", "saveEOI", "refreshAvailableLayanaUnits", "bulkUpdateLeadStatus", "importLeads", "createSystemUser", "uploadUnitFloorPlan"]);
+        this.mutations = new Set(["bootstrapAdmin", "login", "logout", "changeOwnPassword", "saveClientRegistration", "uploadClientContract", "saveEOI", "refreshAvailableLayanaUnits", "bulkUpdateLeadStatus", "importLeads", "createSystemUser", "uploadUnitFloorPlan", "sendGmail", "completeReminder"]);
     }
 
     setBackendInfo(info = null) {
@@ -49,7 +49,7 @@ class ApiService {
 
     capabilityError(action) {
         const current = this.backendInfo?.backendBuild || this.backendInfo?.version || "unknown";
-        return this.failure(409, `Backend ${current} does not support ${action}. Deploy the matching Operation_System_Backend v5.9 files as one new Apps Script version.`, { code: "BACKEND_VERSION_MISMATCH", action, backend: this.backendInfo });
+        return this.failure(409, `Backend ${current} does not support ${action}. Deploy the matching Vercel backend and Supabase schema for this frontend build.`, { code: "BACKEND_VERSION_MISMATCH", action, backend: this.backendInfo });
     }
 
     post(action, payload = {}, options = {}) {
@@ -68,7 +68,7 @@ class ApiService {
         }
 
         const action = options.action || options.body?.action || options.params?.action || "request";
-        if (action !== "getSystemInfo" && !this.supports(action)) return this.capabilityError(action);
+        if (!["getSystemInfo","bootstrapStatus","bootstrapAdmin","login","refreshSession"].includes(action) && !this.supports(action)) return this.capabilityError(action);
         this.applyGlobalProject(options, action);
         const cacheTTL = options.cacheTTL ?? this.readPolicies.get(action) ?? 0;
         const key = this.makeKey(options);
@@ -80,7 +80,16 @@ class ApiService {
 
         if (this.inFlight.has(key)) return this.inFlight.get(key);
 
-        const promise = this.execute(options).then((result) => {
+        const promise = this.execute(options).then(async (result) => {
+            if (!result.ok && result.status === 401 && action !== "login" && action !== "refreshSession" && !options.__refreshed) {
+                const refreshed = await this.refreshAuthToken();
+                if (refreshed) {
+                    const retryOptions = { ...options, __refreshed: true };
+                    if (retryOptions.body?.token) retryOptions.body = { ...retryOptions.body, token: refreshed };
+                    if (retryOptions.params?.token) retryOptions.params = { ...retryOptions.params, token: refreshed };
+                    result = await this.execute(retryOptions);
+                }
+            }
             if (result.ok && cacheTTL > 0) this.writeCache(key, result, cacheTTL);
             if (result.ok && this.mutations.has(action)) this.clearReadCache();
             return result;
@@ -117,9 +126,10 @@ class ApiService {
             const semanticStatus = Number(data?.status) || response.status;
             const semanticOk = response.ok && data?.ok !== false;
             if (!semanticOk) {
-                if (/Unknown action:/i.test(String(data?.message || ""))) {
-                    const missing = String(data.message).split(":").slice(1).join(":").trim() || action;
-                    return this.failure(409, `Backend mismatch: ${missing} is not available in the deployed API. Deploy the matching v5.9 backend package.`, { ...data, code: "BACKEND_VERSION_MISMATCH", action: missing });
+                if (/Unsupported action:/i.test(String(data?.message || ""))) {
+                    const requestedAction = options?.body?.action || options?.params?.action || 'requested operation';
+                    const missing = String(data.message).split(":").slice(1).join(":").trim() || requestedAction;
+                    return this.failure(409, `Backend version mismatch: ${missing} is not available in the deployed API. Redeploy the matching Enterprise X backend.`, { ...data, code: "BACKEND_VERSION_MISMATCH", action: missing });
                 }
                 if (semanticStatus === 401 || data?.message === "AUTH_REQUIRED" || data?.message === "SESSION_EXPIRED") {
                     window.dispatchEvent(new CustomEvent("operation:session-expired", { detail: data }));
@@ -196,6 +206,27 @@ class ApiService {
         try {
             Object.keys(sessionStorage).filter(k => k.startsWith(this.cachePrefix)).forEach(k => sessionStorage.removeItem(k));
         } catch (_) {}
+    }
+
+
+    async refreshAuthToken() {
+        const refreshToken = sessionStorage.getItem("auth_refresh_token");
+        if (!refreshToken || !this.baseURL) return null;
+        try {
+            const response = await fetch(this.baseURL, {
+                method: "POST",
+                headers: this.headers,
+                body: JSON.stringify({ action: "refreshSession", refreshToken }),
+                cache: "no-store"
+            });
+            const data = await this.parseResponse(response);
+            const session = data?.data;
+            if (!response.ok || data?.ok === false || !session?.token) return null;
+            sessionStorage.setItem("auth_token", session.token);
+            if (session.refreshToken) sessionStorage.setItem("auth_refresh_token", session.refreshToken);
+            if (session.user) sessionStorage.setItem("auth_user", JSON.stringify(session.user));
+            return session.token;
+        } catch (_) { return null; }
     }
 
     async parseResponse(response) {

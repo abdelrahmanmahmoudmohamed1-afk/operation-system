@@ -1,11 +1,14 @@
 /**
- * أسماء الـ actions اللي الباك إند (Apps Script unified backend)
+ * أسماء الـ actions اللي Vercel unified API
  * بيفهمها. أي service جديد المفروض يستخدم القيم من هنا بدل ما
  * يكتب اسم الـ action كنص حر، عشان لو الباك إند اتغير اسم
  * action فيه، نعدّل هنا بس.
  */
 const ENDPOINTS = Object.freeze({
+    BOOTSTRAP_STATUS: "bootstrapStatus",
+    BOOTSTRAP_ADMIN: "bootstrapAdmin",
     LOGIN: "login",
+    REFRESH_SESSION: "refreshSession",
     LOGOUT: "logout",
     CHANGE_PASSWORD: "changeOwnPassword",
     SYSTEM_INFO: "getSystemInfo",
@@ -45,7 +48,13 @@ const ENDPOINTS = Object.freeze({
     USERS_DATA: "getUsersData",
     CREATE_SYSTEM_USER: "createSystemUser",
     AUDIT_HISTORY: "getAuditHistory",
-    AI_CHAT: "operationAiChat"
+    RUN_DIAGNOSTICS: "runDiagnostics",
+    AI_CHAT: "operationAiChat",
+    GMAIL_STATUS: "getGmailStatus",
+    GMAIL_CONNECT_URL: "getGmailConnectUrl",
+    SEND_GMAIL: "sendGmail",
+    REMINDERS: "getReminders",
+    COMPLETE_REMINDER: "completeReminder"
 });
 
 export default ENDPOINTS;

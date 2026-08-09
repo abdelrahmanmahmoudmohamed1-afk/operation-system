@@ -4279,3 +4279,49 @@ body{overflow-x:hidden!important;background:
 @keyframes v58ArmB{from{transform:rotate(13deg)}to{transform:rotate(-13deg)}}
 @keyframes v58HallProgress{0%{transform:translateX(-120%)}100%{transform:translateX(430%)}}
 @media(prefers-reduced-motion:reduce){#route-loader .door,#route-loader .route-worker,#route-loader .worker-leg,#route-loader .worker-arm,#route-loader .hall-progress i{animation:none!important;transition:none!important}}
+
+/* ============================================================
+   Enterprise X — final UI reliability overrides
+   ============================================================ */
+.theme-options-grid{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))!important;align-items:stretch!important}
+.theme-option{min-height:226px!important;height:auto!important;padding:14px!important;display:grid!important;grid-template-rows:112px minmax(22px,auto) minmax(38px,auto)!important;gap:9px!important;align-content:start!important;justify-content:stretch!important;overflow:visible!important}
+.theme-option .theme-swatch{position:relative!important;inset:auto!important;width:100%!important;height:112px!important;border-radius:16px!important;margin:0!important}
+.theme-option strong{margin:0!important;display:block!important;position:relative!important;z-index:2!important;font-size:14px!important;line-height:1.25!important;color:var(--text,#eaf0f6)!important;white-space:normal!important;overflow:visible!important}
+.theme-option small{margin:0!important;display:block!important;position:relative!important;z-index:2!important;font-size:11px!important;line-height:1.4!important;color:var(--text-muted,#98a5b5)!important;white-space:normal!important;overflow:visible!important}
+.settings-theme-card,.settings-panel-pro,.settings-profile-card{overflow:visible!important}
+.settings-input-row label,.premium-form-grid label,.filter-field label,.field-full label,.form-grid label{color:var(--text-muted,#9aa6b4)!important}
+input,textarea,select,.premium-input,.premium-select,.filter-field input,.filter-field select,.copilot-composer textarea{color:var(--text,#edf3f8)!important;background:var(--surface-2,#172235)!important;border-color:var(--line,rgba(255,255,255,.12))!important;caret-color:var(--accent,#d4af37)!important}
+input::placeholder,textarea::placeholder,.premium-input::placeholder,.copilot-composer textarea::placeholder{color:var(--text-muted,#8e9bad)!important;opacity:.82!important}
+select option,.premium-select option{color:var(--text,#edf3f8)!important;background:var(--surface,#111b2a)!important}
+.modal-box,.ops-copilot,.command-palette,.enterprise-quick-create{color:var(--text,#edf3f8)!important;background:var(--surface,#111b2a)!important;border-color:var(--line,rgba(255,255,255,.12))!important}
+.integrity-database-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;border:1px solid var(--line,rgba(255,255,255,.1));border-radius:14px;background:var(--surface-2,rgba(255,255,255,.03));color:var(--text,#edf3f8)}
+.integrity-database-summary span{color:var(--text-muted,#9aa6b4);font-size:12px}
+.first-admin-link{margin-top:12px;width:100%;min-height:40px;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:12px;background:var(--surface-2,rgba(255,255,255,.04));color:var(--text,#edf3f8);font-weight:800;cursor:pointer}
+.bootstrap-admin-panel{margin-top:14px;padding:14px;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:16px;background:var(--surface,rgba(8,15,25,.88));color:var(--text,#edf3f8)}
+.bootstrap-admin-panel.hidden{display:none!important}.bootstrap-admin-panel h3{margin:0 0 5px}.bootstrap-admin-panel p{margin:0 0 12px;color:var(--text-muted,#9aa6b4);font-size:12px}.bootstrap-admin-panel .bootstrap-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.bootstrap-admin-panel .bootstrap-grid .field-full{grid-column:1/-1}
+@media(max-width:680px){.bootstrap-admin-panel .bootstrap-grid{grid-template-columns:1fr}.bootstrap-admin-panel .bootstrap-grid .field-full{grid-column:auto}}
+
+/* Door scene: both doors always return to closed state. The target door is
+   never approached until real controller/data loading has completed. */
+#route-loader{background:var(--bg,#0d1420)}
+#route-loader .room-from .door,#route-loader .room-to .door{transform-origin:left center!important;backface-visibility:hidden!important;will-change:transform}
+#route-loader.stage-source-open .room-from .door,#route-loader.stage-source-exit .room-from .door{transform:translateX(-50%) perspective(760px) rotateY(-72deg)!important}
+#route-loader.stage-source-close .room-from .door,#route-loader.stage-hallway .room-from .door,#route-loader.stage-target-open .room-from .door,#route-loader.stage-target-enter .room-from .door,#route-loader.stage-target-close .room-from .door,#route-loader.stage-done .room-from .door{transform:translateX(-50%) perspective(760px) rotateY(0deg)!important}
+#route-loader.stage-hallway .room-to .door{transform:translateX(-50%) perspective(760px) rotateY(0deg)!important}
+#route-loader.stage-target-open .room-to .door,#route-loader.stage-target-enter .room-to .door{transform:translateX(-50%) perspective(760px) rotateY(72deg)!important}
+#route-loader.stage-target-close .room-to .door,#route-loader.stage-done .room-to .door{transform:translateX(-50%) perspective(760px) rotateY(0deg)!important}
+#route-loader.stage-source-close .route-worker{left:43%!important}
+#route-loader.stage-hallway .route-worker{animation:enterpriseXHallWalk 1.05s linear infinite!important}
+#route-loader.stage-target-open .route-worker{left:62%!important}
+#route-loader.stage-target-enter .route-worker{left:81%!important;opacity:.92!important}
+#route-loader.stage-target-close .route-worker,#route-loader.stage-done .route-worker{left:83%!important;opacity:0!important}
+@keyframes enterpriseXHallWalk{0%{left:43%;transform:translateY(0)}25%{left:49%;transform:translateY(-3px)}50%{left:55%;transform:translateY(0)}75%{left:49%;transform:translateY(-3px)}100%{left:43%;transform:translateY(0)}}
+
+@media print{
+  *,*::before,*::after{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  html,body,#app,.app-shell,.page-content,.dashboard-page,.module-page{background:var(--bg,#fff)!important;color:var(--text,#111)!important}
+  .card,.kpi-card,.table-wrap,.filter-panel,.report-section{background:var(--surface,#fff)!important;color:var(--text,#111)!important;border-color:var(--line,#ddd)!important;box-shadow:none!important}
+  th{background:var(--surface-2,#f4f4f4)!important;color:var(--text,#111)!important}td{color:var(--text,#111)!important}
+  .sidebar,.premium-topbar,#route-loader,#bootLoader,.page-header-actions,.no-print{display:none!important}
+  .page-content{overflow:visible!important;height:auto!important}.table-wrap{overflow:visible!important}.data-table{page-break-inside:auto!important}.data-table tr{page-break-inside:avoid!important}
+}

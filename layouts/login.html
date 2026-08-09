@@ -102,6 +102,20 @@
                 </button>
             </form>
 
+
+            <button type="button" class="first-admin-link hidden" id="first-admin-open">First-time setup · Create Admin</button>
+            <div class="bootstrap-admin-panel hidden" id="bootstrap-admin-panel">
+                <div class="bootstrap-head"><strong>Initialize Operation System</strong><span>Only shown while no admin account exists.</span></div>
+                <form id="bootstrap-admin-form" class="bootstrap-form">
+                    <input id="bootstrap-name" class="premium-input" placeholder="Full name" required>
+                    <input id="bootstrap-username" class="premium-input" placeholder="Admin username" required>
+                    <input id="bootstrap-email" class="premium-input" type="email" placeholder="Admin email" required>
+                    <input id="bootstrap-password" class="premium-input" type="password" minlength="10" placeholder="Password · minimum 10 characters" required>
+                    <button class="btn btn-primary" type="submit">Create first Admin</button>
+                </form>
+                <p class="login-error hidden" id="bootstrap-error"></p>
+            </div>
+
             <div class="login-divider"><span>Secure access</span></div>
             <p class="login-footer-note">© 2026 Operation System. All rights reserved.</p>
         </section>

@@ -21,11 +21,22 @@ class SettingsModuleService {
         const api = Container.get("api");
         const token = Container.get("authManager").getToken();
         const started = performance.now();
-        const res = await api.post("getSystemInfo", { token }, { forceRefresh: true, cacheTTL: 0 });
+        const res = await api.post("runDiagnostics", { token }, { forceRefresh: true, cacheTTL: 0 });
         const latency = Math.round(performance.now() - started);
         const info = res?.data?.data || null;
-        if (res.ok && info) api.setBackendInfo?.(info);
         return { ok: !!res.ok, latency, info, message: res.message || res?.data?.message || "" };
+    }
+
+    async getGmailStatus() {
+        const api=Container.get("api"), token=Container.get("authManager").getToken();
+        const res=await api.post("getGmailStatus",{token},{forceRefresh:true,cacheTTL:0});
+        if(!res.ok) throw new Error(res.message); return res.data?.data || {};
+    }
+
+    async getGmailConnectUrl() {
+        const api=Container.get("api"), token=Container.get("authManager").getToken();
+        const res=await api.post("getGmailConnectUrl",{token},{forceRefresh:true,cacheTTL:0});
+        if(!res.ok) throw new Error(res.message); return res.data?.data?.url || "";
     }
 
 }

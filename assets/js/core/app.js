@@ -26,6 +26,7 @@ import Container from "./container.js";
 
 import ServiceProvider from "../providers/service-provider.js";
 import AuthService from "../services/auth.service.js";
+import SoundService from "../services/sound.service.js";
 
 class App {
     constructor() {
@@ -90,6 +91,39 @@ class App {
             const submitLabel = submitBtn?.querySelector(".login-submit-label");
 
             if (!form || !errorBox || !submitBtn || !passwordInput) throw new Error("Login form is incomplete");
+
+            // First-time production bootstrap. This link is only shown while the central
+            // Supabase auth/profile store has no users, preventing dead-end deployments.
+            try {
+                const api = Container.get("api");
+                const bootstrap = await api.post("bootstrapStatus", {}, { forceRefresh: true, cacheTTL: 0 });
+                const state = bootstrap?.data?.data;
+                const openBtn = document.getElementById("first-admin-open");
+                const panel = document.getElementById("bootstrap-admin-panel");
+                if (state?.needsBootstrap && openBtn && panel) {
+                    openBtn.classList.remove("hidden");
+                    openBtn.addEventListener("click", () => panel.classList.toggle("hidden"));
+                    document.getElementById("bootstrap-admin-form")?.addEventListener("submit", async (e) => {
+                        e.preventDefault();
+                        const err = document.getElementById("bootstrap-error");
+                        const btn = e.currentTarget.querySelector("button[type='submit']");
+                        const data = {
+                            name: document.getElementById("bootstrap-name")?.value.trim(),
+                            username: document.getElementById("bootstrap-username")?.value.trim(),
+                            email: document.getElementById("bootstrap-email")?.value.trim(),
+                            password: document.getElementById("bootstrap-password")?.value
+                        };
+                        btn.disabled = true; err?.classList.add("hidden");
+                        const r = await api.post("bootstrapAdmin", { data }, { forceRefresh: true, cacheTTL: 0 });
+                        btn.disabled = false;
+                        if (!r.ok) { if (err) { err.textContent = r.message || "Admin setup failed"; err.classList.remove("hidden"); } return; }
+                        panel.classList.add("hidden"); openBtn.classList.add("hidden");
+                        document.getElementById("login-username").value = data.username;
+                        document.getElementById("login-password").value = data.password;
+                        Container.get("notification")?.success?.("First Admin created. You can sign in now.");
+                    });
+                }
+            } catch (bootstrapError) { console.warn("Bootstrap status unavailable", bootstrapError); }
 
             if (passwordToggle) {
                 passwordToggle.addEventListener("click", () => {
@@ -283,10 +317,10 @@ class App {
                 sessionStorage.setItem("operation_backend_info", JSON.stringify(info));
                 const required = ["createSystemUser","uploadUnitFloorPlan","uploadClientContract","getInventoryData","getClients","getEOIData","operationAiChat"];
                 const missing = Array.isArray(info.actions) ? required.filter(x => !info.actions.includes(x)) : [];
-                if (missing.length) Container.get("notification")?.warning(`Backend ${info.backendBuild || info.version || ""} is missing: ${missing.join(", ")}. Deploy the included v5.9 backend before using those actions.`);
+                if (missing.length) Container.get("notification")?.warning(`Backend ${info.backendBuild || info.version || ""} is missing: ${missing.join(", ")}. Deploy the matching Enterprise X Vercel backend before using those actions.`);
                 return;
             }
-            Container.get("notification")?.warning("Backend health check failed. Live write actions are disabled until the matching v5.9 backend is deployed.");
+            Container.get("notification")?.warning("Backend health check failed. Live write actions are disabled until the matching Enterprise X backend is deployed.");
         } catch (_) {
             // Never block the shell. Individual requests keep readable errors.
         }
@@ -539,7 +573,12 @@ class App {
         overlay.querySelector(".action-story")?.setAttribute("data-action-kind", inferred);
         const strong = overlay.querySelector(".action-story-copy strong");
         if (strong) strong.textContent = message;
+        const wasHidden = overlay.classList.contains("hidden");
         overlay.classList.toggle("hidden", !active);
+        if (active && wasHidden) {
+            if (inferred === "upload") SoundService.upload();
+            else if (inferred === "user" || inferred === "save" || inferred === "payment") SoundService.tone(310,.08,'triangle',.14);
+        } else if (!active && !wasHidden) SoundService.success();
     }
 
     inferBusyKind(message = "") {
@@ -599,12 +638,24 @@ class App {
             updateBadge();
             try {
                 if ("Notification" in window && Notification.permission === "granted") new Notification("Operation System Reminder", { body: item.title, icon: "./assets/images/favicon.ico" });
-                const AC = window.AudioContext || window.webkitAudioContext; if (AC) { const ctx=new AC(); const osc=ctx.createOscillator(), gain=ctx.createGain(); osc.frequency.value=880; gain.gain.value=.08; osc.connect(gain); gain.connect(ctx.destination); osc.start(); setTimeout(()=>{osc.stop();ctx.close();},650); }
+                SoundService.notification();
             } catch {}
             Container.get("notification")?.info(`Reminder: ${item.title}`);
         };
         const checkReminders = () => { const now=Date.now(); store.getReminders().filter(x=>!x.fired && x.dueAt && new Date(x.dueAt).getTime()<=now).forEach(fireReminder); };
-        if (!this.reminderTimer) { this.reminderTimer=setInterval(checkReminders,10000); checkReminders(); }
+        const syncRemoteReminders = async () => {
+            try {
+                const api=Container.get('api'), token=Container.get('authManager').getToken();
+                if(!token)return;
+                const res=await api.post('getReminders',{token},{cacheTTL:0,forceRefresh:true});
+                const rows=res?.data?.data||[];
+                if(Array.isArray(rows)) rows.filter(x=>!x.completed).forEach(x=>{
+                    const exists=store.getReminders().some(r=>String(r.id)===String(x.id));
+                    if(!exists)store.saveReminder({id:x.id,title:x.title,dueAt:x.due_at,source:'server'});
+                });
+            } catch (_) {}
+        };
+        if (!this.reminderTimer) { this.reminderTimer=setInterval(checkReminders,10000); syncRemoteReminders().finally(checkReminders); }
 
         const openNotifications = () => {
             const rows = store.getNotifications();
@@ -688,6 +739,35 @@ class App {
                     const store=Container.get('enterpriseStore'); store.saveReminder(payload);
                     if('Notification' in window && Notification.permission==='default') { try{ await Notification.requestPermission(); }catch{} }
                     button.disabled=true; button.textContent='✓ Reminder active'; Container.get('notification')?.success('Reminder scheduled'); return;
+                }
+                if(kind==='send-email'){
+                    try {
+                        const api = Container.get('api');
+                        const token = Container.get('authManager').getToken();
+                        if (payload.needsConnect) {
+                            const connect = await api.post('getGmailConnectUrl', { token }, { cacheTTL: 0, forceRefresh: true });
+                            const url = connect?.data?.data?.url || connect?.data?.url || '';
+                            if (!connect?.ok || !url) throw new Error(connect?.message || 'Gmail is not connected. Configure Gmail OAuth in Vercel first.');
+                            window.open(url, 'gmail-connect', 'noopener,noreferrer,width=680,height=760');
+                            button.textContent='Connect Gmail';
+                            Container.get('notification')?.info('Finish Google authorization, then ask me to send again.');
+                            return;
+                        }
+                        const confirmed = window.confirm(`Send this email with your connected Gmail account?\n\nTo: ${payload.to || '-'}\nSubject: ${payload.subject || '-'}`);
+                        if (!confirmed) return;
+                        button.disabled = true; button.textContent = 'Sending…';
+                        window.dispatchEvent(new CustomEvent('operation:busy', {detail:{active:true,kind:'email',message:'Sending with Gmail…'}}));
+                        const res = await api.post('sendGmail', { token, data: { to: payload.to || '', subject: payload.subject || '', body: payload.body || '', documentIds: payload.documentIds || [] } }, { cacheTTL: 0, forceRefresh: true });
+                        if (!res?.ok || res?.data?.ok === false) throw new Error(res?.data?.message || res?.message || 'Email sending failed.');
+                        button.textContent='✓ Sent';
+                        Container.get('notification')?.success('Email sent from your Gmail account');
+                    } catch (error) {
+                        button.disabled = false; button.textContent='Try again';
+                        Container.get('notification')?.error(error.message || 'Email sending failed');
+                    } finally {
+                        window.dispatchEvent(new CustomEvent('operation:busy', {detail:{active:false,kind:'email'}}));
+                    }
+                    return;
                 }
                 if(kind==='email'){
                     const url=`mailto:${encodeURIComponent(payload.to||'')}?subject=${encodeURIComponent(payload.subject||'')}&body=${encodeURIComponent(payload.body||'')}`;

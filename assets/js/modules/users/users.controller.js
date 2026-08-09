@@ -99,7 +99,8 @@ class UsersController extends Module {
             mobile: document.getElementById("new-user-mobile")?.value.trim(),
             active: Boolean(document.getElementById("new-user-active")?.checked)
         };
-        if (!data.name || !data.username || !data.password) return this.notify().warning("Name, username and password are required.");
+        if (!data.name || !data.username || !data.email || !data.password) return this.notify().warning("Name, username, email and password are required.");
+        if (data.password.length < 10) return this.notify().warning("Password must be at least 10 characters.");
         try {
             window.dispatchEvent(new CustomEvent("operation:busy", { detail: { active: true, kind: "user", message: "Creating secure user account…" } }));
             if (button) { button.disabled = true; button.textContent = "Creating..."; }

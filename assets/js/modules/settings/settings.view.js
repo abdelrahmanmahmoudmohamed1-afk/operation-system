@@ -77,7 +77,7 @@ export function renderLayout(user, currentTheme, prefs = {}, history = []) {
                 <div class="report-builder-topline"><div><span class="report-eyebrow">Security</span><h2>Change Password</h2></div></div>
                 <form id="settings-password-form" class="form-grid premium-form-grid">
                     <div class="field-full"><label>Current Password</label><input class="premium-input" type="password" name="oldPassword" required></div>
-                    <div class="field-full"><label>New Password</label><input class="premium-input" type="password" name="newPassword" required minlength="6"></div>
+                    <div class="field-full"><label>New Password</label><input class="premium-input" type="password" name="newPassword" required minlength="10"></div>
                     <p class="form-error hidden" id="settings-pw-error"></p>
                     <div class="form-actions field-full"><button type="submit" class="btn btn-primary">Update Password</button></div>
                 </form>
@@ -105,6 +105,7 @@ export function renderLayout(user, currentTheme, prefs = {}, history = []) {
                     <div class="settings-input-row"><label>Default Landing Page</label><select id="settings-default-route" class="premium-select"><option value="overview">Overview</option><option value="dashboard">Dashboard</option><option value="reports">Reports</option><option value="inventory">Inventory</option></select></div>
                     ${settingSwitch("settings-compact-mode", "Compact density", "Reduce vertical spacing for data-heavy pages", prefs.compactMode)}
                     ${settingSwitch("settings-animations", "Smooth animations", "Keep responsive visual feedback across the system", prefs.animations !== false)}
+                    ${settingSwitch("settings-sound-effects", "Workspace sounds", "Door open/close, uploads, success and notification cues", prefs.soundEffects !== false)}
                     ${settingSwitch("settings-show-details", "Click-to-details", "Open details panel when clicking rows and cards", prefs.showDetails !== false)}
                 </div>
             </div>
@@ -123,27 +124,35 @@ export function renderLayout(user, currentTheme, prefs = {}, history = []) {
         </div>
 
         <div class="card settings-panel-pro ai-integrations-card">
-            <div class="report-builder-topline"><div><span class="report-eyebrow">Operation AI</span><h2>Agent Capabilities · Strategy Engine</h2></div><span class="status-badge">Agent Mode</span></div>
+            <div class="report-builder-topline"><div><span class="report-eyebrow">Operation AI</span><h2>Agent & Integrations</h2></div><span class="status-badge">Enterprise X</span></div>
             <div class="ai-capability-grid">
-                <div class="ai-capability"><strong>Arabic + English</strong><span>Understands Egyptian Arabic commands and English queries.</span><em class="audit-success">Active</em></div>
-                <div class="ai-capability"><strong>Workspace Actions</strong><span>Navigation, filters, reports, CRM lookups and task creation.</span><em class="audit-success">Active</em></div>
-                <div class="ai-capability"><strong>Reminders</strong><span>Persistent in-browser reminders with notification and sound while the workspace is running.</span><em class="audit-success">Active</em></div>
-                <div class="ai-capability"><strong>Email</strong><span>Creates a reviewed compose window. Direct background sending requires a Gmail/Outlook OAuth backend connection.</span><em>Review required</em></div>
+                <div class="ai-capability"><strong>Egyptian Arabic + English</strong><span>Natural-language intent, approximate search, follow-up context and tool calling.</span><em class="audit-success">Built in</em></div>
+                <div class="ai-capability"><strong>Workspace tools</strong><span>CRM, Inventory, EOI, documents, Digital Twin, navigation, reminders and payment-plan analysis.</span><em class="audit-success">Built in</em></div>
+                <div class="ai-capability"><strong>Gmail sending</strong><span id="gmail-status-copy">Checking connection when requested.</span><em id="gmail-status-pill">Not checked</em></div>
+                <div class="ai-capability"><strong>OpenAI brain</strong><span>Server-side key only. The UI never exposes the secret.</span><em id="openai-status-pill">Diagnostics</em></div>
+            </div>
+            <div class="settings-integration-actions">
+                <button class="btn btn-outline" id="settings-check-gmail">Check Gmail</button>
+                <button class="btn btn-primary" id="settings-connect-gmail">Connect Gmail</button>
             </div>
         </div>
 
         <div class="card settings-panel-pro system-integrity-card">
             <div class="report-builder-topline">
-                <div><span class="report-eyebrow">Reliability</span><h2>System Integrity</h2></div>
-                <button class="btn btn-outline" id="settings-run-diagnostics">Run Diagnostics</button>
+                <div><span class="report-eyebrow">Reliability</span><h2>System Health Center</h2></div>
+                <button class="btn btn-outline" id="settings-run-diagnostics">Run Full Diagnostics</button>
             </div>
             <div id="settings-diagnostics-result" class="integrity-grid">
-                <div class="integrity-item"><span>Frontend</span><strong>v5.7</strong><em class="audit-success">Ready</em></div>
-                <div class="integrity-item"><span>Backend</span><strong>Not checked</strong><em>Run diagnostics</em></div>
-                <div class="integrity-item"><span>API actions</span><strong>—</strong><em>Waiting</em></div>
+                <div class="integrity-item"><span>Frontend</span><strong>Enterprise X</strong><em class="audit-success">Ready</em></div>
+                <div class="integrity-item"><span>Vercel API</span><strong>Not checked</strong><em>Run diagnostics</em></div>
+                <div class="integrity-item"><span>Supabase</span><strong>Not checked</strong><em>Waiting</em></div>
+                <div class="integrity-item"><span>Google Sheets</span><strong>Not checked</strong><em>Waiting</em></div>
+                <div class="integrity-item"><span>Storage</span><strong>Not checked</strong><em>Waiting</em></div>
+                <div class="integrity-item"><span>OpenAI</span><strong>Not checked</strong><em>Waiting</em></div>
+                <div class="integrity-item"><span>Gmail</span><strong>Not checked</strong><em>Waiting</em></div>
                 <div class="integrity-item"><span>Latency</span><strong>—</strong><em>Waiting</em></div>
             </div>
-            <p class="muted" style="margin-top:12px">This check verifies the deployed backend build and action manifest before upload, user, CRM and inventory writes are used.</p>
+            <p class="muted" style="margin-top:12px">No more silent zeros: this panel tells you which live dependency is connected, missing or failing.</p>
         </div>
 
         <div class="settings-grid-pro settings-grid-wide">

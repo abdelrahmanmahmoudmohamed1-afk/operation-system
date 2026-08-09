@@ -1,0 +1,21 @@
+
+> operation-system-enterprise-x@1.1.0 audit
+> node scripts/release-audit.mjs
+
+{
+  "ok": true,
+  "generatedAt": "2026-08-09T19:17:33.158Z",
+  "passes": [
+    "JavaScript syntax",
+    "Relative imports",
+    "API parity (44 frontend / 44 backend actions)",
+    "Apps Script runtime remnants",
+    "Unsupported PDF colors",
+    "Legacy unknown-action UI",
+    "Module registry files",
+    "No obvious secret keys in repository"
+  ],
+  "failures": [],
+  "warnings": [],
+  "fileCount": 178
+}

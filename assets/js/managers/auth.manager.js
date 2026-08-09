@@ -17,13 +17,17 @@ class AuthManager {
         return SessionManager.isAuthenticated();
     }
 
-    login(token, user) {
-        SessionManager.setSession(token, user);
+    login(token, user, refreshToken = "") {
+        SessionManager.setSession(token, user, refreshToken);
     }
 
     logout() {
         SessionManager.clearSession();
         location.hash = "login";
+    }
+
+    getRefreshToken() {
+        return SessionManager.getRefreshToken();
     }
 
     getUser() {

@@ -29,6 +29,17 @@ class DocumentStorageService {
     return [safeSegment(kind,'document'), safeSegment(project,'all'), safeSegment(unitCode || clientName,'record'), `${unique}-${safeSegment(fileName || 'document.pdf','document.pdf').replace(/\.pdf$/i,'')}${ext}`].join('/');
   }
 
+  async deleteObject(path) {
+    if (!path) return false;
+    const token = AuthManager.getToken();
+    if (!token) return false;
+    const url = `${SUPABASE_CONFIG.url}/storage/v1/object/${encodeURIComponent(SUPABASE_CONFIG.bucket)}/${String(path).split('/').map(encodeURIComponent).join('/')}`;
+    try {
+      const response = await fetch(url, { method:'DELETE', headers:{ 'Authorization':`Bearer ${token}`, 'apikey':SUPABASE_CONFIG.publishableKey } });
+      return response.ok || response.status === 404;
+    } catch (_) { return false; }
+  }
+
   async uploadPdf(file, meta={}) {
     await this.validatePdf(file, Number(meta.maxMB || 25));
     const token = AuthManager.getToken();

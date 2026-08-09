@@ -19,7 +19,18 @@ import {
 } from "./dashboard.view.js";
 import { renderLoading, renderError, renderEmptyRow } from "../../utils/state.js";
 
-const CHART_COLORS = ["#C9A227", "#E7DDD0", "#8A7B65", "#4ADE80", "#F87171", "#6B94C4", "#A8D5C8"];
+const CHART_COLORS = ["#C9A227", "#8A7B65", "#4ADE80", "#F87171", "#6B94C4", "#A8D5C8", "#D89A5B"];
+function themeChartColors() {
+    const css = getComputedStyle(document.documentElement);
+    const pick = (name, fallback) => (css.getPropertyValue(name) || '').trim() || fallback;
+    return {
+        text: pick('--text', '#20242B'),
+        muted: pick('--text-muted', pick('--muted', '#6B7280')),
+        line: pick('--line', 'rgba(127,127,127,.18)'),
+        surface: pick('--surface', pick('--card', '#FFFFFF')),
+        accent: pick('--accent', '#C9A227')
+    };
+}
 
 class DashboardController extends Module {
     constructor() {
@@ -140,7 +151,7 @@ class DashboardController extends Module {
                 maintainAspectRatio: false,
                 cutout: "62%",
                 plugins: {
-                    legend: { position: "bottom", labels: { color: "#ECEEF1", boxWidth: 12, font: { family: "Inter" } } }
+                    legend: { position: "bottom", labels: { color: themeChartColors().text, boxWidth: 12, font: { family: "Inter" } } }
                 }
             }
         });
@@ -182,15 +193,16 @@ class DashboardController extends Module {
 }
 
 function chartBaseOptions(hideLegend = false) {
+    const c = themeChartColors();
     return {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            legend: { display: !hideLegend, labels: { color: "#ECEEF1", font: { family: "Inter" } } }
+            legend: { display: !hideLegend, labels: { color: c.text, font: { family: "Inter" } } }
         },
         scales: {
-            x: { ticks: { color: "#8B94A3", font: { family: "Inter" } }, grid: { color: "rgba(255,255,255,.06)" } },
-            y: { ticks: { color: "#8B94A3", font: { family: "Inter" } }, grid: { color: "rgba(255,255,255,.06)" } }
+            x: { ticks: { color: c.muted, font: { family: "Inter" } }, grid: { color: c.line } },
+            y: { ticks: { color: c.muted, font: { family: "Inter" } }, grid: { color: c.line } }
         }
     };
 }

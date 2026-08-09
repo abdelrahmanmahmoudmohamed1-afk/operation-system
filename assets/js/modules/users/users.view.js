@@ -59,11 +59,11 @@ export function renderLayout(summary = {}) {
                 <div class="form-grid">
                     <label>Full Name<input id="new-user-name" class="premium-input" required></label>
                     <label>Username<input id="new-user-username" class="premium-input" required autocomplete="off"></label>
-                    <label>Password<input id="new-user-password" class="premium-input" type="password" required autocomplete="new-password"></label>
+                    <label>Password<input id="new-user-password" class="premium-input" type="password" required minlength="10" autocomplete="new-password"></label>
                     <label>Role<select id="new-user-role" class="premium-select"><option value="User">User</option><option value="Admin">Admin</option></select></label>
                     <label>Sales Manager<input id="new-user-manager" class="premium-input"></label>
                     <label>Sales Director<input id="new-user-director" class="premium-input"></label>
-                    <label>Email<input id="new-user-email" class="premium-input" type="email"></label>
+                    <label>Email<input id="new-user-email" class="premium-input" type="email" required></label>
                     <label>Mobile<input id="new-user-mobile" class="premium-input"></label>
                 </div>
                 <label class="form-check"><input class="form-check-input" id="new-user-active" type="checkbox" checked><span class="form-check-label">Active user</span></label>
@@ -73,25 +73,7 @@ export function renderLayout(summary = {}) {
 }
 
 export function renderUsers(users = [], selected = "") {
-    if (!users.length) return `<div class="users-empty">No users found.</div>
-
-        <div class="modal-overlay hidden" id="user-create-modal">
-            <div class="modal-box user-create-box">
-                <div class="modal-head"><div><span class="report-eyebrow">Admin only</span><h2>Create User</h2></div><button class="modal-close" id="user-create-close" type="button">×</button></div>
-                <div class="form-grid">
-                    <label>Full Name<input id="new-user-name" class="premium-input" required></label>
-                    <label>Username<input id="new-user-username" class="premium-input" required autocomplete="off"></label>
-                    <label>Password<input id="new-user-password" class="premium-input" type="password" required autocomplete="new-password"></label>
-                    <label>Role<select id="new-user-role" class="premium-select"><option value="User">User</option><option value="Admin">Admin</option></select></label>
-                    <label>Sales Manager<input id="new-user-manager" class="premium-input"></label>
-                    <label>Sales Director<input id="new-user-director" class="premium-input"></label>
-                    <label>Email<input id="new-user-email" class="premium-input" type="email"></label>
-                    <label>Mobile<input id="new-user-mobile" class="premium-input"></label>
-                </div>
-                <label class="form-check"><input class="form-check-input" id="new-user-active" type="checkbox" checked><span class="form-check-label">Active user</span></label>
-                <div class="modal-actions"><button class="btn btn-outline" id="user-create-cancel" type="button">Cancel</button><button class="btn btn-primary" id="user-create-save" type="button">Create User</button></div>
-            </div>
-        </div>`;
+    if (!users.length) return `<div class="users-empty">No users found.</div>`;
     return users.map(u => `
         <button type="button" class="user-list-card ${selected === u.username ? "active" : ""}" data-username="${escapeHtml(u.username)}">
             <span class="user-avatar-pro">${escapeHtml(initials(u.name || u.username))}</span>
