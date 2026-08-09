@@ -6,7 +6,7 @@ import { sheetInventory, sheetClients, sheetEOI, sheetLeads, sheetsEnabled } fro
 import { ensureSchema, postgresConfigured, tableCounts } from '../lib/schema.js';
 import { createGmailConnectUrl, gmailStatus, sendGmail, gmailConfigured } from '../lib/gmail.js';
 
-const BUILD='enterprise-x-1.1.0';
+const BUILD='enterprise-x-1.3.0';
 const ACTIONS=['bootstrapStatus','bootstrapAdmin','login','refreshSession','logout','changeOwnPassword','getSystemInfo','runDiagnostics','recordUserActivity','getDashboardFilters','getDashboardData','getAchievementData','getClientFormBootstrap','getSales','getCompanies','getManagerDirector','saveClientRegistration','getClients','uploadClientContract','getClientDocuments','getDocumentCoverage','getUnitFloorPlan','uploadUnitFloorPlan','getUnitFloorPlanCoverage','getInventoryData','getInventoryProjects','getAvailableUnitsByProject','getAvailableLayanaUnits','refreshAvailableLayanaUnits','getEOIFormBootstrap','saveEOI','getEOIData','getLeadsData','bulkUpdateLeadStatus','importLeads','getUsersData','createSystemUser','getAuditHistory','operationAiChat','getGmailStatus','getGmailConnectUrl','sendGmail','getReminders','completeReminder'];
 function parseBody(text){try{return text?JSON.parse(text):{}}catch{return{}}}
 async function schema(){try{return await ensureSchema();}catch(e){console.error('schema setup failed',e);return {ok:false,configured:postgresConfigured(),message:e.message};}}

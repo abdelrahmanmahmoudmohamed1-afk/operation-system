@@ -11,10 +11,15 @@ class InventoryController extends Module {
     const gp=sessionStorage.getItem("operation_global_project")||"ALL"; const ps=document.getElementById("inv-project-filter"); if(ps&&[...ps.options].some(o=>o.value===gp))ps.value=gp;
     const gs=sessionStorage.getItem("operation_global_search"); if(gs){try{const x=JSON.parse(gs); if(x.target==="all"||x.target==="inventory")this.searchTerm=x.term||"";}catch{}}
     document.getElementById("inv-table-body").innerHTML=renderLoading({rows:6}); document.getElementById("inv-kpis").innerHTML=renderLoading({variant:"kpis",rows:4});
-    await Promise.all([this.hydrateProjects(),this.loadUnits(true)]);
+    await this.loadUnits(true);
+    this.hydrateProjectsFromUnits();
   }
-  async hydrateProjects(){
-    try{const projects=await InventoryService.loadProjects(); const sel=document.getElementById("inv-project-filter"); if(!sel)return; const current=sel.value; const merged=[...new Set(["Layana","Mersea",...(projects||[])].filter(Boolean))]; sel.innerHTML='<option value="ALL">All Projects</option>'+merged.map(p=>`<option value="${p}">${p}</option>`).join(''); if([...sel.options].some(o=>o.value===current))sel.value=current;}catch(e){this.logger().warn("Project list fallback in use",e);}
+  hydrateProjectsFromUnits(){
+    const sel=document.getElementById("inv-project-filter"); if(!sel)return;
+    const current=sel.value; const projects=[...new Set((this.units||[]).map(x=>x.project).filter(Boolean))];
+    const merged=[...new Set(["Layana","Mersea",...projects])];
+    sel.innerHTML='<option value="ALL">All Projects</option>'+merged.map(p=>`<option value="${p}">${p}</option>`).join('');
+    if([...sel.options].some(o=>o.value===current))sel.value=current;
   }
   async loadUnits(isFirst=false){
     if(this.loading)return; this.loading=true; const tbody=document.getElementById("inv-table-body"), kpis=document.getElementById("inv-kpis"), status=document.getElementById("inv-status-filter");
