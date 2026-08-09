@@ -4113,3 +4113,14 @@ body{overflow-x:hidden!important;background:
 .scene-status{background:rgba(18,34,46,.64)!important;color:#d4e1e8!important;border-color:rgba(255,255,255,.10)!important}.scene-status-dot{background:#f3c35b!important}.creative-login-screen.login-success .scene-status-text{font-size:0!important}.creative-login-screen.login-success .scene-status-text::after{content:"Spreadsheet ready · Workspace loading"!important;font-size:10px!important}
 
 @media(prefers-reduced-motion:reduce){.day-cloud,.excel-ui,.excel-cell.active{animation:none!important}.excel-ui{opacity:1!important}}
+
+/* Enterprise 5.4 — richer AI analysis cards */
+.copilot-message.assistant>div{min-width:0}
+.copilot-message.assistant p{white-space:pre-line}
+.copilot-result-list{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+.copilot-result-row{min-height:44px;align-items:flex-start;cursor:default}
+.copilot-result-row strong{font-size:9px;color:#e7edf4}.copilot-result-row span{text-align:right;font-variant-numeric:tabular-nums}
+.copilot-action-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.copilot-action-btn{border:1px solid rgba(216,179,95,.2);border-radius:9px;padding:8px 10px;background:rgba(216,179,95,.1);color:#e5c679;font-size:9px;font-weight:800;cursor:pointer}.copilot-action-btn:hover{background:rgba(216,179,95,.16)}
+.copilot-preview{display:grid;grid-template-columns:55px 1fr;gap:6px 9px;margin-top:10px;padding:10px;border:1px solid rgba(255,255,255,.07);border-radius:12px;background:rgba(255,255,255,.025)}.copilot-preview>span{font-size:8px;color:#6f8195;text-transform:uppercase;letter-spacing:.08em}.copilot-preview>strong{font-size:9px;color:#dce5ee}.copilot-preview>p{grid-column:1/-1;padding-top:7px;border-top:1px solid rgba(255,255,255,.05);font-size:9px;line-height:1.7;color:#aab7c5}
+@media(max-width:520px){.copilot-result-list{grid-template-columns:1fr}}
+.copilot-expert{display:inline-flex;margin:0 0 7px;padding:3px 7px;border-radius:999px;background:rgba(93,124,255,.1);border:1px solid rgba(93,124,255,.16);color:#aebaff;font-size:7px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}

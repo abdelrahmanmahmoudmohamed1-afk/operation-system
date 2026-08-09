@@ -123,7 +123,7 @@ export function renderLayout(user, currentTheme, prefs = {}, history = []) {
         </div>
 
         <div class="card settings-panel-pro ai-integrations-card">
-            <div class="report-builder-topline"><div><span class="report-eyebrow">Operation AI</span><h2>Agent Capabilities</h2></div><span class="status-badge">Agent Mode</span></div>
+            <div class="report-builder-topline"><div><span class="report-eyebrow">Operation AI</span><h2>Agent Capabilities · Strategy Engine</h2></div><span class="status-badge">Agent Mode</span></div>
             <div class="ai-capability-grid">
                 <div class="ai-capability"><strong>Arabic + English</strong><span>Understands Egyptian Arabic commands and English queries.</span><em class="audit-success">Active</em></div>
                 <div class="ai-capability"><strong>Workspace Actions</strong><span>Navigation, filters, reports, CRM lookups and task creation.</span><em class="audit-success">Active</em></div>
