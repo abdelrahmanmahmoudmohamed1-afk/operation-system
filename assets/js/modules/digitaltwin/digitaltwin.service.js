@@ -1,4 +1,5 @@
 import EnterpriseData from '../../services/enterprise.data.js';
+import ClientService from '../../services/client.service.js';
 
 function norm(v){ return String(v ?? '').trim().toLowerCase(); }
 
@@ -8,6 +9,10 @@ class DigitalTwinService {
     const units = EnterpriseData.normalizeUnits(live.inventory || []);
     return { live, units, summary: this.summarize(units) };
   }
+
+  async getFloorPlan(unit){ return ClientService.getFloorPlan({project:unit.project,unitCode:unit.unitCode}); }
+  async uploadFloorPlan(unit,data){ return ClientService.uploadFloorPlan({...data,project:unit.project,unitCode:unit.unitCode}); }
+  async floorPlanCoverage(){ const project=sessionStorage.getItem('operation_global_project')||'ALL'; return ClientService.getFloorPlanCoverage({project}); }
 
   summarize(units){
     const buildings = {};

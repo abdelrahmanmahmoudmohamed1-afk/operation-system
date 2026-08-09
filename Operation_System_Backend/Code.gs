@@ -59,6 +59,10 @@ const ACTION_MAP = {
   getClients: (p) => getClients(p.token, p.filters),
   uploadClientContract: (p) => uploadClientContract(p.token, p.data),
   getClientDocuments: (p) => getClientDocuments(p.token, p.filters),
+  getDocumentCoverage: (p) => getDocumentCoverage(p.token, p.filters),
+  getUnitFloorPlan: (p) => getUnitFloorPlan(p.token, p.filters),
+  uploadUnitFloorPlan: (p) => uploadUnitFloorPlan(p.token, p.data),
+  getUnitFloorPlanCoverage: (p) => getUnitFloorPlanCoverage(p.token, p.filters),
 
   // Inventory
   getInventoryData: (p) => getInventoryData(p.token, p.filters),
@@ -80,13 +84,14 @@ const ACTION_MAP = {
   // Users & Audit
   getUsersData: (p) => getUsersData(p.token),
   createSystemUser: (p) => createSystemUser(p.token, p.data),
-  getAuditHistory: (p) => getAuditHistory(p.token, p.filters)
+  getAuditHistory: (p) => getAuditHistory(p.token, p.filters),
+  operationAiChat: (p) => operationAiChat(p.token, p.data)
 };
 
 const AUDITED_API_ACTIONS_ = {
   login:1, logout:1, changeOwnPassword:1, saveClientRegistration:1,
   uploadClientContract:1, saveEOI:1, bulkUpdateLeadStatus:1, importLeads:1,
-  createSystemUser:1
+  createSystemUser:1, uploadUnitFloorPlan:1
 };
 
 function shouldAuditApiAction_(action) {

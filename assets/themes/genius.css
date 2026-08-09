@@ -1,6 +1,7 @@
 /* Operation System Enterprise — Genius theme
    Core layout lives in assets/css/style.css. Theme only tunes accents. */
 :root{
+  --bg:#0b0f16;--surface:#111827;--surface-2:#172033;--text:#f7f3e8;--text-muted:#a8b0bf;--accent:#d6ad55;--brass:#d6ad55;--line:#293349;
   --theme-accent:#d6ad55;
   --theme-accent-soft:rgba(214,173,85,.14);
 }

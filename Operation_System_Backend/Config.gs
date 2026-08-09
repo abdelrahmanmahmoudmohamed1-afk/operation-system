@@ -168,8 +168,8 @@ const FIELD_ALIASES = {
 function getSystemInfo_() {
   return {
     name: 'Operation System',
-    version: 'Enterprise 1.0-r2',
+    version: 'Enterprise 5.5 Final',
     projects: (PROJECT_SOURCES || []).map(function(x){ return x.key; }),
-    features: ['unified-projects','users','audit','leads','contract-pdf','achievement','housing-eoi']
+    features: ['unified-projects','users','audit','leads','contract-pdf','achievement','housing-eoi','architectural-drawings','document-coverage','ai-agent']
   };
 }

@@ -1,6 +1,6 @@
 import Module from "../../core/module.js";
 import CrmService from "./crm.service.js";
-import { renderLayout, renderTableRows, renderRegisterForm, renderUploadContractModal, renderDocumentsModal } from "./crm.view.js";
+import { renderLayout, renderTableRows, renderRegisterForm, renderUploadContractModal, renderDocumentsModal, renderDocumentCoverage } from "./crm.view.js";
 import { openClient360 } from "../../utils/profile360.js";
 import { renderLoading, renderEmptyRow, renderErrorRow } from "../../utils/state.js";
 
@@ -33,9 +33,14 @@ class CRMController extends Module {
             return;
         }
 
-        await this.loadClients();
+        await Promise.all([this.loadClients(), this.loadCoverage()]);
     }
 
+
+    async loadCoverage(){
+        const box=document.getElementById("crm-document-kpis"); if(!box)return;
+        try{const project=sessionStorage.getItem("operation_global_project")||"ALL";const stats=await CrmService.loadDocumentCoverage({project});box.innerHTML=renderDocumentCoverage(stats||{});}catch(e){box.innerHTML=renderDocumentCoverage({});this.logger().warn("Document coverage unavailable",e);}
+    }
     async loadClients(search = "") {
         const tbody = document.getElementById("crm-table-body");
         if (tbody) tbody.innerHTML = renderLoading({ rows: 6 });
@@ -69,7 +74,7 @@ class CRMController extends Module {
             });
         }
 
-        if (refreshBtn) refreshBtn.addEventListener("click", () => this.loadClients());
+        if (refreshBtn) refreshBtn.addEventListener("click", () => Promise.all([this.loadClients(),this.loadCoverage()]));
         window.addEventListener("operation:global-search", (e) => {
             const term = e.detail?.term || "";
             const target = e.detail?.target || "all";

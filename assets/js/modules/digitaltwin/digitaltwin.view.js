@@ -52,14 +52,14 @@ export function renderStage(rows){
   }).join('')}</div>`;
 }
 
-export function renderInspector(unit, allRows){
+export function renderInspector(unit, allRows, planState=null){
   if(!unit){
-    const topBuildings = {};
-    allRows.forEach(x=>{ const k=x.building||'Unassigned'; topBuildings[k]=(topBuildings[k]||0)+1; });
-    return `<div class="twin-inspector-empty"><span class="twin-orb"></span><div><div class="eyebrow">Live twin</div><h2>Select a unit</h2><p>Choose any unit in the building map to inspect price, status, floor and open the full 360° profile.</p></div><div class="twin-legend"><i class="available"></i>Available<i class="reserved"></i>Reserved<i class="contracted"></i>Contracted<i class="sold"></i>Sold</div></div>`;
+    return `<div class="twin-inspector-empty"><span class="twin-orb"></span><div><div class="eyebrow">Live twin</div><h2>Select a unit</h2><p>Choose any unit to inspect commercial data and its architectural drawing.</p></div><div class="twin-legend"><i class="available"></i>Available<i class="reserved"></i>Reserved<i class="contracted"></i>Contracted<i class="sold"></i>Sold</div></div>`;
   }
+  const plan=planState?.plan||null; const loading=planState?.loading;
+  const planHtml=loading?`<div class="floor-plan-state"><span class="mini-spinner"></span> Loading architectural drawing…</div>`:plan?.url?`<div class="floor-plan-preview"><div class="floor-plan-preview-head"><strong>Architectural Drawing</strong><a class="btn btn-outline btn-sm" href="${escapeHtml(plan.openUrl||plan.url)}" target="_blank" rel="noopener">Open PDF</a></div><iframe src="${escapeHtml(plan.url)}" title="Floor plan PDF"></iframe></div>`:`<div class="floor-plan-empty"><strong>No architectural drawing uploaded</strong><span>Upload the unit drawing as PDF. It will be linked permanently to ${escapeHtml(unit.unitCode||'this unit')}.</span><label class="btn btn-primary floor-plan-upload-label">Upload Drawing<input type="file" class="twin-floor-plan-file" data-unit-id="${escapeHtml(unit.id)}" accept="application/pdf,.pdf" hidden></label></div>`;
   return `<div class="twin-detail-head"><div><span class="eyebrow">Unit intelligence</span><h2>${escapeHtml(unit.unitCode||'Unit')}</h2><p>${escapeHtml(unit.project||'')} · ${escapeHtml(unit.building||'')} · Floor ${escapeHtml(unit.floor||'—')}</p></div><span class="badge badge-${slug(unit.status)}">${statusLabel(unit.status)}</span></div>
   <div class="twin-detail-grid"><div><span>Type</span><strong>${escapeHtml(unit.unitType||'—')}</strong></div><div><span>Area</span><strong>${Formatter.number(unit.area)} m²</strong></div><div><span>Price</span><strong>${Formatter.money(unit.price)}</strong></div><div><span>Status</span><strong>${statusLabel(unit.status)}</strong></div></div>
-  <div class="twin-price-signal"><span>Commercial signal</span><div class="twin-signal-line"><i style="width:${Math.min(100,Math.max(10,Number(unit.price||0)/100000))}%"></i></div><small>Relative value indicator for the visible portfolio.</small></div>
-  <button class="btn btn-primary twin-open-360" data-unit-id="${escapeHtml(unit.id)}">Open Unit 360</button>`;
+  <div class="unit-plan-section">${planHtml}</div>
+  <button class="btn btn-outline twin-open-360" data-unit-id="${escapeHtml(unit.id)}">Open Unit 360</button>`;
 }

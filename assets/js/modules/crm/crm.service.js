@@ -32,9 +32,8 @@ class CrmModuleService {
         return ClientService.uploadContract(data);
     }
 
-    async loadDocuments(filters = {}) {
-        return ClientService.getDocuments(filters);
-    }
+    async loadDocuments(filters = {}) { return ClientService.getDocuments(filters); }
+    async loadDocumentCoverage(filters = {}) { return ClientService.getDocumentCoverage(filters); }
 }
 
 export default new CrmModuleService();

@@ -1,5 +1,8 @@
 import EnterpriseData from './enterprise.data.js';
 import PaymentService from './payment.service.js';
+import ApiService from './api.service.js';
+import AuthManager from '../managers/auth.manager.js';
+import ENDPOINTS from '../constants/endpoints.js';
 
 function norm(v){return String(v??'').trim().toLowerCase();}
 function money(v){return Number(v||0).toLocaleString('en-US',{maximumFractionDigits:0});}
@@ -198,6 +201,15 @@ class OpsCopilotService {
     this.memory.lastEmail=out.preview; return out;
   }
 
+  async remoteConversation(question,scope){
+    try{
+      const context={project:scope.project||'ALL',units:{total:scope.units.length,available:scope.units.filter(x=>statusNorm(x.status)==='available').length,reserved:scope.units.filter(x=>statusNorm(x.status)==='reserved').length,contracted:scope.units.filter(x=>statusNorm(x.status)==='contracted').length,sold:scope.units.filter(x=>statusNorm(x.status)==='sold').length,value:sum(scope.units,'price')},clients:{total:scope.clients.length,missingMobile:scope.clients.filter(x=>!x.mobile1).length},eoi:this.eoiSummary(scope.eoi)};
+      const res=await ApiService.post(ENDPOINTS.AI_CHAT,{token:AuthManager.getToken(),data:{question,context,history:this.context()}},{cacheTTL:0});
+      const data=res?.data?.data||res?.data; if(res.ok&&data?.enabled&&data.answer)return{title:'Operation AI',answer:data.answer,expert:data.expert||'Chief Operations AI',suggestions:data.suggestedActions||[],type:'conversation'};
+    }catch(e){console.warn('AI brain fallback',e);}
+    return null;
+  }
+
   async ask(question){
     const qRaw=String(question||'').trim(); if(!qRaw)return{title:'AI',answer:''};
     const q=norm(qRaw); const ar=isArabic(qRaw); this.remember('user',qRaw);
@@ -247,8 +259,9 @@ class OpsCopilotService {
     const lookup=/دور|ابحث|search|find|هات بيانات|جيب بيانات|وريني/.test(q);
     if(lookup){const terms=q.split(/\s+/).filter(x=>x.length>1&&!['دور','ابحث','search','find','هات','جيب','وريني','بيانات'].includes(x));const unitMatches=scope.units.filter(x=>terms.some(t=>Object.values(x).some(v=>norm(v).includes(t)))).slice(0,8);const clientMatches=scope.clients.filter(x=>terms.some(t=>Object.values(x).some(v=>norm(v).includes(t)))).slice(0,8);return finish({title:ar?'بحث في النظام':'Workspace search',answer:ar?`لقيت ${unitMatches.length} وحدة و ${clientMatches.length} عميل مطابقين.`:`Found ${unitMatches.length} matching unit(s) and ${clientMatches.length} client record(s).`,rows:[...unitMatches.map(x=>({label:x.unitCode||'Unit',value:`Unit · ${x.project} · ${x.status}`})),...clientMatches.map(x=>({label:x.clientName||'Client',value:`Client · ${x.project} · ${x.mobile1||'No mobile'}`}))].slice(0,12),route:unitMatches.length?'digitaltwin':'crm'},'search');}
 
-    // 9) Conversational clarification instead of misleading search fallback.
-    return finish({title:ar?'فاهمك، بس محتاج أحدد التنفيذ':'I need one detail',answer:ar?'أقدر أنفذ ده كتحليل، تقرير، إيميل، Reminder، بحث في الداتا، أو Payment Plan. قولّي النتيجة اللي عايز توصل لها أو اذكر المشروع/السعر/المدة لو السؤال عن خطة سداد.':'I can handle this as analysis, report, email, reminder, data lookup, or a payment-plan scenario. Tell me the outcome you want, or give project/price/duration for payment strategy.',type:'clarify',expert:'Planner'},'clarify');
+    // 9) Natural conversation: use the production AI brain when configured, otherwise clarify safely.
+    const remote=await this.remoteConversation(qRaw,scope); if(remote)return finish(remote,'conversation');
+    return finish({title:ar?'فاهمك، بس محتاج أحدد التنفيذ':'I need one detail',answer:ar?'بص، الطلب بالشكل ده محتاج معلومة زيادة عشان أنفذه صح. قولّي عايز النتيجة في صورة إيه، أو المشروع/الفترة/السعر لو الموضوع تحليل أو Payment Plan. ولو في حاجة في الطلب مش منطقية هقولك عليها واقترح البديل.':'I need one more detail to execute this correctly. Tell me the desired outcome or the project/period/price for analysis or a payment plan.',type:'clarify',expert:'Planner'},'clarify');
   }
 }
 export default new OpsCopilotService();

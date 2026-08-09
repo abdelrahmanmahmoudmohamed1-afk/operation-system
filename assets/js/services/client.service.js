@@ -83,26 +83,33 @@ class ClientService {
     }
 
     async uploadContract(data) {
-        try {
-            const res = await this.api().post(ENDPOINTS.UPLOAD_CLIENT_CONTRACT, { token: this.token(), data }, { cacheTTL: 0, forceRefresh: true });
-            const msg = res?.data?.message || res?.message || "";
-            if (res.ok && res.data?.ok) return this.unwrap(res);
-            if (!/Unknown action:\s*uploadClientContract/i.test(msg)) throw new Error(msg || "Upload service unavailable");
-        } catch (error) {
-            console.warn("Remote contract upload unavailable; using local document vault.", error);
-        }
-        const saved = await this.saveLocalDocument(data);
-        return { ...saved, message: "PDF saved in this browser's secure local document vault." };
+        const res = await this.api().post(ENDPOINTS.UPLOAD_CLIENT_CONTRACT, { token: this.token(), data }, { cacheTTL: 0, forceRefresh: true });
+        return this.unwrap(res);
     }
 
     async getDocuments(filters = {}) {
-        let remote = [];
-        try {
-            const res = await this.api().post(ENDPOINTS.CLIENT_DOCUMENTS, { token: this.token(), filters });
-            if (res.ok && res.data?.ok) remote = this.unwrap(res) || [];
-        } catch (_) { /* local vault remains available */ }
-        const local = await this.getLocalDocuments(filters);
-        return [...(Array.isArray(remote) ? remote : []), ...local];
+        const res = await this.api().post(ENDPOINTS.CLIENT_DOCUMENTS, { token: this.token(), filters });
+        return this.unwrap(res) || [];
+    }
+
+    async getDocumentCoverage(filters = {}) {
+        const res = await this.api().post(ENDPOINTS.DOCUMENT_COVERAGE, { token: this.token(), filters });
+        return this.unwrap(res);
+    }
+
+    async getFloorPlan(filters = {}) {
+        const res = await this.api().post(ENDPOINTS.UNIT_FLOOR_PLAN, { token: this.token(), filters });
+        return this.unwrap(res);
+    }
+
+    async uploadFloorPlan(data) {
+        const res = await this.api().post(ENDPOINTS.UPLOAD_UNIT_FLOOR_PLAN, { token: this.token(), data }, { cacheTTL: 0, forceRefresh: true });
+        return this.unwrap(res);
+    }
+
+    async getFloorPlanCoverage(filters = {}) {
+        const res = await this.api().post(ENDPOINTS.FLOOR_PLAN_COVERAGE, { token: this.token(), filters });
+        return this.unwrap(res);
     }
 
     openDocumentDb() {

@@ -37,6 +37,8 @@ export function renderLayout() {
             <button class="btn btn-primary" id="crm-add-btn">+ Register Client</button>
         </div>
 
+        <div class="kpi-grid crm-document-kpis" id="crm-document-kpis"></div>
+
         <div class="filter-bar">
             <div class="filter-field">
                 <label>Search</label>
@@ -198,4 +200,9 @@ export function renderDocumentsModal(client = {}, documents = []) {
                 <div class="documents-list">${rows}</div>
             </div>
         </div>`;
+}
+
+export function renderDocumentCoverage(stats={}){
+ const items=[['Sold / Contracted',stats.soldOrContracted||0,'Units requiring contract scan'],['Contract scans',stats.withContractScan||0,`${Math.round(stats.contractCoverage||0)}% coverage`],['Missing scans',stats.missingContractScan||0,'Needs attention'],['All documents',stats.totalDocuments||0,'Uploaded client documents']];
+ return items.map(([t,v,s])=>`<div class="kpi-card"><div class="kpi-title">${escapeHtml(t)}</div><div class="kpi-value">${escapeHtml(v)}</div><div class="kpi-sub">${escapeHtml(s)}</div></div>`).join('');
 }

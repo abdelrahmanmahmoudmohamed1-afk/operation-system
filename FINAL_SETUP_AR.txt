@@ -1,0 +1,32 @@
+OPERATION SYSTEM ENTERPRISE 5.5 FINAL
+=====================================
+
+مهم: المشروع يحتوي Frontend + Backend متطابقين. لكي تعمل وظائف إنشاء المستخدمين ورفع العقود والرسومات الهندسية والـ AI المركزي بشكل نهائي، يجب نشر مجلد Operation_System_Backend بالكامل كنسخة واحدة على Google Apps Script. GitHub Pages وحده لا يستطيع إنشاء مستخدم مركزي أو حفظ PDF على Drive بصورة آمنة.
+
+1) Frontend
+- انسخ محتويات operation-system-v5 إلى Repository الحالي مع الحفاظ على .git
+- Commit ثم Push
+- بعد تحديث GitHub Pages اعمل Ctrl+Shift+R مرة واحدة
+
+2) Backend النهائي
+- استبدل كل ملفات مشروع Apps Script بمحتويات Operation_System_Backend
+- اعمل Deploy > Manage deployments > Edit > New version > Deploy
+- استخدم نفس Deployment حتى يبقى URL الموجود في assets/config/api.config.js كما هو
+- لو أنشأت Deployment جديداً، ضع URL الجديد في assets/config/api.config.js
+
+3) AI الحقيقي (اختياري لكنه مطلوب للمحادثة الحرة الذكية)
+- Apps Script > Project Settings > Script Properties
+- أضف OPENAI_API_KEY
+- ويمكن إضافة OPENAI_MODEL لتحديد الموديل
+- لا تضع API key داخل GitHub أو JavaScript أبداً
+
+الجديد
+- createSystemUser موجود في Code.gs وUsers.gs
+- Theme-aware loading
+- Theme-preserving print styles
+- AI Agent: قواعد تنفيذ + محادثة عربية مصرية عبر AI backend
+- Digital Twin: Architectural Drawing PDF upload/view per unit
+- Digital Twin drawing coverage
+- CRM Contract Scan Coverage للمباع/المتعاقد
+- Inventory initial load محسّن وبدون duplicate request
+- Browser-local document fallback تم إلغاؤه من المسار الرئيسي: الملفات المهمة مركزية فقط

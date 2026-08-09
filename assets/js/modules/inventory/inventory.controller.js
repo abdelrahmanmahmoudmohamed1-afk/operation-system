@@ -5,122 +5,33 @@ import { openUnit360 } from "../../utils/profile360.js";
 import { renderLoading, renderEmptyRow, renderErrorRow } from "../../utils/state.js";
 
 class InventoryController extends Module {
-    constructor() {
-        super();
-        this.units = [];
-        this.allStatuses = [];
-        this.searchTerm = "";
-    }
-
-    async render() {
-        let projects = [];
-
-        try {
-            projects = await InventoryService.loadProjects();
-        } catch (error) {
-            this.logger().warn("Failed to load projects list", error);
-        }
-
-        this.container.innerHTML = renderLayout(projects);
-        const selectedGlobalProject = sessionStorage.getItem("operation_global_project") || "ALL";
-        const projectSelect = document.getElementById("inv-project-filter");
-        if (projectSelect && Array.from(projectSelect.options).some((o) => o.value === selectedGlobalProject)) {
-            projectSelect.value = selectedGlobalProject;
-        }
-        const globalSearch = sessionStorage.getItem("operation_global_search");
-        if (globalSearch) {
-            try {
-                const parsed = JSON.parse(globalSearch);
-                if (parsed.target === "all" || parsed.target === "inventory") {
-                    this.searchTerm = parsed.term || "";
-                }
-            } catch { this.searchTerm = ""; }
-        }
-        document.getElementById("inv-table-body").innerHTML = renderLoading({ rows: 6 });
-        document.getElementById("inv-kpis").innerHTML = renderLoading({ variant: "kpis", rows: 4 });
-        await this.loadUnits(true);
-    }
-
-    async loadUnits(isFirstLoad = false) {
-        const tbody = document.getElementById("inv-table-body");
-        const kpisBox = document.getElementById("inv-kpis");
-        const statusSelect = document.getElementById("inv-status-filter");
-
-        if (tbody) tbody.innerHTML = renderLoading({ rows: 6 });
-        if (kpisBox) kpisBox.innerHTML = renderLoading({ variant: "kpis", rows: 4 });
-
-        const filters = {
-            project: document.getElementById("inv-project-filter")?.value || sessionStorage.getItem("operation_global_project") || "ALL",
-            status: statusSelect?.value || "ALL"
-        };
-
-        try {
-            this.units = await InventoryService.loadUnits(filters);
-
-            // أول مرة بس بنبني قائمة كل الحالات الممكنة من الداتا
-            // مفلترة بالمشروع بس (مش بالحالة نفسها)، عشان القايمة
-            // متفضلش فاضية لو اخترت حالة معينة.
-            if (isFirstLoad || !this.allStatuses.length) {
-                const allForStatuses = filters.project === "ALL"
-                    ? this.units
-                    : await InventoryService.loadUnits({ project: filters.project, status: "ALL" });
-
-                if (statusSelect) statusSelect.innerHTML = renderStatusOptions(allForStatuses, filters.status);
-            }
-
-            const visibleUnits = this.applySearch(this.units);
-            if (tbody) {
-                tbody.innerHTML = visibleUnits.length
-                    ? renderRows(visibleUnits)
-                    : renderEmptyRow(8, "No units match the selected filters");
-            }
-            if (kpisBox) kpisBox.innerHTML = renderKpis(visibleUnits);
-        } catch (error) {
-            this.logger().error("Inventory load failed", error);
-            if (tbody) tbody.innerHTML = renderErrorRow(8, error.message);
-            this.notify().error(error.message);
-        }
-    }
-
-    applySearch(rows) {
-        const q = String(this.searchTerm || "").toLowerCase().trim();
-        if (!q) return rows || [];
-        return (rows || []).filter((r) => Object.values(r).some((v) => String(v ?? "").toLowerCase().includes(q)));
-    }
-
-    bindEvents() {
-        const projectFilter = document.getElementById("inv-project-filter");
-        const statusFilter = document.getElementById("inv-status-filter");
-        const refreshBtn = document.getElementById("inv-refresh-btn");
-
-        if (projectFilter) {
-            projectFilter.addEventListener("change", () => {
-                this.allStatuses = [];
-                sessionStorage.setItem("operation_global_project", projectFilter.value || "ALL");
-                const global = document.getElementById("global-project-filter");
-                if (global && Array.from(global.options).some((o) => o.value === projectFilter.value)) global.value = projectFilter.value;
-                this.loadUnits(true);
-            });
-        }
-        if (statusFilter) statusFilter.addEventListener("change", () => this.loadUnits());
-        if (refreshBtn) refreshBtn.addEventListener("click", () => this.loadUnits(true));
-        document.getElementById("inv-table-body")?.addEventListener("click", (e) => {
-            const btn = e.target.closest(".inv-open-360");
-            if (!btn) return;
-            e.stopPropagation();
-            try { openUnit360(JSON.parse(btn.dataset.unitRow || "{}")); } catch (_) {}
-        });
-        window.addEventListener("operation:global-search", (e) => {
-            const target = e.detail?.target || "all";
-            if (target !== "all" && target !== "inventory") return;
-            this.searchTerm = e.detail?.term || "";
-            const tbody = document.getElementById("inv-table-body");
-            const kpisBox = document.getElementById("inv-kpis");
-            const visibleUnits = this.applySearch(this.units);
-            if (tbody) tbody.innerHTML = visibleUnits.length ? renderRows(visibleUnits) : renderEmptyRow(8, "No units match your search");
-            if (kpisBox) kpisBox.innerHTML = renderKpis(visibleUnits);
-        });
-    }
+  constructor(){ super(); this.units=[]; this.allStatuses=[]; this.searchTerm=""; this.loading=false; }
+  async render(){
+    this.container.innerHTML=renderLayout(["Layana","Mersea"]);
+    const gp=sessionStorage.getItem("operation_global_project")||"ALL"; const ps=document.getElementById("inv-project-filter"); if(ps&&[...ps.options].some(o=>o.value===gp))ps.value=gp;
+    const gs=sessionStorage.getItem("operation_global_search"); if(gs){try{const x=JSON.parse(gs); if(x.target==="all"||x.target==="inventory")this.searchTerm=x.term||"";}catch{}}
+    document.getElementById("inv-table-body").innerHTML=renderLoading({rows:6}); document.getElementById("inv-kpis").innerHTML=renderLoading({variant:"kpis",rows:4});
+    await Promise.all([this.hydrateProjects(),this.loadUnits(true)]);
+  }
+  async hydrateProjects(){
+    try{const projects=await InventoryService.loadProjects(); const sel=document.getElementById("inv-project-filter"); if(!sel)return; const current=sel.value; const merged=[...new Set(["Layana","Mersea",...(projects||[])].filter(Boolean))]; sel.innerHTML='<option value="ALL">All Projects</option>'+merged.map(p=>`<option value="${p}">${p}</option>`).join(''); if([...sel.options].some(o=>o.value===current))sel.value=current;}catch(e){this.logger().warn("Project list fallback in use",e);}
+  }
+  async loadUnits(isFirst=false){
+    if(this.loading)return; this.loading=true; const tbody=document.getElementById("inv-table-body"), kpis=document.getElementById("inv-kpis"), status=document.getElementById("inv-status-filter");
+    if(tbody)tbody.innerHTML=renderLoading({rows:6}); if(kpis)kpis.innerHTML=renderLoading({variant:"kpis",rows:4});
+    const filters={project:document.getElementById("inv-project-filter")?.value||sessionStorage.getItem("operation_global_project")||"ALL",status:status?.value||"ALL"};
+    try{
+      this.units=await InventoryService.loadUnits(filters);
+      if(isFirst||!this.allStatuses.length){ this.allStatuses=[...new Set((this.units||[]).map(x=>x.status).filter(Boolean))]; if(status)status.innerHTML=renderStatusOptions(this.units,filters.status); }
+      const visible=this.applySearch(this.units); if(tbody)tbody.innerHTML=visible.length?renderRows(visible):renderEmptyRow(8,"No units match the selected filters"); if(kpis)kpis.innerHTML=renderKpis(visible);
+    }catch(error){ this.logger().error("Inventory load failed",error); if(tbody)tbody.innerHTML=renderErrorRow(8,error.message); if(kpis)kpis.innerHTML=renderKpis([]); this.notify().error(`Inventory: ${error.message}`); }finally{this.loading=false;}
+  }
+  applySearch(rows){const q=String(this.searchTerm||"").toLowerCase().trim();return !q?(rows||[]):(rows||[]).filter(r=>Object.values(r).some(v=>String(v??"").toLowerCase().includes(q)));}
+  bindEvents(){
+    const p=document.getElementById("inv-project-filter"),s=document.getElementById("inv-status-filter"),r=document.getElementById("inv-refresh-btn");
+    p?.addEventListener("change",()=>{this.allStatuses=[];sessionStorage.setItem("operation_global_project",p.value||"ALL");this.loadUnits(true);}); s?.addEventListener("change",()=>this.loadUnits()); r?.addEventListener("click",()=>this.loadUnits(true));
+    document.getElementById("inv-table-body")?.addEventListener("click",e=>{const b=e.target.closest(".inv-open-360");if(!b)return;try{openUnit360(JSON.parse(b.dataset.unitRow||"{}"));}catch{}});
+    window.addEventListener("operation:global-search",e=>{if(!["all","inventory"].includes(e.detail?.target||"all"))return;this.searchTerm=e.detail?.term||"";const v=this.applySearch(this.units);const tb=document.getElementById("inv-table-body"),kb=document.getElementById("inv-kpis");if(tb)tb.innerHTML=v.length?renderRows(v):renderEmptyRow(8,"No units match your search");if(kb)kb.innerHTML=renderKpis(v);});
+  }
 }
-
 export default new InventoryController();

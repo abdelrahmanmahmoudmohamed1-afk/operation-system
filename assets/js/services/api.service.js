@@ -10,13 +10,13 @@ class ApiService {
         this.retry = API_CONFIG.retry || { enabled: false, maxAttempts: 1, delay: 0 };
         this.inFlight = new Map();
         this.memory = new Map();
-        this.cachePrefix = "operation_api_enterprise_v1:";
+        this.cachePrefix = "operation_api_enterprise_v55:";
         this.readPolicies = new Map([
             ["getSystemInfo", 10 * 60 * 1000],
             ["getDashboardFilters", 5 * 60 * 1000],
             ["getDashboardData", 90 * 1000],
             ["getAchievementData", 90 * 1000],
-            ["getInventoryData", 2 * 60 * 1000],
+            ["getInventoryData", 5 * 60 * 1000],
             ["getInventoryProjects", 10 * 60 * 1000],
             ["getAvailableUnitsByProject", 2 * 60 * 1000],
             ["getAvailableLayanaUnits", 2 * 60 * 1000],
@@ -28,9 +28,12 @@ class ApiService {
             ["getEOIData", 90 * 1000],
             ["getUsersData", 60 * 1000],
             ["getAuditHistory", 30 * 1000],
-            ["getLeadsData", 60 * 1000]
+            ["getLeadsData", 60 * 1000],
+            ["getDocumentCoverage", 90 * 1000],
+            ["getUnitFloorPlan", 5 * 60 * 1000],
+            ["getUnitFloorPlanCoverage", 2 * 60 * 1000]
         ]);
-        this.mutations = new Set(["login", "logout", "changeOwnPassword", "saveClientRegistration", "uploadClientContract", "saveEOI", "refreshAvailableLayanaUnits", "bulkUpdateLeadStatus", "importLeads", "createSystemUser"]);
+        this.mutations = new Set(["login", "logout", "changeOwnPassword", "saveClientRegistration", "uploadClientContract", "saveEOI", "refreshAvailableLayanaUnits", "bulkUpdateLeadStatus", "importLeads", "createSystemUser", "uploadUnitFloorPlan"]);
     }
 
     post(action, payload = {}, options = {}) {

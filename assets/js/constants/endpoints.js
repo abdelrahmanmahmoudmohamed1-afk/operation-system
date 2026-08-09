@@ -23,6 +23,10 @@ const ENDPOINTS = Object.freeze({
     CLIENTS_LIST: "getClients",
     UPLOAD_CLIENT_CONTRACT: "uploadClientContract",
     CLIENT_DOCUMENTS: "getClientDocuments",
+    DOCUMENT_COVERAGE: "getDocumentCoverage",
+    UNIT_FLOOR_PLAN: "getUnitFloorPlan",
+    UPLOAD_UNIT_FLOOR_PLAN: "uploadUnitFloorPlan",
+    FLOOR_PLAN_COVERAGE: "getUnitFloorPlanCoverage",
 
     INVENTORY_DATA: "getInventoryData",
     INVENTORY_PROJECTS: "getInventoryProjects",
@@ -40,7 +44,8 @@ const ENDPOINTS = Object.freeze({
 
     USERS_DATA: "getUsersData",
     CREATE_SYSTEM_USER: "createSystemUser",
-    AUDIT_HISTORY: "getAuditHistory"
+    AUDIT_HISTORY: "getAuditHistory",
+    AI_CHAT: "operationAiChat"
 });
 
 export default ENDPOINTS;
