@@ -1,11 +1,30 @@
-const stored = (() => { try { return localStorage.getItem('operation_api_base') || ''; } catch (_) { return ''; } })();
-const injected = String(window.OPERATION_API_BASE || '').trim();
 const API_CONFIG = Object.freeze({
-    // Vercel Functions backend. Set window.OPERATION_API_BASE in index.html or use localStorage key operation_api_base.
-    baseURL: injected || stored || 'https://YOUR-VERCEL-PROJECT.vercel.app/api/ops',
-    version: 'v6',
-    timeout: 30000,
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    retry: { enabled: true, maxAttempts: 2, delay: 500 }
+
+    // Google Apps Script Web App URL
+    baseURL: "https://script.google.com/macros/s/AKfycbzwpGFk2VCisQuRZHbkWdmqmXkgm-1lid3thl_Me0PiOdNtKI8Ui-bfBj9YS1RQPumJ/exec",
+
+    // API Version
+    version: "v1",
+
+    // Request timeout (milliseconds)
+    timeout: 20000,
+
+    // Default Headers
+    // ملحوظة: Apps Script Web Apps مش بترد على CORS preflight (OPTIONS).
+    // باستخدام "text/plain" بدل "application/json" بنتجنب الـ preflight
+    // request من المتصفح، والباك إند برضه بيقرا الـ body كـ JSON عادي
+    // (e.postData.contents) مهما كان الـ header.
+    headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+    },
+
+    // Retry failed requests
+    retry: {
+        enabled: true,
+        maxAttempts: 2,
+        delay: 650
+    }
+
 });
+
 export default API_CONFIG;

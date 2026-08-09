@@ -1,12 +1,11 @@
 /**
- * أسماء الـ actions اللي Vercel unified API
+ * أسماء الـ actions اللي الباك إند (Apps Script unified backend)
  * بيفهمها. أي service جديد المفروض يستخدم القيم من هنا بدل ما
  * يكتب اسم الـ action كنص حر، عشان لو الباك إند اتغير اسم
  * action فيه، نعدّل هنا بس.
  */
 const ENDPOINTS = Object.freeze({
     LOGIN: "login",
-    REFRESH_SESSION: "refreshSession",
     LOGOUT: "logout",
     CHANGE_PASSWORD: "changeOwnPassword",
     SYSTEM_INFO: "getSystemInfo",

@@ -6,7 +6,6 @@ class SessionManager {
     constructor() {
         this.tokenKey = "auth_token";
         this.userKey = "auth_user";
-        this.refreshKey = "auth_refresh_token";
         this.migrateLegacySession();
     }
 
@@ -23,18 +22,13 @@ class SessionManager {
         localStorage.removeItem(this.userKey);
     }
 
-    setSession(token, user, refreshToken = "") {
+    setSession(token, user) {
         sessionStorage.setItem(this.tokenKey, token);
         sessionStorage.setItem(this.userKey, JSON.stringify(user));
-        if (refreshToken) sessionStorage.setItem(this.refreshKey, refreshToken);
     }
 
     getToken() {
         return sessionStorage.getItem(this.tokenKey);
-    }
-
-    getRefreshToken() {
-        return sessionStorage.getItem(this.refreshKey);
     }
 
     getUser() {
@@ -50,7 +44,6 @@ class SessionManager {
     clearSession() {
         sessionStorage.removeItem(this.tokenKey);
         sessionStorage.removeItem(this.userKey);
-        sessionStorage.removeItem(this.refreshKey);
     }
 }
 
