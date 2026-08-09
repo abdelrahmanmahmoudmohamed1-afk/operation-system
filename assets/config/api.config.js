@@ -4,7 +4,7 @@ const API_CONFIG = Object.freeze({
     // Vercel Functions backend. Set window.OPERATION_API_BASE in index.html or use localStorage key operation_api_base.
     baseURL: injected || stored || 'https://operation-system-six.vercel.app/api/ops',
     version: 'enterprise-x',
-    timeout: 25000,
+    timeout: 15000,
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     retry: { enabled: true, maxAttempts: 2, delay: 500 }
 });

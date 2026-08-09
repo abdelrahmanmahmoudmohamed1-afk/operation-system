@@ -6,7 +6,7 @@ import { sheetInventory, sheetClients, sheetEOI, sheetLeads, sheetsEnabled } fro
 import { ensureSchema, postgresConfigured, tableCounts } from '../lib/schema.js';
 import { createGmailConnectUrl, gmailStatus, sendGmail, gmailConfigured } from '../lib/gmail.js';
 
-const BUILD='enterprise-x-1.4.0';
+const BUILD='enterprise-x-1.5.0';
 const ACTIONS=['initializeDatabase','bootstrapStatus','bootstrapAdmin','login','refreshSession','logout','changeOwnPassword','getSystemInfo','runDiagnostics','recordUserActivity','getDashboardFilters','getDashboardData','getAchievementData','getClientFormBootstrap','getSales','getCompanies','getManagerDirector','saveClientRegistration','getClients','uploadClientContract','getClientDocuments','getDocumentCoverage','getUnitFloorPlan','uploadUnitFloorPlan','getUnitFloorPlanCoverage','getInventoryData','getInventoryProjects','getAvailableUnitsByProject','getAvailableLayanaUnits','refreshAvailableLayanaUnits','getEOIFormBootstrap','saveEOI','getEOIData','getLeadsData','bulkUpdateLeadStatus','importLeads','getUsersData','createSystemUser','getAuditHistory','operationAiChat','getGmailStatus','getGmailConnectUrl','sendGmail','getReminders','completeReminder'];
 function parseBody(text){try{return text?JSON.parse(text):{}}catch{return{}}}
 async function schema(){try{return await ensureSchema();}catch(e){console.error('schema setup failed',e);return {ok:false,configured:postgresConfigured(),message:e.message};}}
@@ -108,8 +108,15 @@ async function operationAiWithMemory(user,data={}){
   }
   return {...result,conversationId:conversation?.id||null};
 }
-async function profileCount(){const {count,error}=await admin.from('profiles').select('*',{count:'exact',head:true});if(error)throw error;return count||0;}
-async function bootstrapStatus(){let count=0;try{count=await profileCount();}catch{}return {needsBootstrap:count===0,profiles:count,schema:await schema()};}
+async function profileCount(){const result=await withTimeout(admin.from('profiles').select('*',{count:'exact',head:true}),4000,'Supabase profiles check');const {count,error}=result||{};if(error)throw error;return count||0;}
+async function bootstrapStatus(){
+  try{const count=await profileCount();return {needsBootstrap:count===0,profiles:count,databaseReady:true,schema:{ok:true,configured:postgresConfigured(),mode:'migration-managed'}};}
+  catch(e){
+    const msg=String(e?.message||'');
+    const missing=/profiles|relation .* does not exist|PGRST205|42P01/i.test(msg);
+    return {needsBootstrap:false,profiles:null,databaseReady:false,needsMigration:missing,code:missing?'DATABASE_NOT_INITIALIZED':'DATABASE_UNREACHABLE',message:missing?'Supabase database schema is not initialized yet. Run the included migration in Supabase SQL Editor.':msg||'Supabase database could not be reached.'};
+  }
+}
 async function bootstrapAdmin(d){
   const status=await bootstrapStatus();if(!status.needsBootstrap)throw Object.assign(new Error('System already has an administrator.'),{status:409});
   const email=String(d.email||'').trim().toLowerCase(),username=String(d.username||'').trim(),password=String(d.password||'');
@@ -133,9 +140,24 @@ async function handle(action,payload){
   if(action==='initializeDatabase')return schema();
   if(action==='bootstrapStatus')return bootstrapStatus();
   if(action==='bootstrapAdmin')return bootstrapAdmin(payload.data||payload);
-  if(action==='getSystemInfo'){let needsBootstrap=false;try{needsBootstrap=(await profileCount())===0;}catch{}return{backendBuild:BUILD,version:'x1',platform:'Vercel + Supabase + Google Sheets',actions:ACTIONS,needsBootstrap,setup:{googleSheets:sheetsEnabled(),openai:Boolean(process.env.OPENAI_API_KEY),gmail:gmailConfigured(),supabase:supabaseEnv,postgres:postgresConfigured()}};}
+  if(action==='getSystemInfo'){const boot=await bootstrapStatus();return{backendBuild:BUILD,version:'x1.5',platform:'Vercel + Supabase + Google Sheets',actions:ACTIONS,needsBootstrap:Boolean(boot.needsBootstrap),databaseReady:Boolean(boot.databaseReady),databaseStatus:boot,setup:{googleSheets:sheetsEnabled(),openai:Boolean(process.env.OPENAI_API_KEY),gmail:gmailConfigured(),supabase:supabaseEnv,postgres:postgresConfigured()}};}
   if(action==='refreshSession'){const refreshToken=String(payload.refreshToken||'');if(!refreshToken)throw Object.assign(new Error('REFRESH_TOKEN_REQUIRED'),{status:401});const {data,error}=await publicClient.auth.refreshSession({refresh_token:refreshToken});if(error||!data?.session)throw Object.assign(new Error('SESSION_EXPIRED'),{status:401});const profile=await profileFor(data.user.id);return{success:true,token:data.session.access_token,refreshToken:data.session.refresh_token,user:{id:data.user.id,email:data.user.email,name:profile?.full_name||profile?.username||data.user.email,username:profile?.username||'',role:profile?.role||'user'}};}
-  if(action==='login'){const username=String(payload.username||'').trim();let email=username;if(!username.includes('@')){const {data}=await admin.from('profiles').select('email').ilike('username',username).maybeSingle();email=data?.email||'';}if(!email)return{success:false,message:'Invalid username or password'};const {data,error}=await publicClient.auth.signInWithPassword({email,password:String(payload.password||'')});if(error||!data?.session)return{success:false,message:'Invalid username or password'};const profile=await profileFor(data.user.id);if(profile?.is_active===false)return{success:false,message:'User is disabled'};return{success:true,token:data.session.access_token,refreshToken:data.session.refresh_token,user:{id:data.user.id,email:data.user.email,name:profile?.full_name||profile?.username||data.user.email,username:profile?.username||'',role:profile?.role||'user'}};}
+  if(action==='login'){
+    const username=String(payload.username||'').trim();let email=username;
+    if(!username.includes('@')){
+      let lookup;try{lookup=await withTimeout(admin.from('profiles').select('email').ilike('username',username).maybeSingle(),4000,'Username lookup');}
+      catch(e){const err=new Error(/profiles|PGRST205|42P01/i.test(String(e.message||''))?'Database setup is incomplete. Run the Supabase migration before signing in.':`Login service unavailable: ${e.message}`);err.status=503;err.code=/profiles|PGRST205|42P01/i.test(String(e.message||''))?'DATABASE_NOT_INITIALIZED':'AUTH_LOOKUP_TIMEOUT';throw err;}
+      if(lookup?.error){const err=new Error(/profiles|PGRST205|42P01/i.test(String(lookup.error.message||''))?'Database setup is incomplete. Run the Supabase migration before signing in.':lookup.error.message);err.status=503;err.code='DATABASE_LOOKUP_FAILED';throw err;}
+      email=lookup?.data?.email||'';
+    }
+    if(!email)return{success:false,message:'Invalid username or password'};
+    let authResult;try{authResult=await withTimeout(publicClient.auth.signInWithPassword({email,password:String(payload.password||'')}),8000,'Supabase authentication');}
+    catch(e){const err=new Error(`Authentication service timeout. Check the Supabase connection and environment variables.`);err.status=503;err.code='AUTH_TIMEOUT';throw err;}
+    const {data,error}=authResult||{};if(error||!data?.session)return{success:false,message:'Invalid username or password'};
+    let profile=null;try{profile=await withTimeout(profileFor(data.user.id),4000,'Profile lookup');}catch(e){console.warn('Profile lookup delayed',e.message);}
+    if(profile?.is_active===false)return{success:false,message:'User is disabled'};
+    return{success:true,token:data.session.access_token,refreshToken:data.session.refresh_token,user:{id:data.user.id,email:data.user.email,name:profile?.full_name||profile?.username||data.user.email,username:profile?.username||'',role:profile?.role||'user'}};
+  }
   const user=await requireUser(payload.token);const filters=payload.filters||{};
   switch(action){
     case 'runDiagnostics':return diagnostics(user);

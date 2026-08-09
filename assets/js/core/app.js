@@ -96,10 +96,16 @@ class App {
             // Supabase auth/profile store has no users, preventing dead-end deployments.
             try {
                 const api = Container.get("api");
-                const bootstrap = await api.post("bootstrapStatus", {}, { forceRefresh: true, cacheTTL: 0 });
+                const bootstrap = await api.post("bootstrapStatus", {}, { forceRefresh: true, cacheTTL: 0, timeoutMs: 7000 });
                 const state = bootstrap?.data?.data;
                 const openBtn = document.getElementById("first-admin-open");
                 const panel = document.getElementById("bootstrap-admin-panel");
+                if (state && state.databaseReady === false) {
+                    errorBox.textContent = state.needsMigration
+                        ? "Database setup required: run supabase/migrations/001_operation_system.sql in Supabase SQL Editor, then refresh this page."
+                        : (state.message || "Database connection is unavailable. Check Supabase/Vercel settings.");
+                    errorBox.classList.remove("hidden");
+                }
                 if (state?.needsBootstrap && openBtn && panel) {
                     openBtn.classList.remove("hidden");
                     openBtn.addEventListener("click", () => panel.classList.toggle("hidden"));

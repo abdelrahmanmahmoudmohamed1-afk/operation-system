@@ -100,7 +100,9 @@ class ApiService {
     }
 
     async execute(options) {
-        const attempts = this.retry.enabled ? Math.max(1, Number(this.retry.maxAttempts) || 1) : 1;
+        const action = options.action || options.body?.action || options.params?.action || 'request';
+        const noRetry = this.mutations.has(action) || ['bootstrapStatus','bootstrapAdmin','login','refreshSession','initializeDatabase'].includes(action);
+        const attempts = (this.retry.enabled && !noRetry) ? Math.max(1, Number(this.retry.maxAttempts) || 1) : 1;
         let lastResult = null;
         for (let attempt = 1; attempt <= attempts; attempt += 1) {
             lastResult = await this.requestOnce(options);
@@ -112,7 +114,8 @@ class ApiService {
 
     async requestOnce(options) {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+        const effectiveTimeout = Number(options.timeoutMs) > 0 ? Number(options.timeoutMs) : this.timeout;
+        const timeoutId = setTimeout(() => controller.abort(), effectiveTimeout);
         try {
             const response = await fetch(this.buildURL(options.params), {
                 method: options.method || "GET",
