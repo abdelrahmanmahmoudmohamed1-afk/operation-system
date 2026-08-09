@@ -40,24 +40,27 @@
                 </div>
             </div>
 
-            <div class="topbar-right">
-                <select id="global-project-filter" class="global-project-filter premium-select" title="Project">
-                    <option value="ALL">All Projects</option>
-                    <option value="Layana">Layana</option>
-                    <option value="Mersea">Mersea</option>
-                </select>
-                <button class="topbar-icon-btn copilot-btn" id="ops-copilot-btn" type="button" title="Ops Copilot" aria-label="Open Ops Copilot">AI</button>
+            <div class="topbar-right topbar-actions-clean">
+                <div class="topbar-project-wrap">
+                    <span class="topbar-mini-label">Project</span>
+                    <select id="global-project-filter" class="global-project-filter premium-select" title="Project">
+                        <option value="ALL">All Projects</option>
+                        <option value="Layana">Layana</option>
+                        <option value="Mersea">Mersea</option>
+                    </select>
+                </div>
+                <button class="topbar-command-btn copilot-btn" id="ops-copilot-btn" type="button" title="Operation AI" aria-label="Open Operation AI"><span class="topbar-command-icon">✦</span><span>AI Assistant</span></button>
                 <button class="topbar-icon-btn" id="quick-create-btn" type="button" title="Quick Create" aria-label="Quick Create">＋</button>
                 <button class="topbar-icon-btn notification-bell" id="notification-center-btn" type="button" title="Notifications" aria-label="Notifications"><span>●</span><i id="notification-count" class="notification-count hidden">0</i></button>
-                <button class="topbar-icon-btn pdf-btn" id="global-pdf-btn" type="button" title="Print / Save current view as PDF" aria-label="Print or save PDF">PDF</button>
-                <span class="topbar-clock" id="topbar-clock"></span>
+                <div class="topbar-more-wrap">
+                    <button class="topbar-icon-btn" id="topbar-more-btn" type="button" aria-label="More actions">•••</button>
+                    <div class="topbar-more-menu hidden" id="topbar-more-menu"><button type="button" id="global-pdf-btn">Export / PDF</button><span id="topbar-clock"></span></div>
+                </div>
                 <div class="user-chip" title="Signed in user">
                     <span class="user-avatar" id="topbar-user-avatar">U</span>
                     <span class="user-chip-copy"><strong id="topbar-user-name">-</strong><small id="topbar-user-role"></small></span>
                 </div>
-                <button class="logout-btn animated-logout-btn" data-logout type="button" aria-label="Logout">
-                    <span class="logout-text">Log Out</span>
-                </button>
+                <button class="logout-btn animated-logout-btn" data-logout type="button" aria-label="Logout"><span class="logout-text">Log Out</span></button>
             </div>
         </header>
 

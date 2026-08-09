@@ -1,4 +1,4 @@
-const CACHE_NAME = "operation-system-enterprise-v4-20260808";
+const CACHE_NAME = "operation-system-enterprise-v5-20260808";
 const CORE = [
   "./", "./index.html", "./assets/css/style.css", "./layouts/login.html", "./layouts/main.html",
   "./assets/js/core/app.js", "./assets/js/core/router.js", "./assets/js/core/module-loader.js",

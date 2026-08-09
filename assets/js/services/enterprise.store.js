@@ -50,6 +50,16 @@ class EnterpriseStore {
     }
     deleteTask(id) { this.write('tasks', this.getTasks().filter(x => x.id !== id)); }
 
+    getReminders() { return this.read('reminders', []); }
+    saveReminder(reminder) {
+        const rows=this.getReminders();
+        const item={id:reminder.id||this.uid('RMD'),title:reminder.title||'Reminder',dueAt:reminder.dueAt,createdAt:this.now(),fired:false,...reminder};
+        rows.unshift(item); this.write('reminders',rows.slice(0,200));
+        this.addActivity('Reminder scheduled',item.title,{dueAt:item.dueAt});
+        return item;
+    }
+    markReminderFired(id){ const rows=this.getReminders(); const item=rows.find(x=>x.id===id); if(item){item.fired=true;item.firedAt=this.now();this.write('reminders',rows);} return item; }
+
     getNotifications() { return this.read('notifications', []); }
     notify(title, message, type = 'info', meta = {}) {
         const rows = this.getNotifications();

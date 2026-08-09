@@ -45,6 +45,7 @@ class EnterpriseDataService {
             mobile1: text(safeValue(r,['clientPhone','clientPhoneNumber','phone','mobile','Client Phone Number','Client Phone'])),
             mobile2: text(safeValue(r,['clientPhone2','clientPhoneNumber2','phone2','mobile2','Client Phone Number 2'])),
             address: text(safeValue(r,['clientAddress','address','residenceAddress','Residence address','Client Residence'])),
+            email: text(safeValue(r,['clientEmail','email','E-mail','Email'])),
             status: text(safeValue(r,['status','Status','contractStatus','ContractStatus'])),
             sales: text(safeValue(r,['salesName','Sales','Sales Name'])),
             manager: text(safeValue(r,['manager','Manager','Sales Manager'])),

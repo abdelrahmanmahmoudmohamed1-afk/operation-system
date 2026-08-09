@@ -532,6 +532,24 @@ class App {
             badge.classList.toggle("hidden", count === 0);
         };
 
+        const moreBtn = document.getElementById("topbar-more-btn");
+        const moreMenu = document.getElementById("topbar-more-menu");
+        moreBtn?.addEventListener("click", (e) => { e.stopPropagation(); moreMenu?.classList.toggle("hidden"); });
+        document.addEventListener("click", (e) => { if (moreMenu && !e.target.closest(".topbar-more-wrap")) moreMenu.classList.add("hidden"); });
+
+        const fireReminder = (item) => {
+            store.markReminderFired(item.id);
+            store.notify("Reminder", item.title, "warning", { reminderId: item.id });
+            updateBadge();
+            try {
+                if ("Notification" in window && Notification.permission === "granted") new Notification("Operation System Reminder", { body: item.title, icon: "./assets/images/favicon.ico" });
+                const AC = window.AudioContext || window.webkitAudioContext; if (AC) { const ctx=new AC(); const osc=ctx.createOscillator(), gain=ctx.createGain(); osc.frequency.value=880; gain.gain.value=.08; osc.connect(gain); gain.connect(ctx.destination); osc.start(); setTimeout(()=>{osc.stop();ctx.close();},650); }
+            } catch {}
+            Container.get("notification")?.info(`Reminder: ${item.title}`);
+        };
+        const checkReminders = () => { const now=Date.now(); store.getReminders().filter(x=>!x.fired && x.dueAt && new Date(x.dueAt).getTime()<=now).forEach(fireReminder); };
+        if (!this.reminderTimer) { this.reminderTimer=setInterval(checkReminders,10000); checkReminders(); }
+
         const openNotifications = () => {
             const rows = store.getNotifications();
             const html = rows.length ? rows.slice(0, 40).map((x) => `
@@ -596,11 +614,24 @@ class App {
         this.opsCopilotBound = true;
         const root = document.getElementById("enterprise-overlay-root") || document.body;
         const open = async (seed = "") => {
-            root.innerHTML = `<div class="copilot-backdrop"><aside class="ops-copilot"><div class="copilot-head"><div><span class="eyebrow">Workspace intelligence</span><h2>Ops Copilot</h2><p>Ask about units, clients, sales performance, pipeline or data quality.</p></div><button class="modal-close" id="copilot-close">×</button></div><div class="copilot-suggestions"><button data-copilot-prompt="Give me an executive summary">Executive summary</button><button data-copilot-prompt="Show available units">Available units</button><button data-copilot-prompt="Who is the top sales?">Top sales</button><button data-copilot-prompt="Which clients are missing mobile numbers?">CRM quality</button></div><div id="copilot-conversation" class="copilot-conversation"><div class="copilot-message assistant"><span>AI</span><div><strong>Ready</strong><p>I analyze the data already loaded by Operation System. Try “available units in Mersea” or “top sales”.</p></div></div></div><div class="copilot-composer"><button id="copilot-voice" type="button" title="Voice input">◉</button><input id="copilot-input" placeholder="Ask Operation System…" autocomplete="off"><button id="copilot-send" type="button">Ask</button></div></aside></div>`;
+            root.innerHTML = `<div class="copilot-backdrop"><aside class="ops-copilot agent-mode"><div class="copilot-head"><div><span class="eyebrow">Operation AI · Agent Mode</span><h2>مساعد العمليات</h2><p>اتكلم عربي أو English. اسأل عن الداتا، افتح صفحة، جهّز إيميل، أو اعمل Reminder.</p></div><div class="copilot-status"><i></i><span>Ready</span></div><button class="modal-close" id="copilot-close">×</button></div><div class="copilot-suggestions"><button data-copilot-prompt="اديني ملخص سريع عن الشركة">ملخص تنفيذي</button><button data-copilot-prompt="هات الوحدات المتاحة في ميرسي">وحدات متاحة</button><button data-copilot-prompt="فكرني بعد نص ساعة أراجع العقود">Reminder</button><button data-copilot-prompt="ابعت ايميل example@company.com">Email</button></div><div id="copilot-conversation" class="copilot-conversation"><div class="copilot-message assistant"><span>AI</span><div><strong>جاهز</strong><p>قولّي اللي عايزه بطريقتك. مثال: «مين أعلى سيلز؟»، «افتح CRM»، «فكرني بعد نص ساعة أراجع العقود».</p></div></div></div><div class="copilot-composer"><button id="copilot-voice" type="button" title="Voice input">◉</button><textarea id="copilot-input" rows="1" placeholder="اكتب أو اتكلم مع Operation AI…" autocomplete="off"></textarea><button id="copilot-send" type="button">Send</button></div><div class="copilot-footnote">Data actions run locally in this GitHub build. External email sending opens a prepared compose window and requires your confirmation.</div></aside></div>`;
             const close = () => root.innerHTML = "";
             document.getElementById("copilot-close")?.addEventListener("click", close);
             const input = document.getElementById("copilot-input");
             const convo = document.getElementById("copilot-conversation");
+            const executeAction = async (action, button) => {
+                const kind=action?.kind, payload=action?.payload||{};
+                if(kind==='route'){ close(); await this.router.load(payload.route); return; }
+                if(kind==='reminder'){
+                    const store=Container.get('enterpriseStore'); store.saveReminder(payload);
+                    if('Notification' in window && Notification.permission==='default') { try{ await Notification.requestPermission(); }catch{} }
+                    button.disabled=true; button.textContent='✓ Reminder active'; Container.get('notification')?.success('Reminder scheduled'); return;
+                }
+                if(kind==='email'){
+                    const url=`mailto:${encodeURIComponent(payload.to||'')}?subject=${encodeURIComponent(payload.subject||'')}&body=${encodeURIComponent(payload.body||'')}`;
+                    window.location.href=url; button.textContent='✓ Compose opened'; return;
+                }
+            };
             const ask = async (prompt) => {
                 const q = String(prompt || input.value || "").trim(); if (!q) return;
                 input.value = "";
@@ -611,21 +642,24 @@ class App {
                     const result = await mod.default.ask(q);
                     convo.querySelector(".copilot-thinking")?.remove();
                     const rows = (result.rows || []).map((x) => `<button class="copilot-result-row" ${result.route ? `data-route="${this.escapeHTML(result.route)}"` : ""}><strong>${this.escapeHTML(x.label)}</strong><span>${this.escapeHTML(x.value)}</span></button>`).join("");
-                    convo.insertAdjacentHTML("beforeend", `<div class="copilot-message assistant"><span>AI</span><div><strong>${this.escapeHTML(result.title || "Result")}</strong><p>${this.escapeHTML(result.answer || "")}</p>${rows ? `<div class="copilot-result-list">${rows}</div>` : ""}${result.route ? `<button class="copilot-open-route" data-route="${this.escapeHTML(result.route)}">Open ${this.escapeHTML(result.route)}</button>` : ""}</div></div>`);
+                    const preview=result.preview?`<div class="copilot-preview"><span>To</span><strong>${this.escapeHTML(result.preview.to||'')}</strong><span>Subject</span><strong>${this.escapeHTML(result.preview.subject||'')}</strong><p>${this.escapeHTML(result.preview.body||'').replace(/\n/g,'<br>')}</p></div>`:'';
+                    const actions=(result.actions||[]).map((a,i)=>`<button class="copilot-action-btn" data-agent-action="${i}">${this.escapeHTML(a.label||'Run')}</button>`).join('');
+                    convo.insertAdjacentHTML("beforeend", `<div class="copilot-message assistant"><span>AI</span><div><strong>${this.escapeHTML(result.title || "Result")}</strong><p>${this.escapeHTML(result.answer || "")}</p>${preview}${rows ? `<div class="copilot-result-list">${rows}</div>` : ""}${actions?`<div class="copilot-action-row">${actions}</div>`:''}${result.route && !actions ? `<button class="copilot-open-route" data-route="${this.escapeHTML(result.route)}">Open ${this.escapeHTML(result.route)}</button>` : ""}</div></div>`);
+                    const msg=convo.lastElementChild; msg?.querySelectorAll('[data-agent-action]').forEach(btn=>btn.addEventListener('click',()=>executeAction(result.actions[Number(btn.dataset.agentAction)],btn)));
                 } catch (error) {
                     convo.querySelector(".copilot-thinking")?.remove();
-                    convo.insertAdjacentHTML("beforeend", `<div class="copilot-message assistant error"><span>!</span><div><strong>Could not analyze this request</strong><p>${this.escapeHTML(error.message || String(error))}</p></div></div>`);
+                    convo.insertAdjacentHTML("beforeend", `<div class="copilot-message assistant error"><span>!</span><div><strong>مقدرتش أنفذ الطلب</strong><p>${this.escapeHTML(error.message || String(error))}</p></div></div>`);
                 }
                 convo.scrollTop = convo.scrollHeight;
             };
             document.getElementById("copilot-send")?.addEventListener("click", () => ask());
-            input?.addEventListener("keydown", (e) => { if (e.key === "Enter") ask(); if (e.key === "Escape") close(); });
+            input?.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ask(); } if (e.key === "Escape") close(); });
             root.querySelectorAll("[data-copilot-prompt]").forEach((b) => b.addEventListener("click", () => ask(b.dataset.copilotPrompt)));
             const voice = document.getElementById("copilot-voice");
             voice?.addEventListener("click", () => {
                 const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
-                if (!Speech) { Container.get("notification")?.info("Voice search is not supported by this browser."); return; }
-                const recognition = new Speech(); recognition.lang = document.documentElement.lang === "ar" ? "ar-EG" : "en-US"; recognition.interimResults = false;
+                if (!Speech) { Container.get("notification")?.info("Voice input is not supported by this browser."); return; }
+                const recognition = new Speech(); recognition.lang = /[\u0600-\u06FF]/.test(document.documentElement.innerText||'') ? "ar-EG" : "ar-EG"; recognition.interimResults = false;
                 voice.classList.add("listening"); recognition.onresult = (e) => { const text = e.results?.[0]?.[0]?.transcript || ""; input.value = text; ask(text); }; recognition.onend = () => voice.classList.remove("listening"); recognition.onerror = () => voice.classList.remove("listening"); recognition.start();
             });
             if (seed) { input.value = seed; setTimeout(() => ask(seed), 50); } else input?.focus();
@@ -633,11 +667,9 @@ class App {
         document.getElementById("ops-copilot-btn")?.addEventListener("click", () => open());
         document.getElementById("voice-search-btn")?.addEventListener("click", () => {
             const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
-            const input = document.getElementById("global-search-input");
-            if (!Speech) { open("Give me an executive summary"); return; }
-            const recognition = new Speech(); recognition.lang = document.documentElement.lang === "ar" ? "ar-EG" : "en-US"; recognition.interimResults = false;
-            recognition.onresult = (e) => { const text = e.results?.[0]?.[0]?.transcript || ""; if (input) input.value = text; open(text); };
-            recognition.start();
+            if (!Speech) { open("اديني ملخص سريع"); return; }
+            const recognition = new Speech(); recognition.lang = "ar-EG"; recognition.interimResults = false;
+            recognition.onresult = (e) => open(e.results?.[0]?.[0]?.transcript || ""); recognition.start();
         });
         window.addEventListener("operation:open-copilot", (e) => open(e.detail?.prompt || ""));
     }
