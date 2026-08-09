@@ -15,7 +15,7 @@ export function renderLayout(){
  <div id="leads-modal-root"></div>`;
 }
 export function renderRows(rows=[]){
- if(!rows.length) return `<tr><td colspan="10"><div class="empty-office-state"><span class="empty-office-icon"></span><strong>No leads yet</strong><span>New leads will show up here as soon as they come in.</span></div></td></tr>`;
+ if(!rows.length) return `<tr><td colspan="10" class="table-empty">No leads found</td></tr>`;
  return rows.map(r=>`<tr><td><input type="checkbox" class="lead-select" value="${Number(r.rowNumber)}"></td><td>${escapeHtml(r.date||'')}</td><td>${escapeHtml(r.clientName||'')}</td><td>${escapeHtml(r.phone||'')}</td><td>${escapeHtml(r.project||'')}</td><td>${escapeHtml(r.salesName||'')}</td><td><span class="status-badge">${escapeHtml(r.status||'-')}</span></td><td>${escapeHtml(r.stage||'')}</td><td>${escapeHtml(r.source||'')}</td><td class="cell-wrap">${escapeHtml(r.lastComment||'')}</td></tr>`).join('');
 }
 export function renderKpis(data){ return `<div class="kpi-card"><div class="kpi-title">Total Leads</div><div class="kpi-value">${Number(data?.meta?.total||0)}</div></div><div class="kpi-card"><div class="kpi-title">Selected</div><div class="kpi-value" id="leads-selected-count">0</div></div>`; }

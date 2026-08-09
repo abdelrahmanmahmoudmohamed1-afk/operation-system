@@ -164,12 +164,15 @@ class CRMController extends Module {
                 });
                 this.notify().success(result?.message || "PDF uploaded successfully");
                 close();
+                // Refresh document KPIs after a successful upload without forcing a full CRM reload.
+                try { await this.loadCoverage(); } catch (_) {}
             } catch (error) {
-                window.dispatchEvent(new CustomEvent("operation:busy", { detail: { active: false } }));
                 const message = String(error?.message || "Upload failed");
                 this.showContractError(errorBox, message);
                 this.notify().warning(message, 4800);
                 if (submit) { submit.disabled = false; submit.textContent = "Upload PDF"; }
+            } finally {
+                window.dispatchEvent(new CustomEvent("operation:busy", { detail: { active: false } }));
             }
         });
     }

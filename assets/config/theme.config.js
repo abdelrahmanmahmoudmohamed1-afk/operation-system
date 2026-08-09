@@ -11,8 +11,7 @@ const THEME_CONFIG = Object.freeze({
         executive: "assets/themes/executive.css",
         odoo: "assets/themes/odoo.css",
         oracle: "assets/themes/oracle.css",
-        sap: "assets/themes/sap.css",
-        "night-shift": "assets/themes/night-shift.css"
+        sap: "assets/themes/sap.css"
     }
 });
 

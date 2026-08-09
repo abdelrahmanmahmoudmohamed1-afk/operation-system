@@ -177,7 +177,6 @@ class App {
         await this.checkBackendCompatibility();
         this.bindOperationBusyEvents();
         this.applyLanguageLabels();
-        this.bindCreativeEnhancements();
 
         EventBus.emit("app:started", {
             name: this.name,
@@ -282,12 +281,12 @@ class App {
             if (res.ok && info) {
                 api.setBackendInfo?.(info);
                 sessionStorage.setItem("operation_backend_info", JSON.stringify(info));
-                const required = ["createSystemUser","uploadUnitFloorPlan","uploadClientContract","getInventoryData","getClients","getEOIData"];
+                const required = ["createSystemUser","uploadUnitFloorPlan","uploadClientContract","getInventoryData","getClients","getEOIData","operationAiChat"];
                 const missing = Array.isArray(info.actions) ? required.filter(x => !info.actions.includes(x)) : [];
-                if (missing.length) Container.get("notification")?.warning(`Backend ${info.backendBuild || info.version || ""} is missing: ${missing.join(", ")}. Deploy the included v5.7 backend before using those actions.`);
+                if (missing.length) Container.get("notification")?.warning(`Backend ${info.backendBuild || info.version || ""} is missing: ${missing.join(", ")}. Deploy the included v5.9 backend before using those actions.`);
                 return;
             }
-            Container.get("notification")?.warning("Backend health check failed. Live write actions are disabled until the matching v5.7 backend is deployed.");
+            Container.get("notification")?.warning("Backend health check failed. Live write actions are disabled until the matching v5.9 backend is deployed.");
         } catch (_) {
             // Never block the shell. Individual requests keep readable errors.
         }
@@ -347,11 +346,6 @@ class App {
                 scene.id = "logout-scene";
                 scene.className = "logout-scene v51";
                 scene.innerHTML = `<div class="logout-room">
-                    <div class="logout-dusk-window">
-                        <span></span><span></span><span></span><span></span>
-                        <i class="logout-moon"></i>
-                        <i class="logout-star s1"></i><i class="logout-star s2"></i><i class="logout-star s3"></i>
-                    </div>
                     <div class="logout-light"></div>
                     <div class="logout-office-desk"></div>
                     <div class="logout-laptop"><span class="logout-laptop-screen"></span><span class="logout-laptop-base"></span></div>
@@ -676,7 +670,7 @@ class App {
         this.opsCopilotBound = true;
         const root = document.getElementById("enterprise-overlay-root") || document.body;
         const open = async (seed = "") => {
-            root.innerHTML = `<div class="copilot-backdrop"><aside class="ops-copilot agent-mode"><div class="copilot-head"><div><span class="eyebrow">Operation AI · Agent Mode</span><h2>مساعد العمليات</h2><p>اتكلم عربي مصري أو English. حلّل الداتا، قيّم Payment Plan، جهّز Email، أو اعمل Reminder.</p></div><div class="copilot-status"><i></i><span>Ready</span></div><button class="modal-close" id="copilot-close">×</button></div><div class="copilot-suggestions"><button data-copilot-prompt="اديني ملخص سريع عن الشركة">ملخص تنفيذي</button><button data-copilot-prompt="هات الوحدات المتاحة في ميرسي">وحدات متاحة</button><button data-copilot-prompt="فكرني بعد نص ساعة أراجع العقود">Reminder</button><button data-copilot-prompt="رأيك في Payment Plan 10% DP - 8 سنين - Monthly - 5% Discount لو سعر الوحدة 10 مليون">Payment Plan</button><button data-copilot-prompt="ابعت ايميل بإجمالي EOI إلى example@company.com">Email</button></div><div id="copilot-conversation" class="copilot-conversation"><div class="copilot-message assistant"><span>AI</span><div><strong>جاهز</strong><p>قولّي اللي عايزه بطريقتك. مثال: «ابعت إجمالي EOI بالإيميل»، «رأيك في 10% DP على 8 سنين؟»، «فكرني بعد نص ساعة».</p></div></div></div><div class="copilot-composer"><button id="copilot-voice" type="button" title="Voice input">◉</button><textarea id="copilot-input" rows="1" placeholder="اكتب أو اتكلم مع Operation AI…" autocomplete="off"></textarea><button id="copilot-send" type="button">Send</button></div><div class="copilot-footnote">Agent planning and calculations run locally in this GitHub build. Reminders are real while the workspace/browser can notify you. External email opens a reviewed compose window; direct background sending needs an authenticated mail connection.</div></aside></div>`;
+            root.innerHTML = `<div class="copilot-backdrop"><aside class="ops-copilot agent-mode"><div class="copilot-head"><div><span class="eyebrow">Operation AI · Advanced Agent</span><h2>مساعد العمليات</h2><p>كلّمني بطبيعتك. بفهم المصري والإنجليزي، أقدر أدور في الداتا والمستندات، أفتح الأقسام، أحلل Payment Plans، وأجهز إجراءات فعلية.</p></div><div class="copilot-status"><i></i><span>Ready</span></div><button class="modal-close" id="copilot-close">×</button></div><div class="copilot-suggestions"><button data-copilot-prompt="اديني ملخص سريع عن الشركة">ملخص تنفيذي</button><button data-copilot-prompt="هات الوحدات المتاحة في ميرسي">وحدات متاحة</button><button data-copilot-prompt="فكرني بعد نص ساعة أراجع العقود">Reminder</button><button data-copilot-prompt="رأيك في Payment Plan 10% DP - 8 سنين - Monthly - 5% Discount لو سعر الوحدة 10 مليون">Payment Plan</button><button data-copilot-prompt="هاتلي PDF العقد بتاع العميل أحمد">PDF عميل</button><button data-copilot-prompt="ابعت ايميل بإجمالي EOI إلى example@company.com">Email</button></div><div id="copilot-conversation" class="copilot-conversation"><div class="copilot-message assistant"><span>AI</span><div><strong>جاهز</strong><p>قولّي اللي عايزه زي ما بتكلمني عادي. مثال: «هاتلي عقد العميل أحمد»، «افتح CRM»، «PDF الوحدة A03-G01»، أو «رأيك في Payment Plan 10% على 8 سنين؟».</p></div></div></div><div class="copilot-composer"><button id="copilot-voice" type="button" title="Voice input">◉</button><textarea id="copilot-input" rows="1" placeholder="اكتب أو اتكلم مع Operation AI…" autocomplete="off"></textarea><button id="copilot-send" type="button">Send</button></div><div class="copilot-footnote">Operation AI uses the live system as tools when the AI backend is configured. It can search clients/units/documents, open modules and PDFs, analyze plans, and keep conversation context. External sending still requires an authenticated mail connection.</div></aside></div>`;
             const close = () => root.innerHTML = "";
             document.getElementById("copilot-close")?.addEventListener("click", close);
             const input = document.getElementById("copilot-input");
@@ -684,6 +678,12 @@ class App {
             const executeAction = async (action, button) => {
                 const kind=action?.kind, payload=action?.payload||{};
                 if(kind==='route'){ close(); await this.router.load(payload.route); return; }
+                if(kind==='open-url'){
+                    const url=String(payload.url||'');
+                    if(!url){ Container.get('notification')?.warning('Document link is unavailable.'); return; }
+                    window.open(url,'_blank','noopener,noreferrer');
+                    button.disabled=true; button.textContent='✓ PDF opened'; return;
+                }
                 if(kind==='reminder'){
                     const store=Container.get('enterpriseStore'); store.saveReminder(payload);
                     if('Notification' in window && Notification.permission==='default') { try{ await Notification.requestPermission(); }catch{} }
@@ -709,6 +709,8 @@ class App {
                     const expert=result.expert?`<span class="copilot-expert">${this.escapeHTML(result.expert)}</span>`:'';
                     convo.insertAdjacentHTML("beforeend", `<div class="copilot-message assistant"><span>AI</span><div>${expert}<strong>${this.escapeHTML(result.title || "Result")}</strong><p>${this.escapeHTML(result.answer || "")}</p>${preview}${rows ? `<div class="copilot-result-list">${rows}</div>` : ""}${actions?`<div class="copilot-action-row">${actions}</div>`:''}${result.route && !actions ? `<button class="copilot-open-route" data-route="${this.escapeHTML(result.route)}">Open ${this.escapeHTML(result.route)}</button>` : ""}</div></div>`);
                     const msg=convo.lastElementChild; msg?.querySelectorAll('[data-agent-action]').forEach(btn=>btn.addEventListener('click',()=>executeAction(result.actions[Number(btn.dataset.agentAction)],btn)));
+                    const autoAction=(result.actions||[]).find(a=>a?.auto===true && a?.kind==='route');
+                    if(autoAction){ setTimeout(()=>{ const fake=msg?.querySelector(`[data-agent-action="${(result.actions||[]).indexOf(autoAction)}"]`)||document.createElement('button'); executeAction(autoAction,fake); },450); }
                 } catch (error) {
                     convo.querySelector(".copilot-thinking")?.remove();
                     convo.insertAdjacentHTML("beforeend", `<div class="copilot-message assistant error"><span>!</span><div><strong>مقدرتش أنفذ الطلب</strong><p>${this.escapeHTML(error.message || String(error))}</p></div></div>`);
@@ -741,95 +743,6 @@ class App {
         const logger = Container.get("logger");
 
         logger.info(`${this.name} v${this.version} started successfully`);
-    }
-
-    /**
-     * Small, additive UX touches: a "data freshness" pill in the topbar,
-     * a Command Center power-shortcut, and a once-a-day nudge to switch
-     * between light/dark themes based on the time of day.
-     */
-    bindCreativeEnhancements() {
-        this.bindSyncIndicator();
-        this.bindCommandCenterShortcut();
-        this.suggestThemeForTimeOfDay();
-    }
-
-    bindSyncIndicator() {
-        const textEl = document.getElementById("topbar-sync-text");
-        if (!textEl || this.syncIndicatorBound) return;
-        this.syncIndicatorBound = true;
-        this.lastModuleSync = Date.now();
-
-        const render = () => {
-            const el = document.getElementById("topbar-sync-text");
-            if (!el) return;
-            const seconds = Math.max(0, Math.round((Date.now() - this.lastModuleSync) / 1000));
-            if (seconds < 8) el.textContent = "Updated just now";
-            else if (seconds < 60) el.textContent = `Updated ${seconds}s ago`;
-            else el.textContent = `Updated ${Math.round(seconds / 60)}m ago`;
-        };
-
-        EventBus.on("module:loaded", () => {
-            this.lastModuleSync = Date.now();
-            render();
-        });
-
-        render();
-        setInterval(render, 5000);
-    }
-
-    bindCommandCenterShortcut() {
-        if (this.commandCenterShortcutBound) return;
-        this.commandCenterShortcutBound = true;
-        document.addEventListener("keydown", async (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "o") {
-                e.preventDefault();
-                try {
-                    Container.get("audit")?.record("Open module", "commandcenter", { route: "commandcenter", via: "shortcut" });
-                    await this.router.load("commandcenter");
-                } catch (_) { /* route load already surfaces its own errors */ }
-            }
-        });
-    }
-
-    suggestThemeForTimeOfDay() {
-        try {
-            const today = new Date().toISOString().slice(0, 10);
-            if (localStorage.getItem("operation_theme_suggest_dismissed") === today) return;
-
-            const themeManager = Container.get("themeManager");
-            const current = themeManager.getCurrentTheme();
-            const lightThemes = new Set(["light", "sap", "oracle", "odoo"]);
-            const hour = new Date().getHours();
-            const isNight = hour >= 20 || hour < 6;
-
-            if (!isNight || !lightThemes.has(current)) return;
-
-            const toast = document.createElement("div");
-            toast.className = "theme-suggest-toast";
-            toast.innerHTML = `
-                <strong>Working late?</strong>
-                <p>Night Shift is easier on the eyes after hours. Switch now?</p>
-                <div class="tst-actions">
-                    <button type="button" class="tst-primary" id="tst-switch">Switch theme</button>
-                    <button type="button" id="tst-dismiss">Not now</button>
-                </div>`;
-            document.body.appendChild(toast);
-            requestAnimationFrame(() => toast.classList.add("show"));
-
-            const dismiss = () => {
-                localStorage.setItem("operation_theme_suggest_dismissed", today);
-                toast.classList.remove("show");
-                setTimeout(() => toast.remove(), 250);
-            };
-
-            document.getElementById("tst-switch")?.addEventListener("click", () => {
-                themeManager.apply("night-shift");
-                dismiss();
-            });
-            document.getElementById("tst-dismiss")?.addEventListener("click", dismiss);
-            setTimeout(dismiss, 12000);
-        } catch (_) { /* purely cosmetic — never block startup */ }
     }
 }
 

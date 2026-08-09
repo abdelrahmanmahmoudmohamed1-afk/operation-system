@@ -56,9 +56,18 @@ function extractMonthlyBudget(text){
 function extractFrequency(text){const q=norm(text);if(/month|شهري/.test(q))return'monthly';if(/quarter|ربع/.test(q))return'quarter';if(/semi|نصف سنوي|نصف\s*سنوي/.test(q))return'semi';if(/annual|سنوي/.test(q))return'annual';return null;}
 
 class OpsCopilotService {
-  constructor(){this.history=[];this.memory={lastPlan:null,lastIntent:null,lastProject:'',lastEmail:null};}
-  remember(role,text,meta={}){this.history.push({role,text,meta,at:Date.now()});this.history=this.history.slice(-30);}
-  context(){return this.history.slice(-10);}
+  constructor(){
+    try{this.history=JSON.parse(sessionStorage.getItem('operation_ai_history')||'[]');}catch{this.history=[];}
+    this.memory={lastPlan:null,lastIntent:null,lastProject:'',lastEmail:null};
+  }
+  remember(role,text,meta={}){
+    this.history.push({role,text,meta,at:Date.now()});
+    this.history=this.history.slice(-40);
+    try{sessionStorage.setItem('operation_ai_history',JSON.stringify(this.history));}catch{}
+  }
+  context(){return this.history.slice(-16);}
+  clearConversation(){this.history=[];try{sessionStorage.removeItem('operation_ai_history');}catch{}}
+
 
   async workspace(){
     const live=await EnterpriseData.loadAll();
@@ -205,7 +214,12 @@ class OpsCopilotService {
     try{
       const context={project:scope.project||'ALL',units:{total:scope.units.length,available:scope.units.filter(x=>statusNorm(x.status)==='available').length,reserved:scope.units.filter(x=>statusNorm(x.status)==='reserved').length,contracted:scope.units.filter(x=>statusNorm(x.status)==='contracted').length,sold:scope.units.filter(x=>statusNorm(x.status)==='sold').length,value:sum(scope.units,'price')},clients:{total:scope.clients.length,missingMobile:scope.clients.filter(x=>!x.mobile1).length},eoi:this.eoiSummary(scope.eoi)};
       const res=await ApiService.post(ENDPOINTS.AI_CHAT,{token:AuthManager.getToken(),data:{question,context,history:this.context()}},{cacheTTL:0});
-      const data=res?.data?.data||res?.data; if(res.ok&&data?.enabled&&data.answer)return{title:'Operation AI',answer:data.answer,expert:data.expert||'Chief Operations AI',suggestions:data.suggestedActions||[],type:'conversation'};
+      const data=res?.data?.data||res?.data;
+      if(res.ok&&data?.enabled&&data.answer)return{
+        title:'Operation AI',answer:data.answer,expert:data.expert||'Operation AI',
+        actions:Array.isArray(data.actions)?data.actions:[],
+        suggestions:data.suggestedActions||[],type:'conversation',toolTrace:data.toolTrace||[]
+      };
     }catch(e){console.warn('AI brain fallback',e);}
     return null;
   }
@@ -215,6 +229,11 @@ class OpsCopilotService {
     const q=norm(qRaw); const ar=isArabic(qRaw); this.remember('user',qRaw);
     const data=await this.workspace(); const scope=this.scope(data,q);
     const finish=(out,intent='')=>{this.memory.lastIntent=intent||this.memory.lastIntent;this.remember('assistant',out.answer||'',{intent:intent||''});return out;};
+
+    // Production AI is the primary brain. It can call live workspace tools and return UI actions.
+    // Local deterministic handlers below are a resilience fallback when the AI backend is not configured/unavailable.
+    const remotePrimary=await this.remoteConversation(qRaw,scope);
+    if(remotePrimary) return finish(remotePrimary,'agent');
 
     // 1) Reminders / tasks
     if(/فكرني|ذكرني|remind me|reminder|alarm|نبهني/.test(q)){
@@ -260,7 +279,6 @@ class OpsCopilotService {
     if(lookup){const terms=q.split(/\s+/).filter(x=>x.length>1&&!['دور','ابحث','search','find','هات','جيب','وريني','بيانات'].includes(x));const unitMatches=scope.units.filter(x=>terms.some(t=>Object.values(x).some(v=>norm(v).includes(t)))).slice(0,8);const clientMatches=scope.clients.filter(x=>terms.some(t=>Object.values(x).some(v=>norm(v).includes(t)))).slice(0,8);return finish({title:ar?'بحث في النظام':'Workspace search',answer:ar?`لقيت ${unitMatches.length} وحدة و ${clientMatches.length} عميل مطابقين.`:`Found ${unitMatches.length} matching unit(s) and ${clientMatches.length} client record(s).`,rows:[...unitMatches.map(x=>({label:x.unitCode||'Unit',value:`Unit · ${x.project} · ${x.status}`})),...clientMatches.map(x=>({label:x.clientName||'Client',value:`Client · ${x.project} · ${x.mobile1||'No mobile'}`}))].slice(0,12),route:unitMatches.length?'digitaltwin':'crm'},'search');}
 
     // 9) Natural conversation: use the production AI brain when configured, otherwise clarify safely.
-    const remote=await this.remoteConversation(qRaw,scope); if(remote)return finish(remote,'conversation');
     return finish({title:ar?'فاهمك، بس محتاج أحدد التنفيذ':'I need one detail',answer:ar?'بص، الطلب بالشكل ده محتاج معلومة زيادة عشان أنفذه صح. قولّي عايز النتيجة في صورة إيه، أو المشروع/الفترة/السعر لو الموضوع تحليل أو Payment Plan. ولو في حاجة في الطلب مش منطقية هقولك عليها واقترح البديل.':'I need one more detail to execute this correctly. Tell me the desired outcome or the project/period/price for analysis or a payment plan.',type:'clarify',expert:'Planner'},'clarify');
   }
 }
