@@ -1,55 +1,56 @@
 <div class="login-screen creative-login-screen">
     <div class="login-shell">
         <section class="login-visual-panel" aria-hidden="true">
-            <div class="login-brand-block">
+            <div class="login-brand-block clean-login-brand">
                 <img src="https://i.ibb.co/FLnH6Fw2/1cf98fc6-5c25-4af8-8af0-1e556340272f.jpg" class="login-company-logo" alt="Company logo">
-                <div>
-                    <div class="login-logo-word">OPERATION</div>
-                    <div class="login-system-name">Operation System</div>
+                <div class="login-brand-copy">
+                    <div class="login-system-title">Operation System</div>
+                    <div class="login-system-name">Sales Operations Workspace</div>
                 </div>
             </div>
 
-            <div class="login-door-scene">
-                <div class="login-speed-lines line-1"></div>
-                <div class="login-speed-lines line-2"></div>
-                <div class="login-speed-lines line-3"></div>
-                <div class="login-portal-glow"></div>
-                <div class="login-door-frame">
-                    <div class="login-door">
-                        <div class="door-logo-mark">
-                            <span>OPERATION</span>
-                            <small>Operation System</small>
-                        </div>
-                        <span class="door-handle"></span>
-                    </div>
+            <div class="office-login-scene" role="presentation">
+                <div class="office-wall-glow"></div>
+                <div class="office-window"><span></span><span></span><span></span><span></span></div>
+                <div class="office-door-frame">
+                    <div class="office-door-panel"><span class="office-door-handle"></span></div>
                 </div>
-                <div class="login-runner">
-                    <span class="runner-head"></span>
-                    <span class="runner-body"></span>
-                    <span class="runner-arm arm-left"></span>
-                    <span class="runner-arm arm-right"></span>
-                    <span class="runner-leg leg-left"></span>
-                    <span class="runner-leg leg-right"></span>
+                <div class="office-desk">
+                    <div class="office-laptop"><span class="laptop-screen"></span><span class="laptop-base"></span></div>
+                    <div class="office-coffee"></div>
+                </div>
+                <div class="office-person entering-person">
+                    <span class="person-head"><i class="stress-line s1"></i><i class="stress-line s2"></i><i class="stress-line s3"></i></span>
+                    <span class="person-torso"></span>
+                    <span class="person-arm pa-left"></span>
+                    <span class="person-arm pa-right"></span>
+                    <span class="person-leg pl-left"></span>
+                    <span class="person-leg pl-right"></span>
+                    <span class="person-bag"></span>
+                </div>
+                <div class="scene-status" aria-hidden="true">
+                    <span class="scene-status-dot"></span>
+                    <span class="scene-status-text">Starting the day...</span>
                 </div>
             </div>
 
-            <div class="login-tagline">
-                <span>Smart Systems.</span>
-                <strong>Better Performance.</strong>
+            <div class="login-tagline modern-login-tagline">
+                <span>One workspace.</span>
+                <strong>Every operation under control.</strong>
             </div>
         </section>
 
         <section class="login-card creative-login-card">
-            <div class="login-card-header">
+            <div class="login-card-header clean-login-card-header">
                 <img src="https://i.ibb.co/FLnH6Fw2/1cf98fc6-5c25-4af8-8af0-1e556340272f.jpg" class="login-card-logo" alt="Company logo">
                 <div>
-                    <div class="login-logo">OPERATION</div>
-                    <p class="login-sub">Operation System</p>
+                    <div class="login-logo">Operation System</div>
+                    <p class="login-sub">Secure Workspace</p>
                 </div>
             </div>
 
             <h1 class="login-title">Welcome <span>Back</span></h1>
-            <p class="login-description">Sign in to continue to Operation System</p>
+            <p class="login-description">Sign in to access your operations workspace.</p>
 
             <form id="login-form" class="login-form creative-login-form">
                 <label for="login-username">Username or Email</label>
@@ -62,7 +63,10 @@
                 <div class="login-field">
                     <span class="field-icon">▣</span>
                     <input id="login-password" type="password" autocomplete="current-password" placeholder="Password" required>
-                    <button type="button" class="password-eye" aria-label="Show password">◉</button>
+                    <button type="button" class="password-eye" id="login-password-toggle" aria-label="Show password" aria-pressed="false">
+                        <span class="eye-open" aria-hidden="true">◉</span>
+                        <span class="eye-closed" aria-hidden="true">—</span>
+                    </button>
                 </div>
 
                 <div class="login-options-row">
@@ -76,11 +80,8 @@
                 <p id="login-error" class="login-error hidden"></p>
 
                 <button type="submit" id="login-submit" class="btn btn-primary btn-block creative-login-btn">
-                    <span>Log In</span>
-                    <span class="login-btn-animation" aria-hidden="true">
-                        <span class="btn-runner"></span>
-                        <span class="btn-door"></span>
-                    </span>
+                    <span class="login-submit-label">Log In</span>
+                    <span class="login-btn-arrow" aria-hidden="true">→</span>
                 </button>
             </form>
 

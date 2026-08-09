@@ -85,8 +85,24 @@ class App {
             const form = document.getElementById("login-form");
             const errorBox = document.getElementById("login-error");
             const submitBtn = document.getElementById("login-submit");
+            const passwordInput = document.getElementById("login-password");
+            const passwordToggle = document.getElementById("login-password-toggle");
+            const submitLabel = submitBtn?.querySelector(".login-submit-label");
 
-            if (!form || !errorBox || !submitBtn) throw new Error("Login form is incomplete");
+            if (!form || !errorBox || !submitBtn || !passwordInput) throw new Error("Login form is incomplete");
+
+            if (passwordToggle) {
+                passwordToggle.addEventListener("click", () => {
+                    const visible = passwordInput.type === "text";
+                    passwordInput.type = visible ? "password" : "text";
+                    passwordToggle.classList.toggle("is-visible", !visible);
+                    passwordToggle.setAttribute("aria-pressed", String(!visible));
+                    passwordToggle.setAttribute("aria-label", visible ? "Show password" : "Hide password");
+                    passwordInput.focus({ preventScroll: true });
+                    const end = passwordInput.value.length;
+                    try { passwordInput.setSelectionRange(end, end); } catch (_) { /* unsupported input type */ }
+                });
+            }
 
             form.addEventListener("submit", async (event) => {
                 event.preventDefault();
@@ -101,13 +117,15 @@ class App {
                 }
 
                 submitBtn.disabled = true;
-                submitBtn.textContent = "Signing you in...";
+                submitBtn.classList.add("is-loading");
+                if (submitLabel) submitLabel.textContent = "Signing you in...";
                 errorBox.classList.add("hidden");
 
                 const result = await AuthService.login(username, password);
 
                 submitBtn.disabled = false;
-                submitBtn.textContent = "Log In";
+                submitBtn.classList.remove("is-loading");
+                if (submitLabel) submitLabel.textContent = "Log In";
 
                 if (!result.success) {
                     errorBox.textContent = result.message || "Invalid username or password.";
@@ -115,6 +133,11 @@ class App {
                     return;
                 }
 
+                const loginScreen = document.querySelector(".creative-login-screen");
+                if (loginScreen) {
+                    loginScreen.classList.add("login-success");
+                    await new Promise((resolve) => setTimeout(resolve, 650));
+                }
                 await this.startApp();
             });
         } catch (error) {
@@ -308,12 +331,19 @@ class App {
                 if (document.getElementById("logout-scene")) return;
                 const scene = document.createElement("div");
                 scene.id = "logout-scene";
-                scene.className = "logout-scene";
-                scene.innerHTML = `<div class="logout-room"><div class="logout-light"></div><div class="logout-person"><i></i></div><div class="logout-exit-door"><span></span></div><p>See you soon</p></div>`;
+                scene.className = "logout-scene v51";
+                scene.innerHTML = `<div class="logout-room">
+                    <div class="logout-light"></div>
+                    <div class="logout-office-desk"></div>
+                    <div class="logout-laptop"><span class="logout-laptop-screen"></span><span class="logout-laptop-base"></span></div>
+                    <div class="logout-tired-person"><span class="h"></span><span class="b"></span><span class="a1"></span><span class="a2"></span><span class="l1"></span><span class="l2"></span></div>
+                    <div class="logout-exit-door"><span></span></div>
+                    <p><strong>Day complete.</strong>Closing workspace and signing out...</p>
+                </div>`;
                 document.body.appendChild(scene);
                 requestAnimationFrame(() => scene.classList.add("play"));
                 Container.get("audit")?.record("Logout", "Auth", {});
-                await new Promise((resolve) => setTimeout(resolve, 1700));
+                await new Promise((resolve) => setTimeout(resolve, 3100));
                 try { await AuthService.logout(); } catch (_) { Container.get("authManager")?.logout(); }
                 location.reload();
             });
