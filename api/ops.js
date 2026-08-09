@@ -189,7 +189,7 @@ async function handle(action,payload){
 }
 
 export default async function handler(request){
-  const origin=request.headers.get('origin')||'*';
+  const origin=(typeof request.headers?.get==='function'?request.headers.get('origin'):(request.headers?.origin||request.headers?.Origin))||'*';
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':process.env.ALLOWED_ORIGIN||origin,'Vary':'Origin','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,Authorization','Access-Control-Max-Age':'86400'}});
   try{const url=new URL(request.url);let payload={};if(request.method==='POST')payload=parseBody(await request.text());else for(const[k,v]of url.searchParams.entries()){try{payload[k]=JSON.parse(v)}catch{payload[k]=v}}const action=payload.action||url.searchParams.get('action');if(!action)return json(fail('action is required','BAD_REQUEST'),400,origin);const data=await handle(action,payload);return json(ok(data),200,origin);}catch(error){console.error('ops error',error);return json(fail(error.message||'Server error',error.code||'SERVER_ERROR'),error.status||500,origin);}
 }
