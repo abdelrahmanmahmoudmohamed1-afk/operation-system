@@ -39,6 +39,13 @@ class SettingsModuleService {
         if(!res.ok) throw new Error(res.message); return res.data?.data?.url || "";
     }
 
+    async sendTestGmail(to) {
+        const api=Container.get("api"), token=Container.get("authManager").getToken();
+        const res=await api.post("sendGmail",{token,data:{to,subject:"Operation System - Gmail Test",body:"Gmail integration test completed successfully from Operation System.",documentIds:[]}},{forceRefresh:true,cacheTTL:0});
+        if(!res.ok) throw new Error(res.message || "Test email failed");
+        return res.data?.data || {};
+    }
+
 }
 
 export default new SettingsModuleService();

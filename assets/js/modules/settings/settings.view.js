@@ -134,6 +134,8 @@ export function renderLayout(user, currentTheme, prefs = {}, history = []) {
             <div class="settings-integration-actions">
                 <button class="btn btn-outline" id="settings-check-gmail">Check Gmail</button>
                 <button class="btn btn-primary" id="settings-connect-gmail">Connect Gmail</button>
+                <input class="premium-input" id="settings-gmail-test-to" type="email" placeholder="Test recipient email" style="min-width:260px">
+                <button class="btn btn-outline" id="settings-test-gmail">Send Test Email</button>
             </div>
         </div>
 

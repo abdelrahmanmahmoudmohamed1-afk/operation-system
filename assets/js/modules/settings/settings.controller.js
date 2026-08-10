@@ -127,6 +127,20 @@ class SettingsController extends Module {
                 this.notify().info("Finish Google authorization in the new window, then use Check Gmail.");
             } catch (error) { this.notify().error(error.message || "Could not start Gmail connection"); }
         });
+        document.getElementById("settings-test-gmail")?.addEventListener("click", async () => {
+            const input=document.getElementById("settings-gmail-test-to");
+            const to=String(input?.value||"").trim();
+            if(!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)){ this.notify().warning("Enter a valid recipient email"); return; }
+            const btn=document.getElementById("settings-test-gmail");
+            try {
+                if(btn){btn.disabled=true;btn.textContent="Sending…";}
+                const result=await SettingsService.sendTestGmail(to);
+                this.notify().success(`Test email sent to ${result.to || to}`);
+                AuditService.record("Gmail test email sent", "Settings", { to: result.to || to, messageId: result.messageId || "" });
+            } catch(error){ this.notify().error(error.message || "Test email failed"); }
+            finally { if(btn){btn.disabled=false;btn.textContent="Send Test Email";} }
+        });
+
         document.getElementById("settings-save-preferences")?.addEventListener("click", () => this.savePrefs());
         document.getElementById("settings-export-audit")?.addEventListener("click", () => this.exportAudit());
         document.getElementById("settings-clear-audit")?.addEventListener("click", () => {
