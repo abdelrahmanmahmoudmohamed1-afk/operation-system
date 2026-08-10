@@ -6,7 +6,7 @@ import { sheetInventory, sheetClients, sheetEOI, sheetLeads, sheetsEnabled } fro
 import { ensureSchema, postgresConfigured, tableCounts } from '../lib/schema.js';
 import { createGmailConnectUrl, gmailStatus, sendGmail, gmailConfigured } from '../lib/gmail.js';
 
-const BUILD='enterprise-x-1.5.0';
+const BUILD='enterprise-x-1.6.0';
 const ACTIONS=['initializeDatabase','bootstrapStatus','bootstrapAdmin','login','refreshSession','logout','changeOwnPassword','getSystemInfo','runDiagnostics','recordUserActivity','getDashboardFilters','getDashboardData','getAchievementData','getClientFormBootstrap','getSales','getCompanies','getManagerDirector','saveClientRegistration','getClients','uploadClientContract','getClientDocuments','getDocumentCoverage','getUnitFloorPlan','uploadUnitFloorPlan','getUnitFloorPlanCoverage','getInventoryData','getInventoryProjects','getAvailableUnitsByProject','getAvailableLayanaUnits','refreshAvailableLayanaUnits','getEOIFormBootstrap','saveEOI','getEOIData','getLeadsData','bulkUpdateLeadStatus','importLeads','getUsersData','createSystemUser','getAuditHistory','operationAiChat','getGmailStatus','getGmailConnectUrl','sendGmail','getReminders','completeReminder'];
 function parseBody(text){try{return text?JSON.parse(text):{}}catch{return{}}}
 async function schema(){try{return await ensureSchema();}catch(e){console.error('schema setup failed',e);return {ok:false,configured:postgresConfigured(),message:e.message};}}
@@ -140,7 +140,7 @@ async function handle(action,payload){
   if(action==='initializeDatabase')return schema();
   if(action==='bootstrapStatus')return bootstrapStatus();
   if(action==='bootstrapAdmin')return bootstrapAdmin(payload.data||payload);
-  if(action==='getSystemInfo'){const boot=await bootstrapStatus();return{backendBuild:BUILD,version:'x1.5',platform:'Vercel + Supabase + Google Sheets',actions:ACTIONS,needsBootstrap:Boolean(boot.needsBootstrap),databaseReady:Boolean(boot.databaseReady),databaseStatus:boot,setup:{googleSheets:sheetsEnabled(),openai:Boolean(process.env.OPENAI_API_KEY),gmail:gmailConfigured(),supabase:supabaseEnv,postgres:postgresConfigured()}};}
+  if(action==='getSystemInfo'){const boot=await bootstrapStatus();return{backendBuild:BUILD,version:'x1.6',platform:'Vercel + Supabase + Google Sheets',actions:ACTIONS,needsBootstrap:Boolean(boot.needsBootstrap),databaseReady:Boolean(boot.databaseReady),databaseStatus:boot,setup:{googleSheets:sheetsEnabled(),openai:Boolean(process.env.OPENAI_API_KEY),gmail:gmailConfigured(),supabase:supabaseEnv,postgres:postgresConfigured()}};}
   if(action==='refreshSession'){const refreshToken=String(payload.refreshToken||'');if(!refreshToken)throw Object.assign(new Error('REFRESH_TOKEN_REQUIRED'),{status:401});const {data,error}=await publicClient.auth.refreshSession({refresh_token:refreshToken});if(error||!data?.session)throw Object.assign(new Error('SESSION_EXPIRED'),{status:401});const profile=await profileFor(data.user.id);return{success:true,token:data.session.access_token,refreshToken:data.session.refresh_token,user:{id:data.user.id,email:data.user.email,name:profile?.full_name||profile?.username||data.user.email,username:profile?.username||'',role:profile?.role||'user'}};}
   if(action==='login'){
     const username=String(payload.username||'').trim();let email=username;
@@ -222,8 +222,26 @@ async function handle(action,payload){
   }
 }
 
-export default async function handler(request){
-  const origin=(typeof request.headers?.get==='function'?request.headers.get('origin'):(request.headers?.origin||request.headers?.Origin))||'*';
+async function opsFetch(request){
+  const origin=request.headers.get('origin')||'*';
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':process.env.ALLOWED_ORIGIN||origin,'Vary':'Origin','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,Authorization','Access-Control-Max-Age':'86400'}});
-  try{const url=new URL(request.url);let payload={};if(request.method==='POST')payload=parseBody(await request.text());else for(const[k,v]of url.searchParams.entries()){try{payload[k]=JSON.parse(v)}catch{payload[k]=v}}const action=payload.action||url.searchParams.get('action');if(!action)return json(fail('action is required','BAD_REQUEST'),400,origin);const data=await handle(action,payload);return json(ok(data),200,origin);}catch(error){console.error('ops error',error);return json(fail(error.message||'Server error',error.code||'SERVER_ERROR'),error.status||500,origin);}
+  try{
+    const url=new URL(request.url);
+    let payload={};
+    if(request.method==='POST') payload=parseBody(await request.text());
+    else for(const[k,v]of url.searchParams.entries()){try{payload[k]=JSON.parse(v)}catch{payload[k]=v}}
+    const action=payload.action||url.searchParams.get('action');
+    if(!action)return json(fail('action is required','BAD_REQUEST'),400,origin);
+    const data=await handle(action,payload);
+    return json(ok(data),200,origin);
+  }catch(error){
+    console.error('ops error',error);
+    return json(fail(error.message||'Server error',error.code||'SERVER_ERROR'),error.status||500,origin);
+  }
 }
+
+// Vercel Functions 2026 Web Handler format. Exporting a plain function can be
+// interpreted as the legacy Node req/res handler; returning a Web Response from
+// that mode leaves the invocation open until maxDuration. This fetch export
+// guarantees a real Web Request and that Response is committed immediately.
+export default { fetch: opsFetch };
