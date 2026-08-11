@@ -1,5 +1,35 @@
 import { escapeHtml } from "../../utils/helpers.js";
 
+
+export const USER_PERMISSION_MODULES = Object.freeze([
+    ["commandcenter","Command Center"],["overview","Overview"],["dashboard","Dashboard"],
+    ["inventory","Inventory"],["digitaltwin","Digital Twin"],["payment","Payment"],["crm","CRM"],
+    ["salesoperations","Sales Organization"],["leads","Leads"],["orientation","Orientation"],["eoi","EOI"],
+    ["achievement","Achievement"],["reports","Reports"],["tasks","Tasks"],["analytics","Analytics"],
+    ["quality","Data Quality"],["contracts","Contracts"],["documents","Documents"],["settings","Settings"]
+]);
+
+export function renderPermissionMatrix(prefix = "manage", selected = null) {
+    const defaults = selected === null ? null : new Set((selected || []).map(String));
+    return `<div class="permission-matrix" data-permission-matrix="${prefix}">
+        <div class="permission-matrix-head">
+            <div><strong>Permission Matrix</strong><small>Choose exactly which modules this User can open.</small></div>
+            <div class="permission-matrix-actions">
+                <button type="button" class="btn btn-outline btn-sm permission-preset" data-prefix="${prefix}" data-preset="all">Select All</button>
+                <button type="button" class="btn btn-outline btn-sm permission-preset" data-prefix="${prefix}" data-preset="ops">Operations</button>
+                <button type="button" class="btn btn-outline btn-sm permission-preset" data-prefix="${prefix}" data-preset="sales">Sales</button>
+                <button type="button" class="btn btn-outline btn-sm permission-preset" data-prefix="${prefix}" data-preset="viewer">Viewer</button>
+                <button type="button" class="btn btn-outline btn-sm permission-preset" data-prefix="${prefix}" data-preset="none">Clear</button>
+            </div>
+        </div>
+        <div class="permission-matrix-grid">${USER_PERMISSION_MODULES.map(([route,label]) => {
+            const checked = defaults === null ? true : defaults.has(route);
+            return `<label class="permission-tile"><input type="checkbox" class="permission-checkbox" data-prefix="${prefix}" value="${route}" ${checked ? "checked" : ""}><span><b>${label}</b><small>${route}</small></span></label>`;
+        }).join("")}</div>
+        <div class="permission-admin-note hidden" id="${prefix}-permission-admin-note">Admin accounts always have full system access; the matrix is preserved for use if the account is changed back to User.</div>
+    </div>`;
+}
+
 function initials(name = "") {
     return String(name).split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join("").toUpperCase() || "U";
 }
@@ -53,6 +83,21 @@ export function renderLayout(summary = {}) {
             </section>
         </div>
 
+
+        <div class="modal-overlay hidden" id="user-manage-modal">
+            <div class="modal-box user-create-box">
+                <div class="modal-head"><div><span class="report-eyebrow">Admin only</span><h2>Manage User</h2><p id="manage-user-caption" class="muted"></p></div><button class="modal-close" id="user-manage-close" type="button">×</button></div>
+                <input type="hidden" id="manage-user-id">
+                <div class="form-grid">
+                    <label>Role<select id="manage-user-role" class="premium-select"><option value="user">User</option><option value="admin">Admin</option></select></label>
+                    <label>Status<select id="manage-user-active" class="premium-select"><option value="true">Active</option><option value="false">Inactive</option></select></label>
+                </div>
+                ${renderPermissionMatrix("manage", [])}
+                <div class="state-box" style="margin-top:12px"><strong>Role and permission changes take effect on the user's next login.</strong><br><span class="muted">Admin always has full access. The system prevents removing the last active Admin.</span></div>
+                <div class="modal-actions"><button class="btn btn-outline" id="user-manage-cancel" type="button">Cancel</button><button class="btn btn-primary" id="user-manage-save" type="button">Save Changes</button></div>
+            </div>
+        </div>
+
         <div class="modal-overlay hidden" id="user-create-modal">
             <div class="modal-box user-create-box">
                 <div class="modal-head"><div><span class="report-eyebrow">Admin only</span><h2>Create User</h2></div><button class="modal-close" id="user-create-close" type="button">×</button></div>
@@ -66,6 +111,7 @@ export function renderLayout(summary = {}) {
                     <label>Email<input id="new-user-email" class="premium-input" type="email" required></label>
                     <label>Mobile<input id="new-user-mobile" class="premium-input"></label>
                 </div>
+                ${renderPermissionMatrix("create", null)}
                 <label class="form-check"><input class="form-check-input" id="new-user-active" type="checkbox" checked><span class="form-check-label">Active user</span></label>
                 <div class="modal-actions"><button class="btn btn-outline" id="user-create-cancel" type="button">Cancel</button><button class="btn btn-primary" id="user-create-save" type="button">Create User</button></div>
             </div>
@@ -75,11 +121,12 @@ export function renderLayout(summary = {}) {
 export function renderUsers(users = [], selected = "") {
     if (!users.length) return `<div class="users-empty">No users found.</div>`;
     return users.map(u => `
-        <button type="button" class="user-list-card ${selected === u.username ? "active" : ""}" data-username="${escapeHtml(u.username)}">
+        <div class="user-list-card ${selected === u.username ? "active" : ""}" data-username="${escapeHtml(u.username)}" role="button" tabindex="0">
             <span class="user-avatar-pro">${escapeHtml(initials(u.name || u.username))}</span>
-            <span><strong>${escapeHtml(u.name || u.username)}</strong><small>@${escapeHtml(u.username)} · ${escapeHtml(u.role || "No role")}</small></span>
+            <span class="user-list-copy"><strong>${escapeHtml(u.name || u.username)}</strong><small>@${escapeHtml(u.username)} · ${escapeHtml(u.role || "No role")}</small></span>
             <span class="badge ${u.active ? "badge-available" : "badge-cancelled"}">${u.active ? "Active" : "Inactive"}</span>
-        </button>`).join("");
+            <button type="button" class="btn btn-outline btn-sm user-manage-btn" data-user-id="${escapeHtml(u.id || '')}" data-username="${escapeHtml(u.username || '')}">Manage</button>
+        </div>`).join("");
 }
 
 export function renderAudit(rows = [], resultFilter = "") {

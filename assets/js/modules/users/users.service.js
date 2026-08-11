@@ -18,6 +18,12 @@ class UsersService {
         return result.data?.data || result.data;
     }
 
+    async updateUser(data) {
+        const result = await ApiService.post(ENDPOINTS.UPDATE_SYSTEM_USER, { token: this.token(), data }, { forceRefresh: true });
+        if (!result.ok) throw new Error(result.message);
+        return result.data?.data || result.data;
+    }
+
     async loadHistory(filters = {}, forceRefresh = false) {
         try {
             const result = await ApiService.post(ENDPOINTS.AUDIT_HISTORY, {

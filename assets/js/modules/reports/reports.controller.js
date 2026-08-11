@@ -271,9 +271,31 @@ class ReportsController extends Module {
             ? renderGroupedReport(title, rows, config.group)
             : renderCustomReport(title, rows, config.source, config.columns);
         this.bindReportSelection();
+        this.renderAnalytics(rows, title);
         document.getElementById("report-export-csv")?.addEventListener("click", () => this.exportCsv(this.selectedReportRows(), title));
         document.getElementById("report-export-json")?.addEventListener("click", () => this.exportJson(this.selectedReportRows(), title));
         document.getElementById("report-print")?.addEventListener("click", () => this.printSelectedReport());
+    }
+
+    renderAnalytics(rows = [], title = "Report") {
+        const output = document.getElementById("report-output");
+        if (!output || !rows.length) return;
+        const value = (r) => this.toNumber(r.Value || r.SalesValue || 0);
+        const group = (field) => { const m = new Map(); rows.forEach(r => { const k = String(r[field] || "Unassigned").trim() || "Unassigned"; const x=m.get(k)||{name:k,count:0,value:0}; x.count++; x.value+=value(r); m.set(k,x); }); return Array.from(m.values()).sort((a,b)=>b.value-a.value||b.count-a.count); };
+        const status = group("ContractStatus").filter(x=>x.name!=="Unassigned");
+        const projects = group("Project").slice(0,8);
+        const sales = group("Sales").slice(0,10);
+        const totalValue=rows.reduce((a,r)=>a+value(r),0), avg=rows.length?totalValue/rows.length:0;
+        const sold=rows.filter(r=>String(r.ContractStatus||r.Status||'').toLowerCase()==='sold').length;
+        const contracted=rows.filter(r=>String(r.ContractStatus||r.Status||'').toLowerCase()==='contracted').length;
+        const reserved=rows.filter(r=>String(r.ContractStatus||r.Status||'').toLowerCase()==='reserved').length;
+        const panel=document.createElement('section'); panel.className='report-analytics-panel card'; panel.innerHTML=`<div class="report-builder-topline"><div><span class="report-eyebrow">Interactive data analysis</span><h2>${title} Intelligence</h2><p class="muted">Power BI-style visual layer based on the current report filters.</p></div></div><div class="kpi-grid"><div class="kpi-card"><div class="kpi-title">Rows</div><div class="kpi-value">${rows.length.toLocaleString()}</div></div><div class="kpi-card"><div class="kpi-title">Total Value</div><div class="kpi-value">${new Intl.NumberFormat('en-US',{notation:'compact',maximumFractionDigits:1}).format(totalValue)}</div></div><div class="kpi-card"><div class="kpi-title">Avg Value</div><div class="kpi-value">${new Intl.NumberFormat('en-US',{notation:'compact',maximumFractionDigits:1}).format(avg)}</div></div><div class="kpi-card"><div class="kpi-title">Sales Mix</div><div class="kpi-value">${sold}/${contracted}/${reserved}</div><div class="kpi-sub">Sold / Contracted / Reserved</div></div></div><div class="report-bi-grid"><div class="dash-chart-card"><div class="dash-chart-title">Project Value</div><div class="dash-chart-canvas"><canvas id="report-bi-project"></canvas></div></div><div class="dash-chart-card"><div class="dash-chart-title">Status Mix</div><div class="dash-chart-canvas"><canvas id="report-bi-status"></canvas></div></div><div class="dash-chart-card report-bi-wide"><div class="dash-chart-title">Top 10 Sales</div><div class="dash-chart-canvas dash-chart-canvas-wide"><canvas id="report-bi-sales"></canvas></div></div></div>`;
+        output.insertAdjacentElement('afterbegin',panel);
+        if(typeof Chart==='undefined') return;
+        const opts={responsive:true,maintainAspectRatio:false,animation:{duration:500},plugins:{legend:{position:'bottom'}},interaction:{mode:'index',intersect:false}};
+        new Chart(document.getElementById('report-bi-project'),{type:'bar',data:{labels:projects.map(x=>x.name),datasets:[{label:'Value',data:projects.map(x=>x.value)}]},options:opts});
+        new Chart(document.getElementById('report-bi-status'),{type:'doughnut',data:{labels:status.map(x=>x.name),datasets:[{data:status.map(x=>x.count)}]},options:opts});
+        new Chart(document.getElementById('report-bi-sales'),{type:'bar',data:{labels:sales.map(x=>x.name),datasets:[{label:'Sales Value',data:sales.map(x=>x.value)},{label:'Units',data:sales.map(x=>x.count),yAxisID:'y1'}]},options:{...opts,indexAxis:'y',scales:{y:{beginAtZero:true},y1:{display:false,beginAtZero:true}}}});
     }
 
     bindReportSelection() {

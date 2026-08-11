@@ -7,6 +7,7 @@ create table if not exists public.profiles (
   username text unique not null,
   full_name text,
   role text not null default 'user' check (role in ('admin','user')),
+  permissions jsonb default null,
   is_active boolean not null default true,
   manager text default '', director text default '', mobile text default '',
   created_at timestamptz not null default now(), updated_at timestamptz not null default now()

@@ -4325,3 +4325,20 @@ select option,.premium-select option{color:var(--text,#edf3f8)!important;backgro
   .sidebar,.premium-topbar,#route-loader,#bootLoader,.page-header-actions,.no-print{display:none!important}
   .page-content{overflow:visible!important;height:auto!important}.table-wrap{overflow:visible!important}.data-table{page-break-inside:auto!important}.data-table tr{page-break-inside:avoid!important}
 }
+
+
+/* Enterprise X 1.7.3 — universal table paging + fixed dashboard/table headers */
+.table-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0 18px;padding:10px 12px;border:1px solid var(--os-line,rgba(255,255,255,.08));border-radius:13px;background:rgba(14,23,36,.72);backdrop-filter:blur(14px)}
+.table-page-left,.table-page-actions{display:flex;align-items:center;gap:9px}.table-page-left{color:var(--os-muted,#8795a8);font-size:11px}.table-page-size{min-width:78px!important;height:36px!important;padding:0 28px 0 10px!important}.btn-sm{min-height:34px!important;padding:6px 10px!important;font-size:11px!important}.table-page-actions button:disabled{opacity:.35;cursor:not-allowed}
+.data-table thead th,.report-data-table thead th{position:sticky!important;top:0!important;z-index:35!important;background:#172235!important;box-shadow:0 1px 0 rgba(255,255,255,.08)}
+.page-header,.enterprise-page-head,.overview-hero{position:sticky!important;top:calc(var(--os-topbar-h,64px) + 8px)!important;z-index:850!important}
+.report-analytics-panel{margin:0 0 18px;padding:18px}.report-bi-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:16px}.report-bi-wide{grid-column:1/-1}.report-bi-grid .dash-chart-canvas{height:280px}.report-bi-grid .dash-chart-canvas-wide{height:330px}
+.user-list-card{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto auto!important;align-items:center!important;gap:10px!important}.user-list-copy{display:flex;flex-direction:column;min-width:0}.user-manage-btn{white-space:nowrap}
+@media(max-width:800px){.table-pagination{align-items:stretch;flex-direction:column}.table-page-left,.table-page-actions{justify-content:space-between}.report-bi-grid{grid-template-columns:1fr}.report-bi-wide{grid-column:auto}.user-list-card{grid-template-columns:auto minmax(0,1fr) auto!important}.user-manage-btn{grid-column:2/-1}}
+@media print{.table-pagination{display:none!important}.report-analytics-panel{break-inside:avoid}}
+
+
+/* Enterprise X 1.7.4 — User Permission Matrix */
+.permission-matrix{margin-top:16px;padding:16px;border:1px solid var(--border-color,#d9dee7);border-radius:16px;background:color-mix(in srgb,var(--card-bg,#fff) 96%,transparent)}
+.permission-matrix-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px;flex-wrap:wrap}.permission-matrix-head strong{display:block;font-size:15px}.permission-matrix-head small{display:block;margin-top:3px;opacity:.68}.permission-matrix-actions{display:flex;gap:6px;flex-wrap:wrap}.permission-matrix-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:8px}.permission-tile{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border-color,#d9dee7);border-radius:12px;cursor:pointer;transition:.18s ease;background:var(--surface,#fff)}.permission-tile:hover{transform:translateY(-1px);box-shadow:0 5px 18px rgba(0,0,0,.06)}.permission-tile:has(input:checked){border-color:var(--primary,#5b62f4);background:color-mix(in srgb,var(--primary,#5b62f4) 8%,var(--surface,#fff))}.permission-tile input{width:18px;height:18px;accent-color:var(--primary,#5b62f4)}.permission-tile span{display:flex;flex-direction:column;min-width:0}.permission-tile b{font-size:13px}.permission-tile small{font-size:10px;opacity:.55}.permission-admin-note{margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(46,125,50,.08);font-size:12px}.permission-checkbox:disabled{opacity:.55}.permission-tile:has(input:disabled){cursor:not-allowed;opacity:.72}
+@media(max-width:680px){.permission-matrix-grid{grid-template-columns:1fr 1fr}.permission-matrix-actions{width:100%}}

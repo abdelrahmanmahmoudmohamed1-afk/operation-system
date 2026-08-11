@@ -6,8 +6,24 @@ import { sheetInventory, sheetClients, sheetEOI, sheetLeads, sheetOrientation, s
 import { ensureSchema, postgresConfigured, tableCounts } from '../lib/schema.js';
 import { createGmailConnectUrl, gmailStatus, sendGmail, gmailConfigured } from '../lib/gmail.js';
 
-const BUILD='enterprise-x-1.7.0';
-const ACTIONS=['initializeDatabase','bootstrapStatus','bootstrapAdmin','login','refreshSession','logout','changeOwnPassword','getSystemInfo','runDiagnostics','recordUserActivity','getDashboardFilters','getDashboardData','getAchievementData','getSalesOrganization','saveSalesPerson','saveSalesTarget','getOrientationData','getClientFormBootstrap','getSales','getCompanies','getManagerDirector','saveClientRegistration','getClients','uploadClientContract','getClientDocuments','deleteDocument','getDocumentCoverage','getUnitFloorPlan','uploadUnitFloorPlan','getUnitFloorPlanCoverage','getInventoryData','getInventoryProjects','getAvailableUnitsByProject','getAvailableLayanaUnits','refreshAvailableLayanaUnits','getEOIFormBootstrap','saveEOI','getEOIData','getLeadsData','bulkUpdateLeadStatus','importLeads','getUsersData','createSystemUser','getAuditHistory','operationAiChat','getGmailStatus','getGmailConnectUrl','sendGmail','getReminders','completeReminder'];
+const BUILD='enterprise-x-1.7.4';
+const ACTIONS=['initializeDatabase','bootstrapStatus','bootstrapAdmin','login','refreshSession','logout','changeOwnPassword','getSystemInfo','runDiagnostics','recordUserActivity','getDashboardFilters','getDashboardData','getAchievementData','getSalesOrganization','saveSalesPerson','saveSalesTarget','getOrientationData','getClientFormBootstrap','getSales','getCompanies','getManagerDirector','saveClientRegistration','getClients','uploadClientContract','getClientDocuments','deleteDocument','getDocumentCoverage','getUnitFloorPlan','uploadUnitFloorPlan','getUnitFloorPlanCoverage','getInventoryData','getInventoryProjects','getAvailableUnitsByProject','getAvailableLayanaUnits','refreshAvailableLayanaUnits','getEOIFormBootstrap','saveEOI','getEOIData','getLeadsData','bulkUpdateLeadStatus','importLeads','getUsersData','createSystemUser','updateSystemUser','getAuditHistory','operationAiChat','getGmailStatus','getGmailConnectUrl','sendGmail','getReminders','completeReminder'];
+
+const DEFAULT_USER_PERMISSIONS=['commandcenter','overview','dashboard','inventory','digitaltwin','payment','crm','salesoperations','leads','orientation','eoi','achievement','reports','contracts','documents','tasks','analytics','quality','settings'];
+function cleanPermissions(value){if(!Array.isArray(value))return null;const valid=new Set(DEFAULT_USER_PERMISSIONS);return [...new Set(value.map(x=>String(x||'').trim().toLowerCase()).filter(x=>valid.has(x)))];}
+function userPayload(dataUser,profile){return{id:dataUser.id,email:dataUser.email,name:profile?.full_name||profile?.username||dataUser.email,username:profile?.username||'',role:profile?.role||'user',permissions:Array.isArray(profile?.permissions)?profile.permissions:null};}
+const ACTION_PERMISSION_ROUTES={
+  getDashboardFilters:['overview','dashboard','reports','analytics','achievement'],getDashboardData:['overview','dashboard','reports','analytics'],getAchievementData:['achievement','overview','reports','analytics'],
+  getInventoryData:['inventory','digitaltwin','payment','overview','dashboard','reports','analytics','quality'],getInventoryProjects:['inventory','digitaltwin','payment','crm','reports'],getAvailableUnitsByProject:['inventory','digitaltwin','payment','crm'],getAvailableLayanaUnits:['inventory','crm'],refreshAvailableLayanaUnits:['inventory'],
+  getClients:['crm','overview','dashboard','reports','analytics','quality','contracts'],getClientFormBootstrap:['crm'],saveClientRegistration:['crm'],uploadClientContract:['crm','contracts','documents'],
+  getEOIFormBootstrap:['eoi'],saveEOI:['eoi'],getEOIData:['eoi','overview','dashboard','reports','analytics','quality'],
+  getLeadsData:['leads','crm','overview','dashboard','reports','analytics','quality'],bulkUpdateLeadStatus:['leads'],importLeads:['leads'],
+  getSalesOrganization:['salesoperations','orientation','eoi','leads','crm','achievement','reports'],saveSalesPerson:['salesoperations'],saveSalesTarget:['salesoperations','achievement'],getOrientationData:['orientation','overview','dashboard','reports','analytics'],
+  getClientDocuments:['documents','crm','contracts'],deleteDocument:['documents','crm','contracts'],getDocumentCoverage:['documents','crm','contracts'],getUnitFloorPlan:['digitaltwin','documents','inventory'],uploadUnitFloorPlan:['digitaltwin','documents','inventory'],getUnitFloorPlanCoverage:['digitaltwin','documents','inventory'],
+  getGmailStatus:['settings'],getGmailConnectUrl:['settings'],sendGmail:['settings','tasks','reports'],getReminders:['tasks'],completeReminder:['tasks']
+};
+function canProfileAccess(profile,route){const role=String(profile?.role||'user').toLowerCase();if(role==='admin')return true;const p=Array.isArray(profile?.permissions)?profile.permissions:DEFAULT_USER_PERMISSIONS;return p.includes(route);}
+function requireActionPermission(user,action){const routes=ACTION_PERMISSION_ROUTES[action];if(!routes||!routes.length)return;const ok=routes.some(r=>canProfileAccess(user?.profile,r));if(!ok){const e=new Error('PERMISSION_DENIED');e.status=403;e.code='MODULE_PERMISSION_REQUIRED';throw e;}}
 function parseBody(text){try{return text?JSON.parse(text):{}}catch{return{}}}
 async function schema(){try{return await ensureSchema();}catch(e){console.error('schema setup failed',e);return {ok:false,configured:postgresConfigured(),message:e.message};}}
 async function safeSheet(kind){try{return kind==='inventory'?await sheetInventory():kind==='clients'?await sheetClients():kind==='eoi'?await sheetEOI():kind==='leads'?await sheetLeads():null;}catch(e){console.warn('Google Sheets failed',kind,e.message);return null;}}
@@ -122,7 +138,8 @@ async function bootstrapAdmin(d){
   const email=String(d.email||'').trim().toLowerCase(),username=String(d.username||'').trim(),password=String(d.password||'');
   if(!email||!email.includes('@'))throw new Error('A valid email is required.');if(!username)throw new Error('Username is required.');if(password.length<10)throw new Error('Use a password of at least 10 characters.');
   const {data:created,error}=await admin.auth.admin.createUser({email,password,email_confirm:true,user_metadata:{name:d.name||username}});if(error)throw error;
-  const profile={id:created.user.id,email,username,full_name:String(d.name||username),role:'admin',is_active:true};
+  if(String(d.role||'user').toLowerCase()!=='admin'&&Array.isArray(d.permissions)&&cleanPermissions(d.permissions).length===0)throw new Error('Select at least one module permission for the User.');
+      const profile={id:created.user.id,email,username,full_name:String(d.name||username),role:'admin',is_active:true};
   const {error:pErr}=await admin.from('profiles').insert(profile);if(pErr){try{await admin.auth.admin.deleteUser(created.user.id);}catch{}throw pErr;}
   return {success:true,username,email};
 }
@@ -140,8 +157,8 @@ async function handle(action,payload){
   if(action==='initializeDatabase')return schema();
   if(action==='bootstrapStatus')return bootstrapStatus();
   if(action==='bootstrapAdmin')return bootstrapAdmin(payload.data||payload);
-  if(action==='getSystemInfo'){const boot=await bootstrapStatus();return{backendBuild:BUILD,version:'x1.7.2',platform:'Vercel + Supabase + Google Sheets',actions:ACTIONS,needsBootstrap:Boolean(boot.needsBootstrap),databaseReady:Boolean(boot.databaseReady),databaseStatus:boot,setup:{googleSheets:sheetsEnabled(),openai:Boolean(process.env.OPENAI_API_KEY),gmail:gmailConfigured(),supabase:supabaseEnv,postgres:postgresConfigured()}};}
-  if(action==='refreshSession'){const refreshToken=String(payload.refreshToken||'');if(!refreshToken)throw Object.assign(new Error('REFRESH_TOKEN_REQUIRED'),{status:401});const {data,error}=await publicClient.auth.refreshSession({refresh_token:refreshToken});if(error||!data?.session)throw Object.assign(new Error('SESSION_EXPIRED'),{status:401});const profile=await profileFor(data.user.id);return{success:true,token:data.session.access_token,refreshToken:data.session.refresh_token,user:{id:data.user.id,email:data.user.email,name:profile?.full_name||profile?.username||data.user.email,username:profile?.username||'',role:profile?.role||'user'}};}
+  if(action==='getSystemInfo'){const boot=await bootstrapStatus();return{backendBuild:BUILD,version:'x1.7.4',platform:'Vercel + Supabase + Google Sheets',actions:ACTIONS,needsBootstrap:Boolean(boot.needsBootstrap),databaseReady:Boolean(boot.databaseReady),databaseStatus:boot,setup:{googleSheets:sheetsEnabled(),openai:Boolean(process.env.OPENAI_API_KEY),gmail:gmailConfigured(),supabase:supabaseEnv,postgres:postgresConfigured()}};}
+  if(action==='refreshSession'){const refreshToken=String(payload.refreshToken||'');if(!refreshToken)throw Object.assign(new Error('REFRESH_TOKEN_REQUIRED'),{status:401});const {data,error}=await publicClient.auth.refreshSession({refresh_token:refreshToken});if(error||!data?.session)throw Object.assign(new Error('SESSION_EXPIRED'),{status:401});const profile=await profileFor(data.user.id);return{success:true,token:data.session.access_token,refreshToken:data.session.refresh_token,user:userPayload(data.user,profile)};}
   if(action==='login'){
     const username=String(payload.username||'').trim();let email=username;
     if(!username.includes('@')){
@@ -156,9 +173,9 @@ async function handle(action,payload){
     const {data,error}=authResult||{};if(error||!data?.session)return{success:false,message:'Invalid username or password'};
     let profile=null;try{profile=await withTimeout(profileFor(data.user.id),4000,'Profile lookup');}catch(e){console.warn('Profile lookup delayed',e.message);}
     if(profile?.is_active===false)return{success:false,message:'User is disabled'};
-    return{success:true,token:data.session.access_token,refreshToken:data.session.refresh_token,user:{id:data.user.id,email:data.user.email,name:profile?.full_name||profile?.username||data.user.email,username:profile?.username||'',role:profile?.role||'user'}};
+    return{success:true,token:data.session.access_token,refreshToken:data.session.refresh_token,user:userPayload(data.user,profile)};
   }
-  const user=await requireUser(payload.token);const filters=payload.filters||{};
+  const user=await requireUser(payload.token);requireActionPermission(user,action);const filters=payload.filters||{};
   switch(action){
     case 'runDiagnostics':return diagnostics(user);
     case 'logout':return{success:true};
@@ -207,7 +224,9 @@ async function handle(action,payload){
       const live=await sheetOrientation();if(!Array.isArray(live))throw Object.assign(new Error('Orientation Google Sheet is not connected.'),{status:503});let out=live;
       if(filters.search){const q=norm(filters.search);out=out.filter(x=>norm(`${x.sales} ${x.manager} ${x.director} ${x.company} ${x.activity} ${x.feedback}`).includes(q));}
       if(filters.period&&filters.period!=='all')out=out.filter(x=>dateMatchesPeriod(x.date,filters));
-      return{rows:out,meta:{total:out.length,sales:uniq(out.map(x=>x.sales)).filter(Boolean).length,companies:uniq(out.map(x=>x.company)).filter(Boolean).length},topSales:groupRows(out,x=>x.sales,'Sales').slice(0,10),topManagers:groupRows(out,x=>x.manager,'Manager').slice(0,10),topDirectors:groupRows(out,x=>x.director,'Director').slice(0,10),topCompanies:groupRows(out,x=>x.company,'Company').slice(0,10)};
+      if(filters.activity&&filters.activity!=='all'){const a=norm(filters.activity);out=out.filter(x=>{const v=norm(x.activity);return a==='visit'?v.includes('visit'):v.includes(a);});}
+      const activityNorm=x=>norm(x.activity);const breakdown={orientation:out.filter(x=>activityNorm(x).includes('orientation')).length,workshop:out.filter(x=>activityNorm(x).includes('workshop')).length,visit:out.filter(x=>activityNorm(x).includes('visit')).length,visitToledo:out.filter(x=>activityNorm(x).includes('visit toledo')).length,visitSite:out.filter(x=>activityNorm(x).includes('visit site')).length,zoomMeeting:out.filter(x=>activityNorm(x).includes('zoom')).length};
+      return{rows:out,breakdown,meta:{total:out.length,sales:uniq(out.map(x=>x.sales)).filter(Boolean).length,companies:uniq(out.map(x=>x.company)).filter(Boolean).length},topSales:groupRows(out,x=>x.sales,'Sales').slice(0,10),topManagers:groupRows(out,x=>x.manager,'Manager').slice(0,10),topDirectors:groupRows(out,x=>x.director,'Director').slice(0,10),topCompanies:groupRows(out,x=>x.company,'Company').slice(0,10)};
     }
     case 'getEOIData':{const r=await rows('eoi_records',filters);const shaped=r.map(shapeEOI);return{rows:shaped,meta:{total:shaped.length,totalDeposit:shaped.reduce((a,x)=>a+n(x.Deposit),0)}};}
     case 'getEOIFormBootstrap':{const [u,c,sp]=await Promise.all([rows('inventory_units',{}),rows('clients',{}),admin.from('sales_people').select('name').eq('role','sales').eq('is_active',true)]);const projects=uniq(u.map(x=>x.project)).sort(),masterSales=sp.data||[];return{projects,availableUnits:u.filter(x=>norm(x.status)==='available').map(shapeUnit),sales:(masterSales.length?masterSales.map(x=>x.name):uniq(c.map(x=>x.sales_name))).filter(Boolean).sort(),lists:{projectOptions:projects.length?projects:['Layana','Mersea'],sourceOptions:['Personal','Direct','Non-Direct','Broker','Referral','Freelance','Digital','Call Center','Visit','Visit (Site)'],interestOptions:['1 BR','2 BR','3 BR','Investment','Housing','Other'],paymentMethods:['Cash','Cheque','Transfer'],housingOptions:['Housing','Investment','Second Home','Other']}};}
@@ -231,10 +250,20 @@ async function handle(action,payload){
       await requireAdmin(payload.token);const d=payload.data||{};const email=String(d.email||'').trim().toLowerCase();const username=String(d.username||'').trim();const password=String(d.password||'');
       if(!username)throw new Error('Username is required.');if(!email||!email.includes('@'))throw new Error('A valid email is required for a secure central account.');if(password.length<10)throw new Error('Password must be at least 10 characters.');
       const {data:existing}=await admin.from('profiles').select('id,email,username').or(`email.eq.${email},username.ilike.${username}`).limit(1);if(existing?.length)throw Object.assign(new Error('This email or username already exists.'),{status:409});
+      if(String(d.role||'user').toLowerCase()!=='admin'&&Array.isArray(d.permissions)&&cleanPermissions(d.permissions).length===0)throw new Error('Select at least one module permission for the User.');
       const {data:created,error}=await admin.auth.admin.createUser({email,password,email_confirm:true,user_metadata:{name:d.name||d.fullName||username}});if(error)throw error;
-      const profile={id:created.user.id,email,username,full_name:d.name||d.fullName||username,role:String(d.role||'user').toLowerCase()==='admin'?'admin':'user',is_active:d.active!==false,manager:d.manager||'',director:d.director||'',mobile:d.mobile||''};
+      const profile={id:created.user.id,email,username,full_name:d.name||d.fullName||username,role:String(d.role||'user').toLowerCase()==='admin'?'admin':'user',is_active:d.active!==false,manager:d.manager||'',director:d.director||'',mobile:d.mobile||'',permissions:String(d.role||'user').toLowerCase()==='admin'?null:cleanPermissions(d.permissions)};
       const{error:pErr}=await admin.from('profiles').insert(profile);if(pErr){try{await admin.auth.admin.deleteUser(created.user.id);}catch{}throw pErr;}
       await audit(user,'create_user','users',{createdUser:username,role:profile.role});return{...profile,name:profile.full_name,active:profile.is_active};
+    }
+    case 'updateSystemUser':{
+      const adminUser=await requireAdmin(payload.token);const d=payload.data||{};const id=String(d.id||'').trim();if(!id)throw new Error('User ID is required.');
+      const role=String(d.role||'user').toLowerCase()==='admin'?'admin':'user';const active=d.active!==false;
+      const {data:current,error:ce}=await admin.from('profiles').select('*').eq('id',id).single();if(ce||!current)throw ce||new Error('User not found.');
+      const permissions=role==='admin'?(Array.isArray(current.permissions)?current.permissions:null):cleanPermissions(d.permissions);if(role==='user'&&Array.isArray(permissions)&&permissions.length===0)throw new Error('Select at least one module permission for the User.');
+      if(current.role==='admin'&&(role!=='admin'||!active)){const {count,error:cntErr}=await admin.from('profiles').select('id',{count:'exact',head:true}).eq('role','admin').neq('is_active',false);if(cntErr)throw cntErr;if(Number(count||0)<=1)throw Object.assign(new Error('You cannot demote or deactivate the last active Admin.'),{status:409});}
+      const {data,error}=await admin.from('profiles').update({role,is_active:active,permissions,updated_at:new Date().toISOString()}).eq('id',id).select('*').single();if(error)throw error;
+      await audit(adminUser,'update_user_role','users',{targetUser:current.username,oldRole:current.role,newRole:role,oldActive:current.is_active,newActive:active,permissions});return{...data,name:data.full_name,active:data.is_active};
     }
     case 'getAuditHistory':{await requireAdmin(payload.token);const [{data,error},{data:profiles}]=await Promise.all([admin.from('audit_logs').select('*').order('created_at',{ascending:false}).limit(1000),admin.from('profiles').select('id,username,full_name,role')]);if(error)throw error;const pm=new Map((profiles||[]).map(p=>[p.id,p]));let out=(data||[]).map(x=>{const p=pm.get(x.user_id)||{};return{...x,timestamp:x.created_at,createdAt:x.created_at,userName:p.full_name||p.username||'System',username:p.username||'',role:p.role||'',success:x.details?.success!==false,durationMs:x.details?.durationMs||0,details:x.details||{}};});const f=payload.filters||{};if(f.username)out=out.filter(x=>norm(x.username)===norm(f.username));if(f.module)out=out.filter(x=>norm(x.module)===norm(f.module));if(f.search){const q=norm(f.search);out=out.filter(x=>norm(`${x.action} ${x.module} ${JSON.stringify(x.details)}`).includes(q));}return out.slice(0,Number(f.limit||1000));}
     case 'operationAiChat':return operationAiWithMemory(user,payload.data||{});

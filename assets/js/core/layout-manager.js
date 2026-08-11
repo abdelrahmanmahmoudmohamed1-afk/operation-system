@@ -59,8 +59,9 @@ class LayoutManager {
 
         const authManager = Container.get("authManager");
         const permissionManager = Container.get("permissionManager");
-        const role = String(authManager.getUser()?.role || "user").trim().toLowerCase();
-        const visibleMenu = MENU.filter((item) => permissionManager.can(role, item.route));
+        const user = authManager.getUser() || { role: "user" };
+        const role = String(user.role || "user").trim().toLowerCase();
+        const visibleMenu = MENU.filter((item) => permissionManager.can(user, item.route));
         // Defensive guarantee: Admin must always see the Users module.
         if (role === "admin" && !visibleMenu.some((item) => item.route === "users")) {
             const usersItem = MENU.find((item) => item.route === "users");

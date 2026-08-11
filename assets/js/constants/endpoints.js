@@ -52,6 +52,7 @@ const ENDPOINTS = Object.freeze({
 
     USERS_DATA: "getUsersData",
     CREATE_SYSTEM_USER: "createSystemUser",
+    UPDATE_SYSTEM_USER: "updateSystemUser",
     AUDIT_HISTORY: "getAuditHistory",
     RUN_DIAGNOSTICS: "runDiagnostics",
     AI_CHAT: "operationAiChat",

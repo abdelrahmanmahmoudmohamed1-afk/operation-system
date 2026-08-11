@@ -27,6 +27,7 @@ import Container from "./container.js";
 import ServiceProvider from "../providers/service-provider.js";
 import AuthService from "../services/auth.service.js";
 import SoundService from "../services/sound.service.js";
+import TablePagination from "./table-pagination.js";
 
 class App {
     constructor() {
@@ -190,6 +191,7 @@ class App {
      */
     async startApp() {
         await this.layoutManager.loadMainLayout();
+        TablePagination.start();
 
         this.moduleLoader = new ModuleLoader("page-content");
         this.router = new Router(this.moduleLoader);
