@@ -7,12 +7,11 @@ import { ensureSchema, postgresConfigured, tableCounts } from '../lib/schema.js'
 import { createGmailConnectUrl, gmailStatus, sendGmail, gmailConfigured } from '../lib/gmail.js';
 
 const BUILD='enterprise-x-1.7.7';
-const DEVELOPER_EMAIL='abdelrahmanmahmoudmohamed1@gmail.com';
 const ACTIONS=['initializeDatabase','bootstrapStatus','bootstrapAdmin','login','refreshSession','logout','changeOwnPassword','getSystemInfo','runDiagnostics','recordUserActivity','getDashboardFilters','getDashboardData','getAchievementData','getSalesOrganization','saveSalesPerson','saveSalesTarget','getOrientationData','getClientFormBootstrap','getSales','getCompanies','getManagerDirector','saveClientRegistration','getClients','uploadClientContract','getClientDocuments','deleteDocument','getDocumentCoverage','getUnitFloorPlan','uploadUnitFloorPlan','getUnitFloorPlanCoverage','getInventoryData','getInventoryProjects','getAvailableUnitsByProject','getAvailableLayanaUnits','refreshAvailableLayanaUnits','getEOIFormBootstrap','saveEOI','getEOIData','getLeadsData','bulkUpdateLeadStatus','importLeads','getChatBootstrap','getChatMessages','prepareChatAttachmentUpload','sendChatMessage','sendChatAnnouncement','createChatConversation','markChatRead','getUsersData','createSystemUser','updateSystemUser','resetUserPassword','getAuditHistory','operationAiChat','getGmailStatus','getGmailConnectUrl','sendGmail','getReminders','completeReminder'];
 
 const DEFAULT_USER_PERMISSIONS=['commandcenter','overview','dashboard','inventory','digitaltwin','payment','crm','salesoperations','leads','orientation','eoi','achievement','reports','contracts','documents','tasks','analytics','quality','chat','settings'];
 function cleanPermissions(value){if(!Array.isArray(value))return null;const valid=new Set(DEFAULT_USER_PERMISSIONS);return [...new Set(value.map(x=>String(x||'').trim().toLowerCase()).filter(x=>valid.has(x)))];}
-function userPayload(dataUser,profile){return{id:dataUser.id,email:dataUser.email,name:profile?.full_name||profile?.username||dataUser.email,username:profile?.username||'',role:profile?.role||'user',permissions:Array.isArray(profile?.permissions)?profile.permissions:null,mustChangePassword:Boolean(profile?.must_change_password),isDeveloper:String(dataUser.email||'').toLowerCase()===DEVELOPER_EMAIL};}
+function userPayload(dataUser,profile){return{id:dataUser.id,email:dataUser.email,name:profile?.full_name||profile?.username||dataUser.email,username:profile?.username||'',role:profile?.role||'user',permissions:Array.isArray(profile?.permissions)?profile.permissions:null,mustChangePassword:Boolean(profile?.must_change_password)};}
 const ACTION_PERMISSION_ROUTES={
   getDashboardFilters:['overview','dashboard','reports','analytics','achievement'],getDashboardData:['overview','dashboard','reports','analytics'],getAchievementData:['achievement','overview','reports','analytics'],
   getInventoryData:['inventory','digitaltwin','payment','overview','dashboard','reports','analytics','quality'],getInventoryProjects:['inventory','digitaltwin','payment','crm','reports'],getAvailableUnitsByProject:['inventory','digitaltwin','payment','crm'],getAvailableLayanaUnits:['inventory','crm'],refreshAvailableLayanaUnits:['inventory'],
@@ -309,14 +308,13 @@ async function handle(action,payload){
     case 'resetUserPassword':{
       const adminUser=await requireAdmin(payload.token);const d=payload.data||{};const id=String(d.id||'').trim();if(!id)throw new Error('User ID is required.');
       const {data:target,error:te}=await admin.from('profiles').select('id,email,username,full_name').eq('id',id).single();if(te||!target)throw te||new Error('User not found.');
-      const isDeveloper=String(adminUser.email||'').toLowerCase()===DEVELOPER_EMAIL;
       const generated=Boolean(d.generate);const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';let password=String(d.password||'');
       if(generated){password=Array.from({length:16},()=>chars[Math.floor(Math.random()*chars.length)]).join('');}
       if(password.length<10)throw new Error('Password must be at least 10 characters.');
       const {error}=await admin.auth.admin.updateUserById(id,{password});if(error)throw error;
       const forceChange=d.forceChange!==false;await admin.from('profiles').update({must_change_password:forceChange,updated_at:new Date().toISOString()}).eq('id',id);
-      await audit(adminUser,'reset_user_password','users',{targetUser:target.username,forceChange,generated,developer:isDeveloper});
-      return{success:true,message:'Password reset successfully',temporaryPassword:isDeveloper?password:null,revealAllowed:isDeveloper,forceChange};
+      await audit(adminUser,'reset_user_password','users',{targetUser:target.username,forceChange,generated});
+      return{success:true,message:'Password reset successfully',temporaryPassword:generated?password:null,revealAllowed:generated,forceChange};
     }
     case 'getAuditHistory':{await requireAdmin(payload.token);const [{data,error},{data:profiles}]=await Promise.all([admin.from('audit_logs').select('*').order('created_at',{ascending:false}).limit(1000),admin.from('profiles').select('id,username,full_name,role')]);if(error)throw error;const pm=new Map((profiles||[]).map(p=>[p.id,p]));let out=(data||[]).map(x=>{const p=pm.get(x.user_id)||{};return{...x,timestamp:x.created_at,createdAt:x.created_at,userName:p.full_name||p.username||'System',username:p.username||'',role:p.role||'',success:x.details?.success!==false,durationMs:x.details?.durationMs||0,details:x.details||{}};});const f=payload.filters||{};if(f.username)out=out.filter(x=>norm(x.username)===norm(f.username));if(f.module)out=out.filter(x=>norm(x.module)===norm(f.module));if(f.search){const q=norm(f.search);out=out.filter(x=>norm(`${x.action} ${x.module} ${JSON.stringify(x.details)}`).includes(q));}return out.slice(0,Number(f.limit||1000));}
     case 'operationAiChat':return operationAiWithMemory(user,payload.data||{});

@@ -30,7 +30,10 @@ if(epFile&&fs.existsSync(opsFile)){
   const missing=[...new Set(eps.filter(x=>!acts.includes(x)))]; if(missing.length)failures.push(`API endpoints missing in backend: ${missing.join(', ')}`); else passes.push(`API parity (${new Set(eps).size} frontend / ${new Set(acts).size} backend actions)`);
 }
 
-const aggregate=textFiles.filter(f=>!rel(f).startsWith('scripts/')).map(f=>`\n/* ${rel(f)} */\n${read(f)}`).join('\n');
+const runtimePrefixes=['api/','lib/','assets/','pages/','components/','layouts/'];
+const runtimeExact=new Set(['index.html','settings.html','404.html','sw.js','vercel.json','package.json']);
+const runtimeTextFiles=textFiles.filter(f=>{const r=rel(f);return runtimePrefixes.some(p=>r.startsWith(p))||runtimeExact.has(r);});
+const aggregate=runtimeTextFiles.map(f=>`\n/* ${rel(f)} */\n${read(f)}`).join('\n');
 for(const [label,re] of [
   ['Apps Script runtime remnants',/script\.google\.com|google\.script\.run/ig],
   ['Unsupported PDF colors',/\boklab\(|\boklch\(|\bcolor-mix\(/ig],

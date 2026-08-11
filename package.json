@@ -10,7 +10,7 @@
     "googleapis": "^156.0.0",
     "pg": "^8.13.1"
   },
-  "version": "1.7.7",
+  "version": "1.7.8",
   "scripts": {
     "audit": "node scripts/release-audit.mjs"
   }

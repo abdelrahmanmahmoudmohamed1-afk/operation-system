@@ -100,7 +100,7 @@ export function renderLayout(summary = {}) {
                         <label class="form-check"><input class="form-check-input" id="manage-user-force-password" type="checkbox" checked><span class="form-check-label">Force change on next login</span></label>
                     </div>
                     <div class="modal-actions" style="justify-content:flex-start"><button class="btn btn-outline" id="user-password-generate" type="button">Generate Temporary Password</button><button class="btn btn-outline" id="user-password-reset" type="button">Reset Password</button></div>
-                    <div id="developer-password-result" class="hidden" style="margin-top:10px"><strong>Developer one-time view:</strong> <code id="developer-password-value"></code></div>
+                    <div id="developer-password-result" class="hidden" style="margin-top:10px"><strong>Temporary password (one-time view):</strong> <code id="developer-password-value"></code></div>
                 </div>
                 <div class="state-box" style="margin-top:12px"><strong>Role and permission changes take effect on the user's next login.</strong><br><span class="muted">Admin always has full access. The system prevents removing the last active Admin.</span></div>
                 <div class="modal-actions"><button class="btn btn-outline" id="user-manage-cancel" type="button">Cancel</button><button class="btn btn-primary" id="user-manage-save" type="button">Save Changes</button></div>
