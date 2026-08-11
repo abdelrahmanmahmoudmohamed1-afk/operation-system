@@ -24,6 +24,12 @@ class UsersService {
         return result.data?.data || result.data;
     }
 
+    async resetPassword(data) {
+        const result = await ApiService.post(ENDPOINTS.RESET_USER_PASSWORD, { token: this.token(), data }, { forceRefresh: true });
+        if (!result.ok) throw new Error(result.message);
+        return result.data?.data || result.data;
+    }
+
     async loadHistory(filters = {}, forceRefresh = false) {
         try {
             const result = await ApiService.post(ENDPOINTS.AUDIT_HISTORY, {

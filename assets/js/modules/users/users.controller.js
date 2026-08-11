@@ -78,6 +78,8 @@ class UsersController extends Module {
         document.getElementById("user-create-save")?.addEventListener("click", () => this.createUser());
         ["user-manage-close","user-manage-cancel"].forEach(id => document.getElementById(id)?.addEventListener("click", () => this.toggleManageModal(false)));
         document.getElementById("user-manage-save")?.addEventListener("click", () => this.updateUser());
+        document.getElementById("user-password-generate")?.addEventListener("click", () => this.resetPassword(true));
+        document.getElementById("user-password-reset")?.addEventListener("click", () => this.resetPassword(false));
         document.getElementById("manage-user-role")?.addEventListener("change", () => this.syncPermissionMatrixRole("manage"));
         document.getElementById("new-user-role")?.addEventListener("change", () => this.syncPermissionMatrixRole("create"));
         document.querySelectorAll(".permission-preset").forEach(btn => btn.addEventListener("click", () => this.applyPermissionPreset(btn.dataset.prefix, btn.dataset.preset)));
@@ -108,6 +110,8 @@ class UsersController extends Module {
             cb.checked = explicit === null ? true : explicit.includes(cb.value);
         });
         this.syncPermissionMatrixRole("manage");
+        const pw=document.getElementById("manage-user-new-password"); if(pw) pw.value="";
+        document.getElementById("developer-password-result")?.classList.add("hidden");
         this.toggleManageModal(true);
     }
 
@@ -156,6 +160,20 @@ class UsersController extends Module {
             await this.loadAll(true);
         } catch (error) { this.notify().error(error.message); }
         finally { if (button) { button.disabled = false; button.textContent = "Save Changes"; } }
+    }
+
+    async resetPassword(generate = false) {
+        const id=document.getElementById("manage-user-id")?.value||"";
+        const input=document.getElementById("manage-user-new-password");
+        const forceChange=Boolean(document.getElementById("manage-user-force-password")?.checked);
+        const password=String(input?.value||"");
+        if(!generate && password.length<10) return this.notify().warning("Enter a password of at least 10 characters, or use Generate Temporary Password.");
+        try {
+            const result=await UsersService.resetPassword({id,password,generate,forceChange});
+            if(result?.temporaryPassword){ if(input) input.value=result.temporaryPassword; const value=document.getElementById("developer-password-value"); if(value)value.textContent=result.temporaryPassword; document.getElementById("developer-password-result")?.classList.remove("hidden"); }
+            else { document.getElementById("developer-password-result")?.classList.add("hidden"); }
+            this.notify().success(result?.message||"Password reset successfully");
+        } catch(error){ this.notify().error(error.message); }
     }
 
     async createUser() {

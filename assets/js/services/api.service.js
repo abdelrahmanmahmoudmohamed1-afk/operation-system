@@ -35,7 +35,7 @@ class ApiService {
             ["getUnitFloorPlan", 5 * 60 * 1000],
             ["getUnitFloorPlanCoverage", 2 * 60 * 1000]
         ]);
-        this.mutations = new Set(["bootstrapAdmin", "login", "logout", "changeOwnPassword", "saveClientRegistration", "uploadClientContract", "saveEOI", "refreshAvailableLayanaUnits", "bulkUpdateLeadStatus", "importLeads", "createSystemUser", "updateSystemUser", "uploadUnitFloorPlan", "sendGmail", "completeReminder"]);
+        this.mutations = new Set(["bootstrapAdmin", "login", "logout", "changeOwnPassword", "saveClientRegistration", "uploadClientContract", "saveEOI", "refreshAvailableLayanaUnits", "bulkUpdateLeadStatus", "importLeads", "createSystemUser", "updateSystemUser", "resetUserPassword", "uploadUnitFloorPlan", "sendGmail", "completeReminder"]);
     }
 
     setBackendInfo(info = null) {
