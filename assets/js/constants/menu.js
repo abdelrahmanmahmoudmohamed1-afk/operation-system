@@ -17,6 +17,7 @@ const MENU = Object.freeze([
     { label: "Data Quality", route: "quality", code: "DQL", icon: "◇" },
     { label: "Contracts", route: "contracts", code: "CTR", icon: "▣" },
     { label: "Documents", route: "documents", code: "DOC", icon: "▧" },
+    { label: "Chat", route: "chat", code: "CHT", icon: "✉" },
     { label: "Users", route: "users", code: "USR", icon: "◎" },
     { label: "Settings", route: "settings", code: "SET", icon: "⚙" }
 ]);

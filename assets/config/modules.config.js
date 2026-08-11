@@ -128,6 +128,11 @@ const MODULES = Object.freeze({
         controller: "documents.controller.js", service: "documents.service.js", view: "documents.view.js", permissions: []
     },
 
+    chat: {
+        name: "Chat", route: "chat", folder: "chat",
+        controller: "chat.controller.js", service: "chat.service.js", view: "chat.view.js", permissions: []
+    },
+
     users: {
         name: "Users",
         route: "users",

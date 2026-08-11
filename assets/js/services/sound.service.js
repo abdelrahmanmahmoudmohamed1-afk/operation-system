@@ -11,5 +11,7 @@ class SoundService {
   upload(){this.tone(230,.08,'triangle',.16);this.tone(360,.1,'triangle',.18,.07);this.tone(540,.11,'triangle',.18,.14);}
   error(){this.tone(160,.14,'sawtooth',.2);this.tone(115,.18,'sawtooth',.22,.11);}
   notification(){this.tone(720,.08,'sine',.15);this.tone(880,.11,'sine',.18,.12);}
+  mention(){this.tone(860,.07,'sine',.2);this.tone(1080,.09,'sine',.22,.09);this.tone(920,.12,'triangle',.18,.19);}
+  announcement(){this.tone(520,.1,'square',.15);this.tone(660,.11,'triangle',.2,.1);this.tone(880,.16,'sine',.24,.22);}
 }
 export default new SoundService();

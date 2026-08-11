@@ -50,6 +50,14 @@ const ENDPOINTS = Object.freeze({
     BULK_UPDATE_LEAD_STATUS: "bulkUpdateLeadStatus",
     IMPORT_LEADS: "importLeads",
 
+    CHAT_BOOTSTRAP: "getChatBootstrap",
+    CHAT_MESSAGES: "getChatMessages",
+    CHAT_PREPARE_ATTACHMENT: "prepareChatAttachmentUpload",
+    CHAT_SEND: "sendChatMessage",
+    CHAT_ANNOUNCEMENT: "sendChatAnnouncement",
+    CHAT_CREATE: "createChatConversation",
+    CHAT_READ: "markChatRead",
+
     USERS_DATA: "getUsersData",
     CREATE_SYSTEM_USER: "createSystemUser",
     UPDATE_SYSTEM_USER: "updateSystemUser",
