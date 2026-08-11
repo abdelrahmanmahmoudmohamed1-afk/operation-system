@@ -17,6 +17,10 @@ const ENDPOINTS = Object.freeze({
     DASHBOARD_FILTERS: "getDashboardFilters",
     DASHBOARD_DATA: "getDashboardData",
     ACHIEVEMENT_DATA: "getAchievementData",
+    SALES_ORG_DATA: "getSalesOrganization",
+    SAVE_SALES_PERSON: "saveSalesPerson",
+    SAVE_SALES_TARGET: "saveSalesTarget",
+    ORIENTATION_DATA: "getOrientationData",
 
     CLIENT_FORM_BOOTSTRAP: "getClientFormBootstrap",
     SALES_LIST: "getSales",
@@ -26,6 +30,7 @@ const ENDPOINTS = Object.freeze({
     CLIENTS_LIST: "getClients",
     UPLOAD_CLIENT_CONTRACT: "uploadClientContract",
     CLIENT_DOCUMENTS: "getClientDocuments",
+    DELETE_DOCUMENT: "deleteDocument",
     DOCUMENT_COVERAGE: "getDocumentCoverage",
     UNIT_FLOOR_PLAN: "getUnitFloorPlan",
     UPLOAD_UNIT_FLOOR_PLAN: "uploadUnitFloorPlan",

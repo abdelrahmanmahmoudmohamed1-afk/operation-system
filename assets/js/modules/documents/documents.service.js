@@ -1,5 +1,9 @@
 import ClientService from '../../services/client.service.js';
 class DocumentsService {
+  async delete(id){
+    const res=await ClientService.api().post("deleteDocument",{token:ClientService.token(),data:{id}},{cacheTTL:0,forceRefresh:true});
+    return ClientService.unwrap(res);
+  }
   async load(){
     const project=sessionStorage.getItem('operation_global_project')||'ALL';
     const rows=await ClientService.getDocuments({project});

@@ -162,17 +162,17 @@ class ModuleLoader {
                     // Door visibly opens before the worker moves.
                     setStage("stage-source-open", `Opening ${fromLabel}…`);
                     SoundService.doorOpen();
-                    await this.sleep(300);
+                    await this.sleep(80);
                     if (!valid()) return;
 
                     setStage("stage-source-exit", `Leaving ${fromLabel}…`);
-                    await this.sleep(470);
+                    await this.sleep(120);
                     if (!valid()) return;
 
                     // Worker has cleared the door; close it fully behind them.
                     setStage("stage-source-close", `Closing ${fromLabel} behind you…`);
                     SoundService.doorClose();
-                    await this.sleep(300);
+                    await this.sleep(80);
                     if (!valid()) return;
 
                     // Continuous walking loop. The user never appears frozen at a door.
@@ -190,20 +190,20 @@ class ModuleLoader {
                 bar?.classList.add("done");
                 setStage("stage-target-open", `${toLabel} is ready · opening the door…`);
                 SoundService.doorOpen();
-                await this.sleep(300);
+                await this.sleep(80);
                 if (!valid()) return;
 
                 setStage("stage-target-enter", `Entering ${toLabel}…`);
-                await this.sleep(470);
+                await this.sleep(120);
                 if (!valid()) return;
 
                 setStage("stage-target-close", `Closing ${toLabel}…`);
                 SoundService.doorClose();
-                await this.sleep(300);
+                await this.sleep(80);
                 if (!valid()) return;
 
                 setStage("stage-done", `${toLabel} ready`);
-                await this.sleep(100);
+                await this.sleep(40);
             },
 
             fail: (error) => {
@@ -216,7 +216,7 @@ class ModuleLoader {
             hide: async () => {
                 if (!valid()) return;
                 overlay.classList.add("leaving");
-                await this.sleep(180);
+                await this.sleep(60);
                 if (!valid()) return;
                 this.resetTransitionClasses(overlay);
                 overlay.classList.remove("show", "leaving", "failed");
@@ -258,7 +258,8 @@ class ModuleLoader {
             tasks: "Tasks",
             analytics: "Analytics",
             documents: "Documents",
-            quality: "Data Quality"
+            quality: "Data Quality",
+            orientation: "Orientation"
         };
         const key = String(value || "").toLowerCase();
         return map[key] || String(value || "Workspace").replace(/(^|[-_])([a-z])/g, (_, a, b) => `${a ? " " : ""}${b.toUpperCase()}`);

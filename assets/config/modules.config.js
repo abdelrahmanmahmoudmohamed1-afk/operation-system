@@ -71,6 +71,16 @@ const MODULES = Object.freeze({
         permissions: []
     },
 
+    salesoperations: {
+        name: "Sales Organization", route: "salesoperations", folder: "salesoperations",
+        controller: "salesoperations.controller.js", service: "salesoperations.service.js", view: "salesoperations.view.js", permissions: []
+    },
+
+    orientation: {
+        name: "Orientation", route: "orientation", folder: "orientation",
+        controller: "orientation.controller.js", service: "orientation.service.js", view: "orientation.view.js", permissions: []
+    },
+
     achievement: {
         name: "Achievement",
         route: "achievement",
