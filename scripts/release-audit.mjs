@@ -9,7 +9,19 @@ const files=[];
 function walk(dir){for(const ent of fs.readdirSync(dir,{withFileTypes:true})){if(['node_modules','.git'].includes(ent.name))continue;const p=path.join(dir,ent.name);ent.isDirectory()?walk(p):files.push(p);}}
 walk(ROOT);
 const rel=p=>path.relative(ROOT,p).replaceAll('\\','/');
+
+// Archived/legacy projects kept in this repo for reference (pre-Vercel Apps Script
+// era). They intentionally still contain old patterns (google.script.run, color-mix,
+// their own endpoints.js, etc). They must NOT be treated as "the live product" by the
+// checks below, or the checks silently validate the wrong files / report false
+// failures for code nobody ships. They ARE still covered by the secret scan, since a
+// leaked key is a real risk no matter which folder it sits in.
+const LEGACY_DIRS=['Frontend','Toledo_Unified_Backend','Operation_System_Backend'];
+const isLegacy=f=>{const r=rel(f);return LEGACY_DIRS.some(d=>r===d||r.startsWith(d+'/'));};
+
 const textFiles=files.filter(f=>/\.(js|mjs|css|html|json|md|txt|sql)$/.test(f));
+const liveFiles=files.filter(f=>!isLegacy(f));
+const liveTextFiles=textFiles.filter(f=>!isLegacy(f));
 const read=f=>fs.readFileSync(f,'utf8');
 
 // Syntax
@@ -21,7 +33,14 @@ for(const f of files.filter(f=>/\.js$/.test(f))){const s=read(f);for(const m of 
 if(!failures.some(x=>x.startsWith('Missing import:')))passes.push('Relative imports');
 
 // API parity
-const epFile=files.find(f=>rel(f).endsWith('assets/js/constants/endpoints.js')) || files.find(f=>rel(f).endsWith('assets/config/endpoints.js'));
+// NOTE: must resolve the live file by an exact repo-root path, not endsWith().
+// A previous version matched the first file whose path *ended with*
+// 'assets/js/constants/endpoints.js', which also matches archived copies inside
+// LEGACY_DIRS (e.g. Frontend/assets/js/constants/endpoints.js). Directory walk
+// order is not guaranteed alphabetical-by-case, so that version could silently
+// validate a stale/legacy endpoints file instead of the real one.
+const epCandidates=['assets/js/constants/endpoints.js','assets/config/endpoints.js'].map(p=>path.join(ROOT,p));
+const epFile=epCandidates.find(fs.existsSync);
 const opsFile=path.join(ROOT,'api','ops.js');
 if(!epFile) failures.push('Endpoint constants file not found.');
 if(epFile&&fs.existsSync(opsFile)){
@@ -30,15 +49,20 @@ if(epFile&&fs.existsSync(opsFile)){
   const missing=[...new Set(eps.filter(x=>!acts.includes(x)))]; if(missing.length)failures.push(`API endpoints missing in backend: ${missing.join(', ')}`); else passes.push(`API parity (${new Set(eps).size} frontend / ${new Set(acts).size} backend actions)`);
 }
 
-const runtimePrefixes=['api/','lib/','assets/','pages/','components/','layouts/'];
-const runtimeExact=new Set(['index.html','settings.html','404.html','sw.js','vercel.json','package.json']);
-const runtimeTextFiles=textFiles.filter(f=>{const r=rel(f);return runtimePrefixes.some(p=>r.startsWith(p))||runtimeExact.has(r);});
-const aggregate=runtimeTextFiles.map(f=>`\n/* ${rel(f)} */\n${read(f)}`).join('\n');
+// Live-product content checks: only the shipped app, not LEGACY_DIRS reference copies,
+// and only functional code (js/css/html) rather than docs/notes that merely *mention*
+// these patterns in Arabic release notes.
+const liveCodeFiles=liveTextFiles.filter(f=>/\.(js|mjs|css|html)$/.test(f));
+const aggregateLive=liveCodeFiles.filter(f=>!rel(f).startsWith('scripts/')).map(f=>`\n/* ${rel(f)} */\n${read(f)}`).join('\n');
 for(const [label,re] of [
   ['Apps Script runtime remnants',/script\.google\.com|google\.script\.run/ig],
   ['Unsupported PDF colors',/\boklab\(|\boklch\(|\bcolor-mix\(/ig],
   ['Legacy unknown-action UI',/Unknown action:/ig]
-]){const n=(aggregate.match(re)||[]).length;if(n)failures.push(`${label}: ${n} occurrence(s)`);else passes.push(label);}
+]){const n=(aggregateLive.match(re)||[]).length;if(n)failures.push(`${label}: ${n} occurrence(s)`);else passes.push(label);}
+
+// Full-repo aggregate (incl. LEGACY_DIRS) — used only for the secret scan below, since a
+// leaked key must be caught wherever it sits in the repo, archived or not.
+const aggregate=textFiles.filter(f=>!rel(f).startsWith('scripts/')).map(f=>`\n/* ${rel(f)} */\n${read(f)}`).join('\n');
 
 for(const required of ['api/ops.js','api/health.js','lib/ai.js','lib/sheets.js','lib/gmail.js','lib/schema.js','assets/js/services/document-storage.service.js','assets/js/core/module-loader.js','supabase/migrations/001_operation_system.sql']){if(!fs.existsSync(path.join(ROOT,required)))failures.push(`Required file missing: ${required}`);}
 

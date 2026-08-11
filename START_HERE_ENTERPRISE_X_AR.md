@@ -70,9 +70,9 @@
 أي Environment Variable جديدة في Vercel تحتاج Deployment جديد. اعمل Redeploy أو Push commit جديد بعد إضافة المتغيرات.
 
 ## قاعدة البيانات
-Enterprise X يحاول إنشاء الجداول وStorage bucket تلقائيًا على أول طلب للـ API باستخدام اتصال Postgres الذي توفره Supabase/Vercel integration. توجد أيضًا نسخة مطابقة في:
-`supabase/migrations/001_operation_system.sql`
-لو أردت تشغيلها يدويًا من SQL Editor.
+Enterprise X يحاول إنشاء الجداول وStorage bucket تلقائيًا على أول طلب للـ API باستخدام اتصال Postgres الذي توفره Supabase/Vercel integration. توجد أيضًا نسخة مطابقة في مجلد:
+`supabase/migrations/`
+لو أردت تشغيلها يدويًا من SQL Editor — شغّل كل الملفات بالترتيب الرقمي (001 حتى 006 حاليًا)، مش 001 بس، لأن sales_people/sales_targets/lead_history وباقي الجداول موزّعة على أكتر من ملف.
 
 ## أول دخول
 لو قاعدة Profiles فاضية، صفحة Login تظهر `First-time setup · Create Admin`. أنشئ أول Admin مرة واحدة، وبعدها تختفي إمكانية الـ bootstrap ولا يمكن استخدامها مرة ثانية.
