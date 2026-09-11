@@ -10,7 +10,6 @@ class ApiService {
         this.retry = API_CONFIG.retry || { enabled: false, maxAttempts: 1, delay: 0 };
         this.inFlight = new Map();
         this.memory = new Map();
-        this.refreshPromise = null;
         this.cachePrefix = "operation_api_enterprise_x16:";
         this.backendInfo = null;
         this.backendActions = null;
@@ -37,7 +36,6 @@ class ApiService {
             ["getUnitFloorPlanCoverage", 2 * 60 * 1000]
         ]);
         this.mutations = new Set(["bootstrapAdmin", "login", "logout", "changeOwnPassword", "saveClientRegistration", "uploadClientContract", "saveEOI", "refreshAvailableLayanaUnits", "bulkUpdateLeadStatus", "importLeads", "createSystemUser", "updateSystemUser", "resetUserPassword", "uploadUnitFloorPlan", "sendGmail", "completeReminder", "sendChatMessage", "sendChatAnnouncement", "createChatConversation", "markChatRead", "prepareChatAttachmentUpload"]);
-        ["saveSalesPerson", "saveSalesTarget", "deleteDocument", "recordUserActivity", "operationAiChat", "initializeDatabase", "getGmailConnectUrl", "runDiagnostics"].forEach(action => this.mutations.add(action));
     }
 
     setBackendInfo(info = null) {
@@ -64,23 +62,23 @@ class ApiService {
 
     async request(options = {}) {
         if (!this.baseURL) return this.failure(0, "API baseURL is not configured");
+        if (!navigator.onLine) {
+            const offline = this.readCache(this.makeKey(options));
+            return offline || this.failure(0, "No internet connection");
+        }
+
         const action = options.action || options.body?.action || options.params?.action || "request";
         if (!["getSystemInfo","bootstrapStatus","bootstrapAdmin","login","refreshSession"].includes(action) && !this.supports(action)) return this.capabilityError(action);
         this.applyGlobalProject(options, action);
         const cacheTTL = options.cacheTTL ?? this.readPolicies.get(action) ?? 0;
         const key = this.makeKey(options);
-        if (navigator.onLine === false) {
-            const offline = cacheTTL > 0 ? this.readCache(key) : null;
-            return offline || this.failure(0, "No internet connection");
-        }
 
         if (!options.forceRefresh && cacheTTL > 0) {
             const cached = this.readCache(key);
             if (cached) return cached;
         }
 
-        const coalesce = !this.mutations.has(action);
-        if (coalesce && this.inFlight.has(key)) return this.inFlight.get(key);
+        if (this.inFlight.has(key)) return this.inFlight.get(key);
 
         const promise = this.execute(options).then(async (result) => {
             if (!result.ok && result.status === 401 && action !== "login" && action !== "refreshSession" && !options.__refreshed) {
@@ -92,15 +90,12 @@ class ApiService {
                     result = await this.execute(retryOptions);
                 }
             }
-            if (!result.ok && result.status === 401 && action !== "login" && action !== "refreshSession") {
-                window.dispatchEvent(new CustomEvent("operation:session-expired", { detail: result.data }));
-            }
             if (result.ok && cacheTTL > 0) this.writeCache(key, result, cacheTTL);
             if (result.ok && this.mutations.has(action)) this.clearReadCache();
             return result;
-        }).finally(() => { if (coalesce) this.inFlight.delete(key); });
+        }).finally(() => this.inFlight.delete(key));
 
-        if (coalesce) this.inFlight.set(key, promise);
+        this.inFlight.set(key, promise);
         return promise;
     }
 
@@ -138,6 +133,9 @@ class ApiService {
                     const requestedAction = options?.body?.action || options?.params?.action || 'requested operation';
                     const missing = String(data.message).split(":").slice(1).join(":").trim() || requestedAction;
                     return this.failure(409, `Backend version mismatch: ${missing} is not available in the deployed API. Redeploy the matching Enterprise X backend.`, { ...data, code: "BACKEND_VERSION_MISMATCH", action: missing });
+                }
+                if (semanticStatus === 401 || data?.message === "AUTH_REQUIRED" || data?.message === "SESSION_EXPIRED") {
+                    window.dispatchEvent(new CustomEvent("operation:session-expired", { detail: data }));
                 }
                 return this.failure(semanticStatus, this.getStatusMessage(semanticStatus, data), data);
             }
@@ -215,34 +213,23 @@ class ApiService {
 
 
     async refreshAuthToken() {
-        if (this.refreshPromise) return this.refreshPromise;
-        this.refreshPromise = this.performTokenRefresh().finally(() => { this.refreshPromise = null; });
-        return this.refreshPromise;
-    }
-
-    async performTokenRefresh() {
         const refreshToken = sessionStorage.getItem("auth_refresh_token");
         if (!refreshToken || !this.baseURL) return null;
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
         try {
             const response = await fetch(this.baseURL, {
                 method: "POST",
                 headers: this.headers,
-                signal: controller.signal,
                 body: JSON.stringify({ action: "refreshSession", refreshToken }),
                 cache: "no-store"
             });
             const data = await this.parseResponse(response);
             const session = data?.data;
             if (!response.ok || data?.ok === false || !session?.token) return null;
-            if (sessionStorage.getItem("auth_refresh_token") !== refreshToken) return null;
             sessionStorage.setItem("auth_token", session.token);
             if (session.refreshToken) sessionStorage.setItem("auth_refresh_token", session.refreshToken);
             if (session.user) sessionStorage.setItem("auth_user", JSON.stringify(session.user));
             return session.token;
         } catch (_) { return null; }
-        finally { clearTimeout(timeoutId); }
     }
 
     async parseResponse(response) {

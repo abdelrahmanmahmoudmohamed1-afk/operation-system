@@ -27,7 +27,6 @@ class SessionManager {
         sessionStorage.setItem(this.tokenKey, token);
         sessionStorage.setItem(this.userKey, JSON.stringify(user));
         if (refreshToken) sessionStorage.setItem(this.refreshKey, refreshToken);
-        else sessionStorage.removeItem(this.refreshKey);
     }
 
     getToken() {

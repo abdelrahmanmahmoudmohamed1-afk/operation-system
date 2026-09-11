@@ -4,9 +4,6 @@
 .DS_Store
 Thumbs.db
 *.log
-node_modules/
-.vercel/
-coverage/
 
 # Environment and private configuration
 .env

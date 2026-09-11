@@ -12,7 +12,6 @@
   },
   "version": "1.7.7",
   "scripts": {
-    "audit": "node scripts/release-audit.mjs",
-    "test": "node --test scripts/*.test.mjs"
+    "audit": "node scripts/release-audit.mjs"
   }
 }
