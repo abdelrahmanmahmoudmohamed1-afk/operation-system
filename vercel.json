@@ -1,4 +1,7 @@
 {
+  "framework": null,
+  "buildCommand": "npm run build",
+  "outputDirectory": "public",
   "functions": {
     "api/ops.js": { "maxDuration": 60 },
     "api/health.js": { "maxDuration": 30 },

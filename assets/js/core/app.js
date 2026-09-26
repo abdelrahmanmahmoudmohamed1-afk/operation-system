@@ -1,3 +1,4 @@
+import { projectLabel } from "../utils/project-label.js";
 /**
  * ---------------------------------------------------------
  * Abdelrahman Framework
@@ -183,6 +184,9 @@ class App {
             });
         } catch (error) {
             console.error("Failed to load login screen:", error);
+            // Let the startup error screen handle this instead of hiding the
+            // loader over an empty app when the login layout cannot be fetched.
+            throw error;
         }
     }
 
@@ -302,7 +306,7 @@ class App {
         } catch (_) {
             // GitHub-only mode: keep the known project list usable.
         }
-        select.innerHTML = `<option value="ALL">All Projects</option>${projects.map((p) => `<option value="${this.escapeHTML(p)}">${this.escapeHTML(p)}</option>`).join("")}`;
+        select.innerHTML = `<option value="ALL">All Projects</option>${projects.map((p) => `<option value="${this.escapeHTML(p)}">${this.escapeHTML(projectLabel(p))}</option>`).join("")}`;
         select.value = Array.from(select.options).some((o) => o.value === saved) ? saved : "ALL";
         sessionStorage.setItem("operation_global_project", select.value);
         select.addEventListener("change", async () => {

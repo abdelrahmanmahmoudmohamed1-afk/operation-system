@@ -1,3 +1,4 @@
+import { projectLabel } from "../../utils/project-label.js";
 import { escapeHtml } from "../../utils/helpers.js";
 import Formatter from "../../utils/formatter.js";
 
@@ -13,8 +14,10 @@ export function renderLayout() {
 
         <div class="kpi-grid" id="dash-kpis"></div>
 
-        <div class="dash-section-title">Status Combinations</div>
-        <div class="kpi-grid" id="dash-combo-kpis"></div>
+        <details class="sales-breakdown">
+            <summary>Sales breakdown · status combinations</summary>
+            <div class="kpi-grid" id="dash-combo-kpis"></div>
+        </details>
 
         <div class="dash-charts-grid">
             <div class="card dash-chart-card">
@@ -192,7 +195,7 @@ function genericRows(rows, columns, emptyColspan) {
     return rows.map((r) => `
         <tr>
             ${columns.map((c) => {
-                const value = r[c.key];
+                const value = c.key === "Project" ? projectLabel(r[c.key]) : r[c.key];
 
                 if (c.money) {
                     return `<td>${Formatter.money(value || 0)}</td>`;

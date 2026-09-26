@@ -1,3 +1,4 @@
+import { projectLabel } from "../../utils/project-label.js";
 import { escapeHtml, buildTableHead } from "../../utils/helpers.js";
 import Formatter from "../../utils/formatter.js";
 
@@ -14,7 +15,7 @@ const COLUMNS = [
 ];
 
 export function renderLayout(projects = []) {
-    const projectOptions = (projects || []).map((p) => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("");
+    const projectOptions = (projects || []).map((p) => `<option value="${escapeHtml(p)}">${escapeHtml(projectLabel(p))}</option>`).join("");
     return `
         <div class="page-header">
             <div>
@@ -59,7 +60,7 @@ export function renderRows(rows) {
         <tr>
             <td>${escapeHtml(r.Date)}</td>
             <td>${escapeHtml(r.ClientName)}</td>
-            <td>${escapeHtml(r.Project)}</td>
+            <td>${escapeHtml(projectLabel(r.Project))}</td>
             <td>${escapeHtml(r.Housing)}</td>
             <td>${escapeHtml(r.Phone)}</td>
             <td>${escapeHtml(r.Interest)}</td>
@@ -71,12 +72,12 @@ export function renderRows(rows) {
 }
 
 export function renderForm({ salesOptions, lists }) {
-    const salesOpts = (salesOptions || []).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
-    const sourceOpts = (lists.sourceOptions || []).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
-    const interestOpts = (lists.interestOptions || []).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
-    const paymentOpts = (lists.paymentMethods || []).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
-    const projectOpts = (lists.projectOptions || ["Layana","Mersea"]).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
-    const housingOpts = (lists.housingOptions || ["Housing","Investment","Second Home","Other"]).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+    const salesOpts = (salesOptions || []).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(projectLabel(s))}</option>`).join("");
+    const sourceOpts = (lists.sourceOptions || []).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(projectLabel(s))}</option>`).join("");
+    const interestOpts = (lists.interestOptions || []).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(projectLabel(s))}</option>`).join("");
+    const paymentOpts = (lists.paymentMethods || []).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(projectLabel(s))}</option>`).join("");
+    const projectOpts = (lists.projectOptions || ["Layana","Mersea"]).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(projectLabel(s))}</option>`).join("");
+    const housingOpts = (lists.housingOptions || ["Housing","Investment","Second Home","Other"]).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(projectLabel(s))}</option>`).join("");
 
     return `
         <div class="modal-backdrop" id="eoi-modal-backdrop">

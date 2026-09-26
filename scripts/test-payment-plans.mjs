@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {createPaymentPlan} from '../lib/payment-plans.js';
+const unit={status:'Reserved',project:'Layana',unit_code:'A01-101',price:12000001.01};
+const client={project:'Layana',unit_code:'A01-101',client_name:'Client A'};
+const p=createPaymentPlan({unit,client,downPaymentPercent:25,installments:7,startDate:'2026-09-26'});
+assert.equal(Math.round((p.downPayment+p.installments.reduce((s,r)=>s+r.amount,0))*100),Math.round(unit.price*100));
+assert.equal(p.deliveryDate,'2029-09-26');assert.equal(p.maintenanceDeposit,1200000.10);
+assert.throws(()=>createPaymentPlan({unit:{...unit,status:'Available'},client,startDate:'2026-09-26'}),/Reserved/);
+assert.throws(()=>createPaymentPlan({unit,client:{...client,unit_code:'WRONG'},startDate:'2026-09-26'}),/match/);
+assert.throws(()=>createPaymentPlan({unit:{...unit,price:null},client,startDate:'2026-09-26'}),/unavailable/);
+console.log('Payment-plan arithmetic, reservation validation, maintenance separation and default delivery: PASS');

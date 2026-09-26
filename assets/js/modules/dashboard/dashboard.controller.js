@@ -1,3 +1,4 @@
+import { projectLabel } from "../../utils/project-label.js";
 /**
  * ---------------------------------------------------------
  * Abdelrahman Framework
@@ -19,7 +20,7 @@ import {
 } from "./dashboard.view.js";
 import { renderLoading, renderError, renderEmptyRow } from "../../utils/state.js";
 
-const CHART_COLORS = ["#C9A227", "#8A7B65", "#4ADE80", "#F87171", "#6B94C4", "#A8D5C8", "#D89A5B"];
+const CHART_COLORS = ["#2563eb", "#60a5fa", "#4ADE80", "#F87171", "#6B94C4", "#A8D5C8", "#D89A5B"];
 function themeChartColors() {
     const css = getComputedStyle(document.documentElement);
     const pick = (name, fallback) => (css.getPropertyValue(name) || '').trim() || fallback;
@@ -28,7 +29,7 @@ function themeChartColors() {
         muted: pick('--text-muted', pick('--muted', '#6B7280')),
         line: pick('--line', 'rgba(127,127,127,.18)'),
         surface: pick('--surface', pick('--card', '#FFFFFF')),
-        accent: pick('--accent', '#C9A227')
+        accent: pick('--accent', '#2563eb')
     };
 }
 
@@ -54,7 +55,7 @@ class DashboardController extends Module {
             const data = await DashboardService.loadData({});
 
             if (metaEl) {
-                metaEl.textContent = `Generated: ${data.meta.generatedAt} | ${data.meta.rowsInventory} inventory rows`;
+                metaEl.textContent = `Updated ${new Date(data.meta.generatedAt).toLocaleString()} · ${data.meta.rowsInventory} inventory units`;
             }
 
             if (kpisEl) kpisEl.innerHTML = renderKpis(data.kpis);
@@ -111,8 +112,8 @@ class DashboardController extends Module {
                     {
                         label: "Sales Value",
                         data: rows.map((r) => r.SalesValue),
-                        borderColor: "#C9A227",
-                        backgroundColor: "rgba(201,162,39,.15)",
+                        borderColor: "#2563eb",
+                        backgroundColor: "rgba(37,99,235,.12)",
                         tension: .3,
                         fill: true
                     },
@@ -172,7 +173,7 @@ class DashboardController extends Module {
                     label: "Value",
                     data: top.map((r) => r.Value),
                     backgroundColor: "rgba(201,162,39,.55)",
-                    borderColor: "#C9A227",
+                    borderColor: "#2563eb",
                     borderWidth: 1,
                     borderRadius: 6
                 }]

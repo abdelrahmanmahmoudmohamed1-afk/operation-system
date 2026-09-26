@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const failures=[]; const warnings=[]; const passes=[];
 const files=[];
-function walk(dir){for(const ent of fs.readdirSync(dir,{withFileTypes:true})){if(['node_modules','.git'].includes(ent.name))continue;const p=path.join(dir,ent.name);ent.isDirectory()?walk(p):files.push(p);}}
+function walk(dir){for(const ent of fs.readdirSync(dir,{withFileTypes:true})){if(['node_modules','.git','public'].includes(ent.name))continue;const p=path.join(dir,ent.name);ent.isDirectory()?walk(p):files.push(p);}}
 walk(ROOT);
 const rel=p=>path.relative(ROOT,p).replaceAll('\\','/');
 

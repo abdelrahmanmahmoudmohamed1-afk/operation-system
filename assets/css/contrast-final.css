@@ -1,0 +1,7 @@
+/* Accessible control surfaces across supported themes; preserve theme accents. */
+:root{color-scheme:light dark}
+:where(.modal-box,.report-builder,.card,.table-wrap) :where(input:not([type=checkbox]):not([type=radio]),select,textarea){min-height:38px}
+:where(.modal-box,.report-builder,.card) :where(input,select,textarea):focus-visible{outline:2px solid var(--primary,#2563eb);outline-offset:2px}
+:where(.modal-box,.report-builder,.card) :where(button,a):focus-visible{outline:2px solid var(--primary,#2563eb);outline-offset:3px}
+:where(.modal-box,.report-builder,.card) :where(input,select,textarea)::placeholder{opacity:.72}
+@media(prefers-contrast:more){:where(.modal-box,.report-builder,.card) :where(input,select,textarea){border-width:2px}:where(.modal-box,.report-builder,.card) :where(button){font-weight:700}}

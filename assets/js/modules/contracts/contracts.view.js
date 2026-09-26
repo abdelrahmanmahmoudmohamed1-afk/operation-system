@@ -1,3 +1,4 @@
+import { projectLabel } from "../../utils/project-label.js";
 import { escapeHtml, buildTableHead } from "../../utils/helpers.js";
 import Formatter from "../../utils/formatter.js";
 
@@ -31,7 +32,7 @@ export function renderRows(rows) {
     return (rows || []).map((r) => `
         <tr class="detail-row" data-detail='${escapeHtml(JSON.stringify(r))}'>
             <td>${escapeHtml(r.unitCode)}</td>
-            <td>${escapeHtml(r.project)}</td>
+            <td>${escapeHtml(projectLabel(r.project))}</td>
             <td>${escapeHtml(r.clientName)}</td>
             <td>${escapeHtml(r.salesName)}</td>
             <td>${Formatter.money(r.soldPrice)}</td>

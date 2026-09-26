@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {parseEOINumber,nextEOINumber,normalizeRequestId} from '../lib/eoi-number-utils.js';
+assert.equal(parseEOINumber('١٢٥'),125);
+assert.equal(parseEOINumber('۱۲۵'),125);
+assert.equal(parseEOINumber('125'),125);
+assert.equal(parseEOINumber('125.5'),0);
+assert.equal(parseEOINumber('12345678901234567890'),0);
+assert.equal(nextEOINumber(['120','١٢٥','bad','124'],124,121),126);
+assert.equal(nextEOINumber(['120','125'],127,124,3),130);
+assert.equal(nextEOINumber([],0,0),1);
+assert.throws(()=>nextEOINumber([],0,0,0));
+assert.throws(()=>nextEOINumber([],0,0,1001));
+assert.equal(normalizeRequestId('abc-1234567890'), 'abc-1234567890');
+assert.throws(()=>normalizeRequestId('bad'));
+console.log('PASS: EOI numbering, Arabic digits, increment validation, request IDs');

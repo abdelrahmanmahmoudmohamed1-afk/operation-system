@@ -1,0 +1,46 @@
+/* Additive simplification layer — loaded AFTER style.css.
+   Only adds spacing/behaviour for the grouped sidebar and the
+   consolidated topbar "More" menu. Does not remove or override
+   any existing theme colors; it reads the same CSS variables
+   style.css already defines so every theme stays consistent. */
+
+.sidebar-group + .sidebar-group {
+    margin-top: 18px;
+}
+
+.sidebar-group .sidebar-section-label {
+    opacity: .75;
+}
+
+/* Consolidated topbar "More" menu now also hosts Quick Create,
+   so give it a simple readable list layout instead of relying on
+   whatever ad-hoc rules matched the old two-item version. */
+.topbar-more-menu {
+    display: flex;
+    flex-direction: column;
+    min-width: 190px;
+    gap: 2px;
+    padding: 6px;
+}
+
+.topbar-more-menu button,
+.topbar-more-menu > span {
+    width: 100%;
+    text-align: left;
+    padding: 9px 10px;
+    border-radius: 10px;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+}
+
+.topbar-more-menu button:hover {
+    background: var(--os-accent-soft, rgba(255,255,255,.06));
+}
+
+.topbar-more-menu > span {
+    opacity: .7;
+    cursor: default;
+}

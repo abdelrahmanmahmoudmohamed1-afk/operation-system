@@ -1,3 +1,4 @@
+import { projectLabel } from "../../utils/project-label.js";
 import { escapeHtml, buildTableHead } from "../../utils/helpers.js";
 import Formatter from "../../utils/formatter.js";
 
@@ -21,7 +22,7 @@ function statusBadge(status) {
 }
 
 export function renderLayout(projects) {
-    const options = (projects || []).map((p) => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("");
+    const options = (projects || []).map((p) => `<option value="${escapeHtml(p)}">${escapeHtml(projectLabel(p))}</option>`).join("");
 
     return `
         <div class="page-header">
@@ -70,7 +71,7 @@ export function renderStatusOptions(rows, currentValue) {
 
     const statuses = Array.from(set).sort();
     const options = statuses.map((s) => `
-        <option value="${escapeHtml(s)}" ${s === currentValue ? "selected" : ""}>${escapeHtml(s)}</option>
+        <option value="${escapeHtml(s)}" ${s === currentValue ? "selected" : ""}>${escapeHtml(projectLabel(s))}</option>
     `).join("");
 
     return `<option value="ALL" ${currentValue === "ALL" ? "selected" : ""}>All Statuses</option>${options}`;
@@ -104,7 +105,7 @@ export function renderRows(rows) {
     return rows.map((r) => `
         <tr class="detail-row" data-detail='${escapeHtml(JSON.stringify(r))}'>
             <td>${escapeHtml(r.unitCode)}</td>
-            <td>${escapeHtml(r.project)}</td>
+            <td>${escapeHtml(projectLabel(r.project))}</td>
             <td>${escapeHtml(r.unitType)}</td>
             <td>${escapeHtml(r.floor)}</td>
             <td>${statusBadge(r.status)}</td>

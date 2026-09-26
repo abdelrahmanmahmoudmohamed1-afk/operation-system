@@ -35,7 +35,7 @@ class ApiService {
             ["getUnitFloorPlan", 5 * 60 * 1000],
             ["getUnitFloorPlanCoverage", 2 * 60 * 1000]
         ]);
-        this.mutations = new Set(["bootstrapAdmin", "login", "logout", "changeOwnPassword", "saveClientRegistration", "uploadClientContract", "saveEOI", "refreshAvailableLayanaUnits", "bulkUpdateLeadStatus", "importLeads", "createSystemUser", "updateSystemUser", "resetUserPassword", "uploadUnitFloorPlan", "sendGmail", "completeReminder", "sendChatMessage", "sendChatAnnouncement", "createChatConversation", "markChatRead", "prepareChatAttachmentUpload"]);
+        this.mutations = new Set(["bootstrapAdmin", "login", "logout", "changeOwnPassword", "saveClientRegistration", "uploadClientContract", "saveEOI", "refreshAvailableLayanaUnits", "bulkUpdateLeadStatus", "importLeads", "createSystemUser", "updateSystemUser", "resetUserPassword", "uploadUnitFloorPlan", "sendGmail", "completeReminder", "sendChatMessage", "sendChatAnnouncement", "createChatConversation", "markChatRead", "prepareChatAttachmentUpload", "saveSalesPerson", "saveSalesTarget", "deleteDocument", "operationAiChat"]);
     }
 
     setBackendInfo(info = null) {
@@ -90,6 +90,9 @@ class ApiService {
                     result = await this.execute(retryOptions);
                 }
             }
+            if (!result.ok && result.status === 401 && action !== "login" && action !== "refreshSession") {
+                window.dispatchEvent(new CustomEvent("operation:session-expired", { detail: result.data || result }));
+            }
             if (result.ok && cacheTTL > 0) this.writeCache(key, result, cacheTTL);
             if (result.ok && this.mutations.has(action)) this.clearReadCache();
             return result;
@@ -133,9 +136,6 @@ class ApiService {
                     const requestedAction = options?.body?.action || options?.params?.action || 'requested operation';
                     const missing = String(data.message).split(":").slice(1).join(":").trim() || requestedAction;
                     return this.failure(409, `Backend version mismatch: ${missing} is not available in the deployed API. Redeploy the matching Enterprise X backend.`, { ...data, code: "BACKEND_VERSION_MISMATCH", action: missing });
-                }
-                if (semanticStatus === 401 || data?.message === "AUTH_REQUIRED" || data?.message === "SESSION_EXPIRED") {
-                    window.dispatchEvent(new CustomEvent("operation:session-expired", { detail: data }));
                 }
                 return this.failure(semanticStatus, this.getStatusMessage(semanticStatus, data), data);
             }

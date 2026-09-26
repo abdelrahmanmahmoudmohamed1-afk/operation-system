@@ -1,3 +1,4 @@
+import { projectLabel } from "../../utils/project-label.js";
 /**
  * ---------------------------------------------------------
  * CRM Module — View
@@ -68,7 +69,7 @@ export function renderTableRows(rows) {
     return rows.map((row) => `
         <tr class="detail-row" data-detail='${escapeHtml(JSON.stringify(row))}'>
             <td>${escapeHtml(row.unitCode)}</td>
-            <td>${escapeHtml(row.project)}</td>
+            <td>${escapeHtml(projectLabel(row.project))}</td>
             <td>${escapeHtml(row.clientName)}</td>
             <td><div>${escapeHtml(row.clientPhone || "-")}</div><small>${escapeHtml(row.clientPhone2 || "")}</small></td>
             <td class="cell-wrap">${escapeHtml(row.clientAddress || "-")}</td>
@@ -83,10 +84,10 @@ export function renderTableRows(rows) {
 }
 
 export function renderRegisterForm({ salesOptions, lists }) {
-    const salesOpts = (salesOptions || []).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+    const salesOpts = (salesOptions || []).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(projectLabel(s))}</option>`).join("");
     const nationalityOpts = (lists.nationalities || []).map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
-    const sourceOpts = (lists.sourceOptions || []).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
-    const paymentOpts = (lists.paymentMethods || []).map((p) => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("");
+    const sourceOpts = (lists.sourceOptions || []).map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(projectLabel(s))}</option>`).join("");
+    const paymentOpts = (lists.paymentMethods || []).map((p) => `<option value="${escapeHtml(p)}">${escapeHtml(projectLabel(p))}</option>`).join("");
 
     return `
         <div class="modal-backdrop" id="crm-modal-backdrop">
@@ -158,7 +159,7 @@ export function renderUploadContractModal(client = {}) {
         <div class="modal-backdrop" id="crm-contract-modal-backdrop">
             <div class="modal-box crm-contract-upload-modal">
                 <h2>Upload Client Contract</h2>
-                <p class="modal-subtitle">${escapeHtml(client.project || "-")} — ${escapeHtml(client.unitCode || "-")} — ${escapeHtml(client.clientName || "-")}</p>
+                <p class="modal-subtitle">${escapeHtml(projectLabel(client.project || "-"))} — ${escapeHtml(client.unitCode || "-")} — ${escapeHtml(client.clientName || "-")}</p>
                 <form id="crm-contract-upload-form">
                     <div class="form-grid">
                         <div>
@@ -196,7 +197,7 @@ export function renderDocumentsModal(client = {}, documents = []) {
     return `
         <div class="modal-backdrop" id="crm-documents-modal-backdrop">
             <div class="modal-box crm-documents-modal">
-                <div class="modal-heading"><div><h2>Client Documents</h2><p class="modal-subtitle">${escapeHtml(client.project || "-")} — ${escapeHtml(client.unitCode || "-")} — ${escapeHtml(client.clientName || "-")}</p></div><button type="button" class="modal-close" id="crm-documents-close">×</button></div>
+                <div class="modal-heading"><div><h2>Client Documents</h2><p class="modal-subtitle">${escapeHtml(projectLabel(client.project || "-"))} — ${escapeHtml(client.unitCode || "-")} — ${escapeHtml(client.clientName || "-")}</p></div><button type="button" class="modal-close" id="crm-documents-close">×</button></div>
                 <div class="documents-list">${rows}</div>
             </div>
         </div>`;

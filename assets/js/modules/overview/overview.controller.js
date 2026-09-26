@@ -20,7 +20,7 @@ class OverviewController extends Module {
             const projects = document.getElementById("overview-projects");
 
             const mode = data.meta?.sourceMode || "Live";
-            if (meta) meta.textContent = `Generated: ${data.meta?.generatedAt || "-"} • ${mode}`;
+            if (meta) meta.textContent = `${mode} overview · Updated ${data.meta?.generatedAt ? new Date(data.meta.generatedAt).toLocaleString() : "just now"}`;
             if (kpis) kpis.innerHTML = renderKpis(data);
             if (pipeline) pipeline.innerHTML = renderPipeline(data.statusMix || []);
             if (projects) projects.innerHTML = renderProjects(data.projectPerformance || []);

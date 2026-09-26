@@ -1,3 +1,4 @@
+import { projectLabel } from "../../utils/project-label.js";
 import { escapeHtml } from "../../utils/helpers.js";
 import Formatter from "../../utils/formatter.js";
 
@@ -45,7 +46,7 @@ const ORIENTATION_FALLBACK = ["North", "South", "East", "West", "North East", "N
 const STATUS_FALLBACK = ["Available", "Hold", "Reserved", "Contracted", "Sold", "Cancelled", "Sent for Signature", "DP Completed", "DP Not Completed", "Cheques Not Submitted", "Ready To Deliver", "Pending"];
 
 function option(value, label, selected = false) {
-    return `<option value="${escapeHtml(value)}" ${selected ? "selected" : ""}>${escapeHtml(label)}</option>`;
+    return `<option value="${escapeHtml(value)}" ${selected ? "selected" : ""}>${escapeHtml(projectLabel(label))}</option>`;
 }
 
 function uniqueValues(rows, key) {
@@ -101,7 +102,7 @@ function formatCell(key, value) {
     if (value === null || value === undefined || value === "") return "—";
     if (moneyAware(key)) return Formatter.money(Number(value) || 0);
     if (/date|created/i.test(key) && value) return Formatter.date(value);
-    return escapeHtml(value);
+    return escapeHtml(key.toLowerCase() === "project" ? projectLabel(value) : value);
 }
 
 function table(title, rows, columns, summary = {}) {

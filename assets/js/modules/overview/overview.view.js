@@ -1,3 +1,4 @@
+import { projectLabel } from "../../utils/project-label.js";
 import Formatter from "../../utils/formatter.js";
 import { escapeHtml } from "../../utils/helpers.js";
 
@@ -14,9 +15,9 @@ export function renderLayout() {
     return `
         <div class="overview-hero card">
             <div>
-                <div class="eyebrow">Operation CRM</div>
-                <h1>Business Overview</h1>
-                <p id="overview-meta">Loading executive summary...</p>
+                <div class="eyebrow">WORKSPACE</div>
+                <h1>Operation System</h1>
+                <p id="overview-meta">Your operations, in one workspace.</p>
             </div>
             <div class="overview-actions">
                 <button class="btn btn-primary" data-route="inventory">Open Inventory</button>
@@ -106,7 +107,7 @@ export function renderProjects(rows) {
     if (!rows || !rows.length) return `<tr><td colspan="4">No data</td></tr>`;
     return rows.slice(0, 8).map((r) => `
         <tr class="detail-row" data-detail='${escapeHtml(JSON.stringify(r))}'>
-            <td>${escapeHtml(r.Project)}</td>
+            <td>${escapeHtml(projectLabel(r.Project))}</td>
             <td>${escapeHtml(r.Units)}</td>
             <td>${Formatter.money(r.Value)}</td>
             <td>${Formatter.money(r.AvgUnitPrice)}</td>

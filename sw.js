@@ -1,9 +1,9 @@
-const CACHE_NAME = 'operation-system-enterprise-x-1.1.0';
+const CACHE_NAME = 'operation-system-blue-2026-09-24-startup';
 const CORE = [
   "./", "./index.html", "./assets/css/style.css", "./layouts/login.html", "./layouts/main.html",
   "./assets/js/core/app.js", "./assets/js/core/router.js", "./assets/js/core/module-loader.js",
   "./assets/js/services/enterprise.store.js", "./assets/js/services/enterprise.data.js", "./assets/js/services/ops.copilot.service.js",
-  "./assets/themes/genius.css"
+  "./assets/themes/genius.css", "./assets/css/operation-blue.css", "./assets/images/operation-mark.svg"
 ];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE)).catch(() => null));
@@ -24,6 +24,11 @@ self.addEventListener("fetch", event => {
     fetch(req, { cache: "no-store" }).then(response => {
       if (response && response.ok) caches.open(CACHE_NAME).then(cache => cache.put(req, response.clone()));
       return response;
-    }).catch(() => caches.match(req).then(cached => cached || caches.match("./index.html")))
+    }).catch(() => caches.match(req).then(async cached => {
+      if (cached) return cached;
+      if (req.mode === "navigate") return (await caches.match("./index.html")) || Response.error();
+      // Never return HTML for a missing JavaScript or CSS file.
+      return Response.error();
+    }))
   );
 });

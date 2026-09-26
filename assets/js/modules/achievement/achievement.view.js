@@ -1,3 +1,4 @@
+import { projectLabel } from "../../utils/project-label.js";
 import { escapeHtml } from "../../utils/helpers.js";
 import Formatter from "../../utils/formatter.js";
 
@@ -35,5 +36,5 @@ export function renderKpis(data){
 
 export function renderRows(rows=[]){
     if(!rows.length) return `<tr><td colspan="11" class="table-empty">No achievement units match this period.</td></tr>`;
-    return rows.map((r,i)=>`<tr class="achievement-row" data-index="${i}"><td class="report-select-col"><input class="ach-select" type="checkbox" value="${i}" checked></td><td>${escapeHtml(r.Date||'-')}</td><td>${escapeHtml(r.Project||'-')}</td><td>${escapeHtml(r.UnitCode||'-')}</td><td><span class="status-badge">${escapeHtml(r.Status||'-')}</span></td><td>${escapeHtml(r.Client||'-')}</td><td>${escapeHtml(r.Mobile||'-')}</td><td>${escapeHtml(r.Sales||'-')}</td><td>${escapeHtml(r.UnitType||'-')}</td><td>${escapeHtml(r.Area||0)}</td><td>${Formatter.money(r.Value||0)}</td></tr>`).join('');
+    return rows.map((r,i)=>`<tr class="achievement-row" data-index="${i}"><td class="report-select-col"><input class="ach-select" type="checkbox" value="${i}" checked></td><td>${escapeHtml(r.Date||'-')}</td><td>${escapeHtml(projectLabel(r.Project||'-'))}</td><td>${escapeHtml(r.UnitCode||'-')}</td><td><span class="status-badge">${escapeHtml(r.Status||'-')}</span></td><td>${escapeHtml(r.Client||'-')}</td><td>${escapeHtml(r.Mobile||'-')}</td><td>${escapeHtml(r.Sales||'-')}</td><td>${escapeHtml(r.UnitType||'-')}</td><td>${escapeHtml(r.Area||0)}</td><td>${Formatter.money(r.Value||0)}</td></tr>`).join('');
 }
